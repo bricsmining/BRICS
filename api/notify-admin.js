@@ -72,8 +72,8 @@ export default async function handler(req, res) {
       adminChatId = adminConfig.adminChatId;
     } catch (error) {
       console.error('Failed to get admin config:', error);
-      // Fallback to environment variable
-      adminChatId = process.env.VITE_ADMIN_CHAT_ID;
+      // No fallback - admin must set chat ID in admin panel
+      adminChatId = null;
     }
   }
 

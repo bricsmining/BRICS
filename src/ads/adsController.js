@@ -8,15 +8,15 @@ import { getAdminConfig } from '@/data/firestore/adminConfig';
 // import * as network3 from './networks/network3';
 // import * as network4 from './networks/network4';
 
-// Dynamic configuration for ad networks (loaded from database)
+// Dynamic configuration for ad networks (loaded from database only)
 let AD_CONFIG = {
   adsgram: {
-    blockId: import.meta.env.VITE_ADSGRAM_BLOCK_ID || 'int-12066', // Fallback
-    enabled: import.meta.env.VITE_ADSGRAM_ENABLED === 'true', // Fallback
+    blockId: 'int-12066', // Default value, will be overridden by database
+    enabled: false, // Default disabled, will be overridden by database
   },
   monetag: {
-    zoneId: import.meta.env.VITE_MONETAG_ZONE_ID || '9475832', // Fallback
-    enabled: import.meta.env.VITE_MONETAG_ENABLED === 'true', // Fallback
+    zoneId: '9475832', // Default value, will be overridden by database
+    enabled: false, // Default disabled, will be overridden by database
   },
   // Add more network configs here
 };
@@ -28,11 +28,11 @@ const loadAdConfig = async () => {
     AD_CONFIG = {
       adsgram: {
         blockId: config.adsgramBlockId || AD_CONFIG.adsgram.blockId,
-        enabled: config.adsgramEnabled !== undefined ? config.adsgramEnabled : AD_CONFIG.adsgram.enabled,
+        enabled: config.adsgramEnabled !== undefined ? config.adsgramEnabled : false,
       },
       monetag: {
         zoneId: config.monetagZoneId || AD_CONFIG.monetag.zoneId,
-        enabled: config.monetagEnabled !== undefined ? config.monetagEnabled : AD_CONFIG.monetag.enabled,
+        enabled: config.monetagEnabled !== undefined ? config.monetagEnabled : false,
       },
     };
     console.log('Ad config loaded from database:', AD_CONFIG);

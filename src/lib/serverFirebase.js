@@ -138,10 +138,10 @@ export const getServerAdminConfig = async () => {
     if (configDoc.exists()) {
       return configDoc.data();
     } else {
-      // Return fallback values if no config exists
+      // Return fallback values if no config exists (no env vars for these)
       return {
-        adminChatId: process.env.VITE_ADMIN_CHAT_ID || '5063003944', // Fallback to env
-        adminTgUsername: process.env.VITE_ADMIN_TG_USERNAME || '',
+        adminChatId: '', // Must be set in admin panel
+        adminTgUsername: '', // Must be set in admin panel
         stonToTonRate: 0.0000001,
         maxEnergy: 500,
         dailyEnergyAdLimit: 10,
@@ -157,10 +157,10 @@ export const getServerAdminConfig = async () => {
     }
   } catch (error) {
     console.error('Error getting server admin config:', error);
-    // Return fallback with environment variables
+    // Return fallback values (no env vars for these)
     return {
-      adminChatId: process.env.VITE_ADMIN_CHAT_ID || '5063003944',
-      adminTgUsername: process.env.VITE_ADMIN_TG_USERNAME || '',
+      adminChatId: '', // Must be set in admin panel
+      adminTgUsername: '', // Must be set in admin panel
       stonToTonRate: 0.0000001,
       maxEnergy: 500,
       dailyEnergyAdLimit: 10,

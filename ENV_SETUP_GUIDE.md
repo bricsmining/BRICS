@@ -168,8 +168,8 @@ environment:
 - Ensure bot has permission to send messages
 
 ### Ads Not Showing:
-- Check ad network is enabled (`VITE_ADSGRAM_ENABLED=true`)
-- Verify block/zone IDs are correct
+- Check ad network is enabled in the admin panel (Admin Settings → Ad Networks)
+- Verify block/zone IDs are correct in admin panel
 - Test in production environment
 
 ## 📞 Support

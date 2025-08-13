@@ -15,7 +15,6 @@ VITE_TG_BOT_TOKEN=7689055729:AAEtSkOpdognz7LzD5IbE5s0JcqtkhNw0RI
 
 # Admin Configuration (Required)
 ADMIN_API_KEY=your-secret-admin-key-here
-VITE_ADMIN_CHAT_ID=5063003944
 
 # Payment Integration (Required)
 VITE_OXAPAY_API_KEY=your-oxapay-api-key
@@ -24,8 +23,5 @@ VITE_OXAPAY_PAYOUT_API_KEY=your-payout-api-key
 # Optional APIs
 VITE_REFERRAL_API_KEY=your-referral-api-key
 
-# Ad Networks (Optional - can be configured in admin panel)
-VITE_ADSGRAM_ENABLED=true
-VITE_ADSGRAM_BLOCK_ID=int-12066
-VITE_MONETAG_ENABLED=true
-VITE_MONETAG_ZONE_ID=9475832
+# NOTE: Ad network settings (AdsGram, MonetAG) and admin chat ID/username 
+# are now configured through the Admin Panel, not environment variables!
