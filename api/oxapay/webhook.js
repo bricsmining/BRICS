@@ -4,7 +4,7 @@
  * Handles payment and withdrawal status updates from Oxapay
  */
 
-import { db } from '../../src/lib/serverFirebase.js';
+import { db, getServerAdminConfig } from '../../src/lib/serverFirebase.js';
 import { 
   collection, 
   query, 
@@ -471,7 +471,7 @@ async function sendPaymentNotification(paymentData, type, txHash, reason) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        chat_id: process.env.VITE_ADMIN_CHAT_ID || '5063003944',
+        chat_id: (await getServerAdminConfig()).adminChatId,
         text: message,
         parse_mode: 'HTML'
       })
@@ -507,7 +507,7 @@ async function sendWithdrawalNotification(withdrawalData, type, txHash, reason) 
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        chat_id: process.env.VITE_ADMIN_CHAT_ID || '5063003944',
+        chat_id: (await getServerAdminConfig()).adminChatId,
         text: message,
         parse_mode: 'HTML'
       })

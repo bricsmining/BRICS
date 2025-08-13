@@ -311,7 +311,7 @@ const TasksSection = ({ tasks = [], user = {}, refreshUserData, isLoading }) => 
     boxes: 0
   });
 
-  const adminChatId = import.meta.env.VITE_ADMIN_CHAT_ID;
+  // Admin chat ID is now fetched from database via API
 
   // Function to trigger flying animation
   const triggerFlyingReward = useCallback((type, amount) => {
@@ -419,7 +419,7 @@ const TasksSection = ({ tasks = [], user = {}, refreshUserData, isLoading }) => 
           'Content-Type': 'application/json',
           'x-api-key': import.meta.env.VITE_ADMIN_API_KEY
         },
-        body: JSON.stringify({ message, adminChatId }),
+        body: JSON.stringify({ message }),
       });
       
       if (!response.ok) {
@@ -438,7 +438,7 @@ const TasksSection = ({ tasks = [], user = {}, refreshUserData, isLoading }) => 
       });
       return false;
     }
-  }, [adminChatId, toast]);
+  }, [toast]);
 
   const handleEarnEnergyAd = useCallback(async () => {
     if (!user?.id) {

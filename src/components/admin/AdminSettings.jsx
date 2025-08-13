@@ -126,20 +126,37 @@ const AdminSettings = ({ adminData }) => {
 
     try {
       setBroadcasting(true);
-      const result = await broadcastMessage(broadcastText, adminData.email);
       
-      toast({
-        title: '✅ Broadcast Sent',
-        description: `Message sent to ${result.successCount}/${result.totalUsers} users`,
-        className: 'bg-[#1a1a1a] text-white'
+      // Use server-side API for broadcasting
+      const response = await fetch('/api/broadcast', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': import.meta.env.VITE_ADMIN_API_KEY
+        },
+        body: JSON.stringify({
+          message: broadcastText,
+          adminEmail: adminData.email
+        })
       });
       
-      setBroadcastText('');
+      const result = await response.json();
+      
+      if (result.success) {
+        toast({
+          title: '✅ Broadcast Sent',
+          description: `Message sent to ${result.successCount}/${result.totalUsers} users`,
+          className: 'bg-[#1a1a1a] text-white'
+        });
+        setBroadcastText('');
+      } else {
+        throw new Error(result.error || 'Broadcast failed');
+      }
     } catch (error) {
       console.error('Error broadcasting message:', error);
       toast({
         title: '❌ Broadcast Failed',
-        description: 'Failed to send broadcast message',
+        description: error.message || 'Failed to send broadcast message',
         variant: 'destructive',
         className: 'bg-[#1a1a1a] text-white'
       });

@@ -1086,7 +1086,6 @@ const ProfileSection = ({ user, refreshUserData }) => {
   const navigate = useNavigate();
 
   const adminUsername = import.meta.env.VITE_ADMIN_TG_USERNAME;
-  const adminChatId = import.meta.env.VITE_ADMIN_CHAT_ID;
   const isBanned = user.isBanned;
 
   // Memoized calculations
@@ -1285,7 +1284,7 @@ const ProfileSection = ({ user, refreshUserData }) => {
           "Content-Type": "application/json",
           "x-api-key": import.meta.env.VITE_ADMIN_API_KEY
         },
-        body: JSON.stringify({ message, adminChatId }),
+        body: JSON.stringify({ message }),
       });
       
       if (!response.ok) {
@@ -1303,7 +1302,7 @@ const ProfileSection = ({ user, refreshUserData }) => {
       });
       return false;
     }
-  }, [adminChatId, toast]);
+  }, [toast]);
 
   const handleConnectWallet = useCallback(async (walletInput) => {
     if (!user?.id) return;
