@@ -19,7 +19,7 @@ VITE_FIREBASE_APP_ID=your-app-id
 # 🤖 TELEGRAM BOT CONFIGURATION
 # ========================================
 # Bot token from @BotFather (required for admin notifications)
-VITE_TG_BOT_TOKEN=7689055729:AAEtSkOpdognz7LzD5IbE5s0JcqtkhNw0RI
+VITE_TG_BOT_TOKEN=your-telegram-bot-token
 
 # ========================================
 # 🔐 REFERRAL SYSTEM (Optional)
@@ -31,8 +31,9 @@ VITE_REFERRAL_API_KEY=your-referral-api-key
 # 💳 OXAPAY PAYMENT GATEWAY
 # ========================================
 # OxaPay API keys (get from OxaPay dashboard)
+# IMPORTANT: Never hardcode these in source code!
 VITE_OXAPAY_API_KEY=your-oxapay-api-key
-VITE_OXAPAY_PAYOUT_API_KEY=JLTE2F-DYZQHI-20JAOW-16UPGY
+VITE_OXAPAY_PAYOUT_API_KEY=your-oxapay-payout-api-key
 
 # ========================================
 # 🔥 FIREBASE CONFIGURATION

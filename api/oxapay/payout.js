@@ -2,8 +2,6 @@
  * OxaPay Payout API endpoint
  * Handles cryptocurrency payouts for approved withdrawals
  */
-
-const OXAPAY_PAYOUT_API_KEY = 'JLTE2F-DYZQHI-20JAOW-16UPGY';
 const OXAPAY_PAYOUT_URL = 'https://api.oxapay.com/v1/payout';
 
 export default async function handler(req, res) {
@@ -15,6 +13,17 @@ export default async function handler(req, res) {
   }
 
   try {
+    // Get API key from environment variables
+    const OXAPAY_PAYOUT_API_KEY = process.env.VITE_OXAPAY_PAYOUT_API_KEY;
+    
+    if (!OXAPAY_PAYOUT_API_KEY) {
+      console.error('OXAPAY_PAYOUT_API_KEY not configured');
+      return res.status(500).json({ 
+        success: false, 
+        error: 'Payment service not configured' 
+      });
+    }
+
     const { 
       address, 
       amount, 

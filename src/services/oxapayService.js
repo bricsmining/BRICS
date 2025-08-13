@@ -3,8 +3,9 @@
  * Handles all interactions with Oxapay API for payments and withdrawals
  */
 
-const OXAPAY_API_KEY = 'UH27B3-MCP7GB-Q3WCXJ-D331S3';
-const OXAPAY_MERCHANT_ID = 'UH27B3-MCP7GB-Q3WCXJ-D331S3'; // Usually same as API key or provided separately
+// Get API keys from environment variables
+const OXAPAY_API_KEY = import.meta.env.VITE_OXAPAY_API_KEY;
+const OXAPAY_MERCHANT_ID = import.meta.env.VITE_OXAPAY_API_KEY; // Same as API key // Usually same as API key or provided separately
 const OXAPAY_BASE_URL = 'https://api.oxapay.com';
 
 // Supported cryptocurrencies for payments

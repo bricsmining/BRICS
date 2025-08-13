@@ -16,8 +16,13 @@ import {
   arrayUnion 
 } from 'firebase/firestore';
 
-const OXAPAY_API_KEY = 'UH27B3-MCP7GB-Q3WCXJ-D331S3';
+// Get API key from environment variables
+const OXAPAY_API_KEY = process.env.VITE_OXAPAY_API_KEY;
 const OXAPAY_BASE_URL = 'https://api.oxapay.com';
+
+if (!OXAPAY_API_KEY) {
+  console.error('VITE_OXAPAY_API_KEY not configured in environment variables');
+}
 
 // Individual card configurations (should match frontend)
 const INDIVIDUAL_CARDS = {
