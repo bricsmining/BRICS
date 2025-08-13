@@ -1,0 +1,31 @@
+# Copy these environment variables to your Vercel project settings
+# Go to: https://vercel.com/team-xtremes-projects-2496e4b3/sky-ton-main/settings
+# Then: Environment Variables section
+
+# Firebase Configuration (Required)
+VITE_FIREBASE_API_KEY=your-firebase-api-key
+VITE_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=your-project-id
+VITE_FIREBASE_STORAGE_BUCKET=your-project.appspot.com
+VITE_FIREBASE_MESSAGING_SENDER_ID=your-sender-id
+VITE_FIREBASE_APP_ID=your-app-id
+
+# Telegram Bot (Required)
+VITE_TG_BOT_TOKEN=7689055729:AAEtSkOpdognz7LzD5IbE5s0JcqtkhNw0RI
+
+# Admin Configuration (Required)
+ADMIN_API_KEY=your-secret-admin-key-here
+VITE_ADMIN_CHAT_ID=5063003944
+
+# Payment Integration (Required)
+VITE_OXAPAY_API_KEY=your-oxapay-api-key
+VITE_OXAPAY_PAYOUT_API_KEY=your-payout-api-key
+
+# Optional APIs
+VITE_REFERRAL_API_KEY=your-referral-api-key
+
+# Ad Networks (Optional - can be configured in admin panel)
+VITE_ADSGRAM_ENABLED=true
+VITE_ADSGRAM_BLOCK_ID=int-12066
+VITE_MONETAG_ENABLED=true
+VITE_MONETAG_ZONE_ID=9475832
