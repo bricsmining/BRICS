@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Admin Notification API</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        input, textarea, select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #333;
+            border-radius: 0.5rem;
+            background: #2a2a2a;
+            color: #fff;
+            font-size: 1rem;
+        }
+        textarea {
+            height: 120px;
+            resize: vertical;
+        }
+        button {
+            background: #0066cc;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-size: 1rem;
+            margin-right: 1rem;
+        }
+        button:hover {
+            background: #0052a3;
+        }
+        button:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 2rem;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+        .success {
+            background: #1a4d1a;
+            border: 1px solid #2d7d2d;
+        }
+        .error {
+            background: #4d1a1a;
+            border: 1px solid #7d2d2d;
+        }
+        .info {
+            background: #1a1a4d;
+            border: 1px solid #2d2d7d;
+        }
+        .code-block {
+            background: #2a2a2a;
+            border: 1px solid #333;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin: 1rem 0;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 Admin Notification API Tester</h1>
+    <p>Use this tool to test the admin notification API endpoint.</p>
+
+    <form id="testForm">
+        <div class="form-group">
+            <label for="endpoint">API Endpoint:</label>
+            <select id="endpoint">
+                <option value="https://your-vercel-app.vercel.app/api/notify-admin">Production (Vercel)</option>
+                <option value="http://localhost:3000/api/notify-admin">Local (Vercel Dev)</option>
+                <option value="http://localhost:5173/api/notify-admin">Local (Vite - Won't work)</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="apiKey">Admin API Key:</label>
+            <input type="password" id="apiKey" placeholder="Enter your ADMIN_API_KEY">
+        </div>
+
+        <div class="form-group">
+            <label for="chatId">Admin Chat ID (optional):</label>
+            <input type="text" id="chatId" placeholder="5063003944" value="5063003944">
+            <small style="color: #888;">Leave empty to use database config</small>
+        </div>
+
+        <div class="form-group">
+            <label for="message">Test Message:</label>
+            <textarea id="message" placeholder="Enter your test message...">🧪 <b>Test Notification</b>
+This is a test message from the admin notification API.
+Time: ${new Date().toISOString()}
+Status: Working correctly! ✅</textarea>
+        </div>
+
+        <button type="submit" id="sendBtn">Send Test Notification</button>
+        <button type="button" id="clearBtn">Clear Results</button>
+    </form>
+
+    <div id="result"></div>
+
+    <div class="info" style="margin-top: 2rem;">
+        <h3>📋 Setup Instructions:</h3>
+        <ol>
+            <li><strong>Deploy to Vercel:</strong> The API endpoints only work when deployed to Vercel or running with <code>vercel dev</code></li>
+            <li><strong>Environment Variables:</strong> Make sure these are set in your deployment:
+                <div class="code-block">VITE_TG_BOT_TOKEN=your-bot-token
+ADMIN_API_KEY=your-admin-api-key
+VITE_ADMIN_CHAT_ID=5063003944 (fallback)</div>
+            </li>
+            <li><strong>Admin Panel Config:</strong> Set your admin chat ID in the admin panel settings</li>
+            <li><strong>Bot Permissions:</strong> Make sure your Telegram bot can send messages to the admin chat</li>
+        </ol>
+    </div>
+
+    <div class="info">
+        <h3>🐛 Common Issues:</h3>
+        <ul>
+            <li><strong>404 Not Found:</strong> API endpoint not deployed or wrong URL</li>
+            <li><strong>401 Unauthorized:</strong> Invalid or missing API key</li>
+            <li><strong>500 Server Error:</strong> Missing bot token or chat ID</li>
+            <li><strong>Telegram API Error:</strong> Invalid bot token or chat ID</li>
+        </ul>
+    </div>
+
+    <script>
+        const form = document.getElementById('testForm');
+        const resultDiv = document.getElementById('result');
+        const sendBtn = document.getElementById('sendBtn');
+        
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const endpoint = document.getElementById('endpoint').value;
+            const apiKey = document.getElementById('apiKey').value;
+            const chatId = document.getElementById('chatId').value;
+            const message = document.getElementById('message').value;
+            
+            if (!apiKey) {
+                showResult('❌ Please enter your Admin API Key', 'error');
+                return;
+            }
+            
+            if (!message.trim()) {
+                showResult('❌ Please enter a test message', 'error');
+                return;
+            }
+            
+            sendBtn.disabled = true;
+            sendBtn.textContent = 'Sending...';
+            
+            try {
+                showResult('🚀 Sending notification...', 'info');
+                
+                const requestBody = {
+                    message: message.trim()
+                };
+                
+                if (chatId) {
+                    requestBody.adminChatId = chatId;
+                }
+                
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-api-key': apiKey,
+                        'x-internal-request': 'true'
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+                
+                const responseData = await response.json();
+                
+                if (response.ok) {
+                    showResult(`✅ Success!
+Status: ${response.status}
+Message ID: ${responseData.messageId || 'N/A'}
+Chat ID: ${responseData.chatId || 'N/A'}
+Response: ${JSON.stringify(responseData, null, 2)}`, 'success');
+                } else {
+                    showResult(`❌ Failed!
+Status: ${response.status}
+Error: ${responseData.error || 'Unknown error'}
+Details: ${JSON.stringify(responseData, null, 2)}`, 'error');
+                }
+                
+            } catch (error) {
+                showResult(`💥 Network Error:
+${error.message}
+
+Make sure:
+1. The API endpoint is deployed and accessible
+2. Your network connection is working
+3. CORS is properly configured`, 'error');
+            } finally {
+                sendBtn.disabled = false;
+                sendBtn.textContent = 'Send Test Notification';
+            }
+        });
+        
+        document.getElementById('clearBtn').addEventListener('click', () => {
+            resultDiv.innerHTML = '';
+        });
+        
+        function showResult(text, type) {
+            resultDiv.innerHTML = `<div class="result ${type}">${text}</div>`;
+        }
+        
+        // Auto-fill current time in message
+        document.getElementById('message').addEventListener('focus', (e) => {
+            if (e.target.value.includes('${new Date().toISOString()}')) {
+                e.target.value = e.target.value.replace('${new Date().toISOString()}', new Date().toISOString());
+            }
+        });
+    </script>
+</body>
+</html>
