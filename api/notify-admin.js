@@ -5,6 +5,14 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
+  // Authentication - Require API key for security
+  const apiKey = req.headers['x-api-key'];
+  const validApiKey = process.env.ADMIN_API_KEY;
+
+  if (!apiKey || apiKey !== validApiKey) {
+    return res.status(401).json({ error: 'Unauthorized - Invalid API key' });
+  }
+
   const { message, adminChatId: providedChatId } = req.body;
   
   // Get bot token from environment

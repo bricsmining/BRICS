@@ -415,7 +415,10 @@ const TasksSection = ({ tasks = [], user = {}, refreshUserData, isLoading }) => 
     try {
       const response = await fetch('/api/notify-admin', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-api-key': import.meta.env.VITE_ADMIN_API_KEY
+        },
         body: JSON.stringify({ message, adminChatId }),
       });
       
