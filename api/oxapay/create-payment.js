@@ -140,7 +140,7 @@ export default async function handler(req, res) {
       currency,
       orderId,
       description: `${cardConfig.name} Purchase - ${stonPrice.toLocaleString()} STON`,
-      callbackUrl: `${process.env.VERCEL_URL || 'http://localhost:3000'}/api/oxapay/webhook`,
+      callbackUrl: `${process.env.VERCEL_URL || 'http://localhost:3000'}/api/oxapay?action=webhook`,
       returnUrl: `${process.env.VERCEL_URL || 'http://localhost:3000'}/mining?payment=return`,
       userEmail,
       userId

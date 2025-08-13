@@ -415,7 +415,7 @@ useEffect(() => {
     try {
       console.log(`Checking payment status for track ID: ${trackId}`);
       
-      const response = await fetch('/api/oxapay/check-payment', {
+      const response = await fetch('/api/oxapay?action=check-payment', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -498,7 +498,7 @@ useEffect(() => {
     }
 
     try {
-      const response = await fetch('/api/oxapay/check-payment', {
+      const response = await fetch('/api/oxapay?action=check-payment', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

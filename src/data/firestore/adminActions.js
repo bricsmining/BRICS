@@ -192,7 +192,7 @@ export const approveWithdrawal = async (withdrawalId, userId, amount) => {
 
     // Call OxaPay payout API
     try {
-      const payoutResponse = await fetch('/api/oxapay/payout', {
+      const payoutResponse = await fetch('/api/oxapay?action=payout', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

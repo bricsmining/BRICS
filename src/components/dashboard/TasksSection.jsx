@@ -413,7 +413,7 @@ const TasksSection = ({ tasks = [], user = {}, refreshUserData, isLoading }) => 
   // Admin notification via backend API
   const sendAdminNotification = useCallback(async (message) => {
     try {
-      const response = await fetch('/api/notify-admin', {
+      const response = await fetch('/api/admin?action=notify', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',

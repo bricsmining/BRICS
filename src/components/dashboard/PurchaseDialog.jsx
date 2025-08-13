@@ -129,7 +129,7 @@ const PurchaseDialog = ({ isOpen, onClose, cardPrice, cardNumber, currentBalance
           currency: 'TON',
           orderId,
           description: `${INDIVIDUAL_CARDS[cardNumber]?.name || `Card ${cardNumber}`} Purchase`,
-          callbackUrl: `${window.location.origin}/api/oxapay/webhook`,
+          callbackUrl: `${window.location.origin}/api/oxapay?action=webhook`,
           returnUrl: `${window.location.origin}/mining?payment=return`,
           userId: user.id,
           userEmail: user.email || `user${user.id}@example.com` // Ensure email is always provided
@@ -174,7 +174,7 @@ const PurchaseDialog = ({ isOpen, onClose, cardPrice, cardNumber, currentBalance
         }
       } else {
         // Use server-side API endpoint for production
-        const response = await fetch('/api/oxapay/create-payment', {
+        const response = await fetch('/api/oxapay?action=create-payment', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

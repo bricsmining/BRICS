@@ -72,7 +72,7 @@ export default async function handler(req, res) {
       amount: parsedAmount,
       network: 'TON',
       description: description,
-      callback_url: `${process.env.VERCEL_URL || 'http://localhost:3000'}/api/oxapay/payout-webhook`
+      callback_url: `${process.env.VERCEL_URL || 'http://localhost:3000'}/api/oxapay?action=payout-webhook`
     };
 
     // Make request to OxaPay payout API

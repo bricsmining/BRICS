@@ -194,7 +194,7 @@ import { Badge } from '@/components/ui/badge';
 
 
 
-      const response = await fetch('/api/oxapay/check-payment', {
+      const response = await fetch('/api/oxapay?action=check-payment', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -246,7 +246,7 @@ import { Badge } from '@/components/ui/badge';
 
       console.log('🔍 Checking payment status for track ID:', targetTrackId);
 
-      const response = await fetch('/api/oxapay/check-payment', {
+      const response = await fetch('/api/oxapay?action=check-payment', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 

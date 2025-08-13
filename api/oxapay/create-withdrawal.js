@@ -93,7 +93,7 @@ export default async function handler(req, res) {
       address: walletAddress,
       orderId,
       description: `STON Withdrawal - ${stonAmount} STON to ${cryptoAmount} ${currency}`,
-      callbackUrl: `${process.env.VERCEL_URL || 'http://localhost:3000'}/api/oxapay/webhook`,
+      callbackUrl: `${process.env.VERCEL_URL || 'http://localhost:3000'}/api/oxapay?action=webhook`,
       userId,
       userEmail
     });

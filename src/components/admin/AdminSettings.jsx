@@ -128,7 +128,7 @@ const AdminSettings = ({ adminData }) => {
       setBroadcasting(true);
       
       // Use server-side API for broadcasting
-      const response = await fetch('/api/broadcast', {
+      const response = await fetch('/api/admin?action=broadcast', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
