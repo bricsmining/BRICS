@@ -1,56 +1,8 @@
 import { getServerAdminConfig } from '../src/lib/serverFirebase.js';
 
-const rateLimitMap = new Map();
-
-function isRateLimited(ip) {
-  const now = Date.now();
-  const windowMs = 60000;
-  const maxRequests = 10; // Increased limit for admin notifications
-
-  if (!rateLimitMap.has(ip)) {
-    rateLimitMap.set(ip, { count: 1, resetTime: now + windowMs });
-    return false;
-  }
-
-  const record = rateLimitMap.get(ip);
-  if (now > record.resetTime) {
-    record.count = 1;
-    record.resetTime = now + windowMs;
-    return false;
-  }
-
-  if (record.count >= maxRequests) return true;
-  record.count++;
-  return false;
-}
-
 export default async function handler(req, res) {
-  // Set CORS headers for development
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-api-key');
-
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
-  }
-
-  // Rate limiting
-  const clientIp = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-  if (isRateLimited(clientIp)) {
-    return res.status(429).json({ error: 'Too many requests' });
-  }
-
-  // Authentication - Check for API key or allow internal requests
-  const apiKey = req.headers['x-api-key'];
-  const validApiKey = process.env.ADMIN_API_KEY;
-  const isInternalRequest = req.headers['user-agent']?.includes('node') || req.headers['x-internal-request'] === 'true';
-
-  if (!isInternalRequest && (!apiKey || apiKey !== validApiKey)) {
-    return res.status(401).json({ error: 'Unauthorized' });
   }
 
   const { message, adminChatId: providedChatId } = req.body;
@@ -72,7 +24,6 @@ export default async function handler(req, res) {
       adminChatId = adminConfig.adminChatId;
     } catch (error) {
       console.error('Failed to get admin config:', error);
-      // No fallback - admin must set chat ID in admin panel
       adminChatId = null;
     }
   }
@@ -87,13 +38,7 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Invalid message' });
   }
 
-  if (message.length > 4096) {
-    return res.status(400).json({ error: 'Message too long' });
-  }
-
   try {
-    console.log('Sending notification to admin:', { chatId: adminChatId, messageLength: message.length });
-    
     const response = await fetch(
       `https://api.telegram.org/bot${botToken}/sendMessage`,
       {
@@ -117,7 +62,6 @@ export default async function handler(req, res) {
     }
 
     const result = await response.json();
-    console.log('Notification sent successfully:', result.message_id);
     
     return res.status(200).json({ 
       success: true, 

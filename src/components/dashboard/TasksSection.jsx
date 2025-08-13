@@ -410,25 +410,15 @@ const TasksSection = ({ tasks = [], user = {}, refreshUserData, isLoading }) => 
     }
   }, [user?.id, refreshUserData, toast, triggerFlyingReward]);
 
-  // Secure admin notification via backend API
+  // Admin notification via backend API
   const sendAdminNotification = useCallback(async (message) => {
     try {
       const response = await fetch('/api/notify-admin', {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'x-api-key': import.meta.env.VITE_ADMIN_API_KEY
-            },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message, adminChatId }),
       });
-      // Handle different error types
-      if (response.status === 401) {
-        throw new Error('Unauthorized - Invalid API key');
-      }
-    
-      if (response.status === 429) {
-        throw new Error('Too many requests - Please wait before trying again');
-      }
+      
       if (!response.ok) {
         throw new Error(`Failed to send notification: ${response.status}`);
       }
@@ -437,17 +427,9 @@ const TasksSection = ({ tasks = [], user = {}, refreshUserData, isLoading }) => 
     } catch (err) {
       console.error("Failed to send admin notification:", err);
       
-      // More specific error messages
-      let errorMessage = "Admin notification failed, but your action was completed.";
-      if (err.message.includes('Unauthorized')) {
-        errorMessage = "Authentication failed for admin notification.";
-      } else if (err.message.includes('Too many requests')) {
-        errorMessage = "Too many notifications sent. Please wait a moment.";
-      }
-    
       toast({
         title: "Warning",
-        description: errorMessage,
+        description: "Admin notification failed, but your action was completed.",
         variant: "warning",
         className: "bg-[#1a1a1a] text-white",
       });
