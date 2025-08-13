@@ -9,11 +9,14 @@ let config = null;
  * @param {Object} adsConfig - Configuration object with blockId
  */
 export function initialize(adsConfig) {
-  if (isInitialized || !adsConfig.blockId) {
-    console.log('Adsgram initialization skipped:', { 
-      isInitialized, 
-      hasBlockId: !!adsConfig.blockId 
-    });
+  // Allow re-initialization if config changed
+  if (isInitialized && config && config.blockId === adsConfig.blockId) {
+    console.log('Adsgram already initialized with same config');
+    return;
+  }
+  
+  if (!adsConfig.blockId) {
+    console.log('Adsgram initialization skipped - no blockId provided');
     return;
   }
 

@@ -24,8 +24,16 @@ let AD_CONFIG = {
 // Load ad config from database
 const loadAdConfig = async () => {
   try {
+    console.log('Loading ad config from database...');
     const config = await getAdminConfig();
-    AD_CONFIG = {
+    console.log('Raw database config:', {
+      adsgramBlockId: config.adsgramBlockId,
+      adsgramEnabled: config.adsgramEnabled,
+      monetagZoneId: config.monetagZoneId,
+      monetagEnabled: config.monetagEnabled
+    });
+    
+    const newConfig = {
       adsgram: {
         blockId: config.adsgramBlockId || AD_CONFIG.adsgram.blockId,
         enabled: config.adsgramEnabled !== undefined ? config.adsgramEnabled : false,
@@ -35,7 +43,10 @@ const loadAdConfig = async () => {
         enabled: config.monetagEnabled !== undefined ? config.monetagEnabled : false,
       },
     };
-    console.log('Ad config loaded from database:', AD_CONFIG);
+    
+    console.log('Previous AD_CONFIG:', AD_CONFIG);
+    AD_CONFIG = newConfig;
+    console.log('New AD_CONFIG:', AD_CONFIG);
   } catch (error) {
     console.error('Failed to load ad config from database, using fallback:', error);
   }
@@ -51,7 +62,9 @@ const adNetworks = [
              AD_CONFIG.adsgram.blockId && 
              adsgram.isAvailable();
     },
-    config: AD_CONFIG.adsgram,
+    get config() {
+      return AD_CONFIG.adsgram;
+    },
   },
   {
     name: 'monetag',
@@ -61,7 +74,9 @@ const adNetworks = [
              AD_CONFIG.monetag.zoneId && 
              monetag.isAvailable();
     },
-    config: AD_CONFIG.monetag,
+    get config() {
+      return AD_CONFIG.monetag;
+    },
   },
   // Add more networks here
 ];
@@ -277,12 +292,40 @@ export async function reinitializeAdNetworks() {
 }
 
 /**
- * Reload ad configuration from database
+ * Reload ad configuration from database and re-initialize networks
  */
 export async function reloadAdConfig() {
   console.log('Reloading ad config from database...');
   await loadAdConfig();
   console.log('Ad config reloaded:', AD_CONFIG);
+  
+  // Re-initialize ad networks with new config
+  setTimeout(() => {
+    adNetworks.forEach(network => {
+      if (network.config.enabled) {
+        try {
+          console.log(`Re-initializing ${network.name} with new config...`);
+          
+          if (network.name === 'adsgram') {
+            adsgram.initialize(network.config);
+          } else if (network.name === 'monetag') {
+            monetag.initialize(network.config);
+          }
+          
+          console.log(`${network.name} re-initialization completed`);
+        } catch (error) {
+          console.error(`Failed to re-initialize ${network.name}:`, error);
+        }
+      } else {
+        console.log(`${network.name} is disabled in new configuration`);
+      }
+    });
+    
+    // Log final status after a short delay
+    setTimeout(() => {
+      console.log('Ad networks re-initialization finished. Status:', getAdNetworkStatus());
+    }, 1000);
+  }, 500); // Small delay to ensure config is fully loaded
 }
 
 /**
@@ -306,6 +349,25 @@ export function getDebugInfo() {
       monetagZoneId: AD_CONFIG.monetag.zoneId ? 'Set' : 'Not set'
     },
     networkStatus: getAdNetworkStatus()
+  };
+}
+
+/**
+ * Test ad config loading (for debugging)
+ */
+export async function testAdConfigLoading() {
+  console.log('=== AD CONFIG TEST START ===');
+  console.log('Current AD_CONFIG before loading:', AD_CONFIG);
+  
+  await loadAdConfig();
+  
+  console.log('Current AD_CONFIG after loading:', AD_CONFIG);
+  console.log('Ad network status:', getAdNetworkStatus());
+  console.log('=== AD CONFIG TEST END ===');
+  
+  return {
+    config: AD_CONFIG,
+    status: getAdNetworkStatus()
   };
 }
 

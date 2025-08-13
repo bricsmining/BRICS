@@ -8,11 +8,14 @@ let sdkCheckInterval = null;
  * @param {Object} adsConfig - Configuration object with zoneId
  */
 export function initialize(adsConfig) {
-  if (isInitialized || !adsConfig.zoneId) {
-    console.log('Monetag initialization skipped:', { 
-      isInitialized, 
-      hasZoneId: !!adsConfig.zoneId 
-    });
+  // Allow re-initialization if config changed
+  if (isInitialized && config && config.zoneId === adsConfig.zoneId) {
+    console.log('Monetag already initialized with same config');
+    return;
+  }
+  
+  if (!adsConfig.zoneId) {
+    console.log('Monetag initialization skipped - no zoneId provided');
     return;
   }
 
