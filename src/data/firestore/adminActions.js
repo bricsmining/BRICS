@@ -18,13 +18,7 @@ import {
   completeTaskForUser,
   rejectManualVerificationForUser
 } from '@/data/firestore/userActions';
-import {
-  notifyTaskApproval,
-  notifyTaskRejection,
-  notifyWithdrawalApproval,
-  notifyWithdrawalRejection,
-  notifyWithdrawalRequest
-} from '@/utils/notifications';
+import { notifyUser, notifyAdmin } from '@/utils/botNotifications';
 
 // Fetch all users, ordered by join date
 export const getAllUsers = async () => {
@@ -112,7 +106,10 @@ export const approveTask = async (userId, taskId) => {
         const task = taskSnap.data();
         const user = userSnap.data();
         
-        await notifyTaskApproval(userId, task.title, task.reward);
+        await notifyUser(userId, 'task_approved', {
+          taskTitle: task.title,
+          reward: task.reward
+        });
       }
     } catch (error) {
       console.error('Error sending task approval notification:', error);
@@ -134,7 +131,10 @@ export const rejectTask = async (userId, taskId, reason = 'Requirements not met'
       
       if (taskSnap.exists()) {
         const task = taskSnap.data();
-        await notifyTaskRejection(userId, task.title, reason);
+        await notifyUser(userId, 'task_rejected', {
+          taskTitle: task.title,
+          reason: reason
+        });
       }
     } catch (error) {
       console.error('Error sending task rejection notification:', error);
@@ -279,12 +279,11 @@ export const approveWithdrawal = async (withdrawalId, userId, amount) => {
 
       // Send user notification about approval
       try {
-        await notifyWithdrawalApproval(
-          userId,
-          parseFloat(amount),
-          'TON Wallet',
-          walletAddress
-        );
+        await notifyUser(userId, 'withdrawal_approved', {
+          amount: parseFloat(amount),
+          method: 'TON Wallet',
+          address: walletAddress
+        });
       } catch (notificationError) {
         console.error('Failed to send approval notification to user:', notificationError);
       }
@@ -347,11 +346,10 @@ export const rejectWithdrawal = async (withdrawalId) => {
       const withdrawalDoc = await getDoc(withdrawalRef);
       const withdrawalData = withdrawalDoc.data();
       
-      await notifyWithdrawalRejection(
-        withdrawalData.userId,
-        withdrawalData.amount,
-        'Administrative decision'
-      );
+      await notifyUser(withdrawalData.userId, 'withdrawal_rejected', {
+        amount: withdrawalData.amount,
+        reason: 'Administrative decision'
+      });
     } catch (notificationError) {
       console.error('Failed to send rejection notification to user:', notificationError);
     }
@@ -382,14 +380,14 @@ export const createWithdrawalRequest = async (userId, amount, walletAddress, use
     
     // Send admin notification
     try {
-      await notifyWithdrawalRequest(
-        userId,
-        username || `User ${userId}`,
-        parseFloat(amount),
-        'TON Wallet',
-        walletAddress,
-        userBalance
-      );
+      await notifyAdmin('withdrawal_request', {
+        userId: userId,
+        userName: username || `User ${userId}`,
+        amount: parseFloat(amount),
+        method: 'TON Wallet',
+        address: walletAddress,
+        currentBalance: userBalance
+      });
     } catch (error) {
       console.error('Error sending withdrawal request notification:', error);
     }

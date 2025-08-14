@@ -16,7 +16,7 @@ import {
 import { defaultFirestoreUser } from '@/data/defaults';
 import { generateReferralLink, processReferralInfo } from '@/data/telegramUtils';
 import { getTask } from '@/data/firestore/taskActions';
-import { notifyNewUser, notifyTaskCompletion } from '@/utils/notifications';
+import { notifyAdmin } from '@/utils/botNotifications';
 
 // Create or return existing user
 export const getOrCreateUser = async (telegramUserData, referrerId = null) => {
@@ -96,7 +96,12 @@ export const getOrCreateUser = async (telegramUserData, referrerId = null) => {
       
       // Send new user notification to admin
       try {
-        await notifyNewUser(telegramUserData, referrerId);
+        await notifyAdmin('new_user', {
+      userId: telegramUserData.id,
+      name: telegramUserData.firstName || 'Unknown',
+      username: telegramUserData.username,
+      referrerId: referrerId
+    });
       } catch (error) {
         console.error('Error sending new user notification:', error);
       }
@@ -191,7 +196,13 @@ export const completeTaskForUser = async (userId, taskId) => {
     // Send task completion notification to admin
     try {
       const userName = userData.firstName || userData.username || `User ${userId}`;
-      await notifyTaskCompletion(userId, userName, task.title, task.reward);
+      await notifyAdmin('task_completion', {
+        userId: userId,
+        userName: userName,
+        taskTitle: task.title,
+        reward: task.reward,
+        taskType: 'Auto'
+      });
     } catch (error) {
       console.error('Error sending task completion notification:', error);
     }

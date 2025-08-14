@@ -27,10 +27,13 @@ export default async function handler(req, res) {
       case 'verify':
         return await handleVerifyAdmin(req, res);
       
+      case 'get-config':
+        return await handleGetConfig(req, res);
+      
       default:
         return res.status(400).json({ 
           error: 'Invalid action parameter',
-          availableActions: ['notify', 'broadcast', 'verify']
+          availableActions: ['notify', 'broadcast', 'verify', 'get-config']
         });
     }
   } catch (error) {
@@ -249,5 +252,27 @@ async function handleVerifyAdmin(req, res) {
     return res.status(200).json({ success: true });
   } else {
     return res.status(403).json({ success: false, message: 'Invalid password.' });
+  }
+}
+
+// Get admin configuration
+async function handleGetConfig(req, res) {
+  try {
+    const configRef = doc(db, 'admin', 'config');
+    const configSnap = await getDoc(configRef);
+
+    if (!configSnap.exists()) {
+      return res.status(404).json({ error: 'Admin config not found' });
+    }
+
+    const config = configSnap.data();
+    return res.status(200).json({
+      telegramChatId: config.telegramChatId || null,
+      hasConfig: true
+    });
+
+  } catch (error) {
+    console.error('Error in handleGetConfig:', error);
+    return res.status(500).json({ error: 'Internal server error' });
   }
 }

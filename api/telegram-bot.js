@@ -1,10 +1,22 @@
 /**
- * Telegram Bot Webhook Handler
- * Handles all Telegram bot interactions including /start commands and referrals
+ * Comprehensive Telegram Bot Webhook Handler
+ * Handles all bot interactions, referrals, notifications, and admin features directly
  */
 
+import { db } from '../src/lib/serverFirebase.js';
+import { 
+  collection, 
+  doc,
+  getDoc,
+  setDoc,
+  updateDoc,
+  addDoc,
+  serverTimestamp,
+  increment,
+  arrayUnion
+} from 'firebase/firestore';
+
 const BOT_TOKEN = process.env.TG_BOT_TOKEN || process.env.VITE_TG_BOT_TOKEN;
-const ADMIN_API_KEY = process.env.ADMIN_API_KEY;
 const WEB_APP_URL = process.env.VITE_WEB_APP_URL || 'https://your-app.vercel.app';
 const WEBHOOK_SECRET = process.env.TELEGRAM_WEBHOOK_SECRET || 'your-webhook-secret';
 
@@ -50,7 +62,7 @@ async function handleMessage(message) {
   const text = message.text;
   const userId = message.from.id;
 
-  console.log(`Received message from ${userId}: ${text}`);
+  console.log(`[BOT] Received message from ${userId}: ${text}`);
 
   // Handle /start command with referral parameter
   if (text && text.startsWith('/start ')) {
@@ -71,13 +83,13 @@ async function handleMessage(message) {
       }
     }
     
-    await handleStartWithReferral(chatId, userId, referrerId);
+    await handleStartWithReferral(chatId, userId, referrerId, message.from);
     return;
   }
 
   // Handle regular /start command
   if (text === '/start') {
-    await handleStart(chatId, userId);
+    await handleStart(chatId, userId, message.from);
     return;
   }
 
@@ -117,112 +129,87 @@ Tap the button below to start mining STON tokens and earning rewards!
   });
 }
 
-// Handle /start command with referral
-async function handleStartWithReferral(chatId, userId, referrerId) {
+// Handle /start command with referral - Direct Firebase processing
+async function handleStartWithReferral(chatId, userId, referrerId, userInfo) {
   console.log(`[BOT] Processing referral: ${userId} referred by ${referrerId}`);
-  console.log(`[BOT] Environment check - ADMIN_API_KEY: ${ADMIN_API_KEY ? 'SET' : 'NOT SET'}`);
 
   // Validate referrer ID - prevent self-referral and empty referrals
   if (!referrerId || 
       referrerId === userId.toString() || 
       referrerId === String(userId) ||
       parseInt(referrerId) === parseInt(userId)) {
-    console.log('Invalid referral: Self-referral or empty referrer ID detected');
-    // Invalid referral, treat as regular start
-    await handleStart(chatId, userId);
+    console.log('[BOT] Invalid referral: Self-referral or empty referrer ID detected');
+    await handleStart(chatId, userId, userInfo);
     return;
   }
 
   try {
-    // Call the referral API
-    if (ADMIN_API_KEY) {
-      console.log('[BOT] ADMIN_API_KEY available, processing referral');
-      const referralUrl = `${getBaseUrl()}/api/utils?action=refer&api=${encodeURIComponent(ADMIN_API_KEY)}&new=${encodeURIComponent(userId)}&referreby=${encodeURIComponent(referrerId)}`;
-      console.log('[BOT] Calling referral URL:', referralUrl);
+    // Process referral directly with Firebase
+    const referralResult = await processReferralDirect(userId, referrerId, userInfo);
+    
+    if (referralResult.success) {
+      console.log('[BOT] Referral processed successfully');
       
-      const response = await fetch(referralUrl);
-      console.log('[BOT] Referral API response status:', response.status);
+      // Send admin notification about new referral
+      await notifyAdminDirect('referral', {
+        newUserId: userId,
+        newUserName: userInfo.first_name || 'Unknown',
+        referrerId: referrerId,
+        reward: referralResult.reward
+      });
       
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('[BOT] Referral API HTTP error:', response.status, errorText);
-        throw new Error(`HTTP ${response.status}: ${errorText}`);
-      }
+      // Send welcome message with referral bonus
+      const webAppUrlWithReferral = `${WEB_APP_URL}?referred=true&referrer=${encodeURIComponent(referrerId)}&bonus=true&firstTime=true&userId=${encodeURIComponent(userId)}`;
       
-      const result = await response.json();
-      console.log('[BOT] Referral API response:', result);
-
-      if (result.success) {
-        console.log('[BOT] Referral API success:', result.message);
-        
-        // Launch web app directly with referral info in URL and welcome tracking
-        const webAppUrlWithReferral = `${WEB_APP_URL}?referred=true&referrer=${encodeURIComponent(referrerId)}&bonus=true&firstTime=true&userId=${encodeURIComponent(userId)}`;
-        
-        await sendMessage(chatId, `
+      await sendMessage(chatId, `
 🎉 *Welcome to SkyTON!*
 
 You've been invited by a friend and earned bonus rewards! 
 
 🎁 *Referral Bonus Applied:*
-• STON tokens added to your balance
+• ${referralResult.reward} STON tokens added
 • Free spin on the reward wheel  
 • Special welcome bonus
 
 Your SkyTON app is launching automatically... 🚀
-        `, {
-          parse_mode: 'Markdown',
-          reply_markup: {
-            inline_keyboard: [
-              [{ text: "🚀 Open SkyTON Mining App", web_app: { url: webAppUrlWithReferral } }]
-            ]
-          }
-        });
-      } else {
-        console.log('[BOT] Referral API failed:', result.message);
-        // Send regular welcome message with web app launch
-        const webAppUrlWithInfo = `${WEB_APP_URL}?welcome=true`;
-        await sendMessage(chatId, `
-🚀 *Welcome to SkyTON!*
-
-Welcome to the mining community! 
-
-Ready to start earning STON tokens? Your app is launching... 🚀
-        `, {
-          parse_mode: 'Markdown',
-          reply_markup: {
-            inline_keyboard: [
-              [{ text: "🚀 Open SkyTON Mining App", web_app: { url: webAppUrlWithInfo } }]
-            ]
-          }
-        });
-      }
+      `, {
+        parse_mode: 'Markdown',
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: "🚀 Open SkyTON Mining App", web_app: { url: webAppUrlWithReferral } }]
+          ]
+        }
+      });
+      
+      // Notify referrer about successful referral
+      await notifyUserDirect(referrerId, 'successful_referral', {
+        newUserName: userInfo.first_name || `User ${userId}`,
+        reward: referralResult.reward,
+        referrerId: referrerId
+      });
+      
     } else {
-      console.error('ADMIN_API_KEY not configured - falling back to regular start');
-      await handleStart(chatId, userId);
+      console.log('[BOT] Referral processing failed:', referralResult.message);
+      await handleStart(chatId, userId, userInfo);
     }
+    
   } catch (error) {
     console.error('[BOT] Error processing referral:', error);
-    console.error('[BOT] Error details:', error.message, error.stack);
-    const webAppUrlWithInfo = `${WEB_APP_URL}?welcome=true&error=referral_processing`;
-    await sendMessage(chatId, `
-🚀 *Welcome to SkyTON!*
-
-Welcome! There was a minor issue processing your referral bonus, but you can still start mining!
-
-Your app is launching... 🚀
-    `, {
-      parse_mode: 'Markdown',
-      reply_markup: {
-        inline_keyboard: [
-          [{ text: "🚀 Open SkyTON Mining App", web_app: { url: webAppUrlWithInfo } }]
-        ]
-      }
-    });
+    await handleStart(chatId, userId, userInfo);
   }
 }
 
 // Handle regular /start command
-async function handleStart(chatId, userId, customMessage = null) {
+async function handleStart(chatId, userId, userInfo, customMessage = null) {
+  // Send new user notification to admin
+  if (userInfo) {
+    await notifyAdminDirect('new_user', {
+      userId: userId,
+      name: userInfo.first_name || 'Unknown',
+      username: userInfo.username || null
+    });
+  }
+
   const message = customMessage || `
 🚀 *Welcome to SkyTON!*
 
@@ -350,7 +337,340 @@ Please open the SkyTON app below! 👇
   });
 }
 
-// Utility functions
+// =============================================================================
+// FIREBASE DIRECT PROCESSING FUNCTIONS
+// =============================================================================
+
+// Process referral directly with Firebase
+async function processReferralDirect(newUserId, referrerId, userInfo) {
+  try {
+    const usersRef = collection(db, 'users');
+    const tasksRef = collection(db, 'tasks');
+
+    const newUserRef = doc(usersRef, newUserId.toString());
+    const referredByRef = doc(usersRef, referrerId.toString());
+    const referTaskRef = doc(tasksRef, 'task_refer_friend');
+
+    const [newUserSnap, referredBySnap, referTaskSnap] = await Promise.all([
+      getDoc(newUserRef),
+      getDoc(referredByRef),
+      getDoc(referTaskRef)
+    ]);
+
+    if (!referredBySnap.exists()) {
+      return { success: false, message: 'Referrer not found.' };
+    }
+
+    if (!referTaskSnap.exists()) {
+      return { success: false, message: 'Referral task config missing.' };
+    }
+
+    const rewardAmount = referTaskSnap.data().reward || 100;
+
+    // Check if user already exists
+    if (newUserSnap.exists()) {
+      const existingUserData = newUserSnap.data();
+      
+      // If user already has a different referrer, reject
+      if (existingUserData.invitedBy && existingUserData.invitedBy !== referrerId) {
+        return { 
+          success: false, 
+          message: 'User already has a different referrer.' 
+        };
+      }
+      
+      // If user doesn't have a referrer yet, update with referral info
+      if (!existingUserData.invitedBy) {
+        await updateDoc(newUserRef, {
+          invitedBy: referrerId
+        });
+        console.log(`[BOT] Updated existing user ${newUserId} with referrer ${referrerId}`);
+      }
+    } else {
+      // Create the new user with referral metadata
+      const defaultUser = {
+        telegramId: newUserId.toString(),
+        username: userInfo.username || `user_${newUserId}`,
+        firstName: userInfo.first_name || '',
+        lastName: userInfo.last_name || '',
+        balance: 100,
+        balanceBreakdown: {
+          task: 100,
+          box: 0,
+          referral: 0,
+          mining: 0
+        },
+        energy: 500,
+        referrals: 0,
+        weeklyReferrals: 0,
+        referralHistory: [],
+        referralCode: newUserId.toString(),
+        invitedBy: referrerId,
+        referralLink: `https://t.me/${getBotUsername()}?start=refID${newUserId}`,
+        completedTasks: [],
+        referredUsers: [],
+        isBanned: false,
+        isAdmin: false,
+        profilePicUrl: userInfo.photo_url || null,
+        mysteryBoxes: 0,
+        lastBoxEarned: null,
+        lastBoxOpened: null,
+        cards: 0,
+        miningData: {
+          lastClaimTime: null,
+          miningStartTime: null,
+          isActive: false,
+          totalMined: 0,
+        }
+      };
+      
+      await setDoc(newUserRef, { ...defaultUser, joinedAt: serverTimestamp() });
+      console.log(`[BOT] Created new user ${newUserId} with referrer ${referrerId}`);
+    }
+
+    // Update referrer's stats with dynamic reward AND free spin
+    const referrerData = referredBySnap.data();
+    const currentDate = new Date();
+    
+    // Check if this user is already in referredUsers to prevent duplicate rewards
+    const existingReferredUsers = referrerData.referredUsers || [];
+    if (existingReferredUsers.includes(newUserId.toString())) {
+      console.log(`[BOT] User ${newUserId} already referred by ${referrerId}, skipping duplicate reward`);
+      return {
+        success: true,
+        message: 'Referral already processed (no duplicate rewards)',
+        reward: rewardAmount,
+        existingReferral: true
+      };
+    }
+    
+    // Check if we need to reset weekly referrals
+    const lastReset = referrerData.weeklyReferralsLastReset;
+    let weeklyReferrals = referrerData.weeklyReferrals || 0;
+    let needsReset = false;
+    
+    if (lastReset) {
+      const daysSinceReset = (currentDate - lastReset.toDate()) / (1000 * 60 * 60 * 24);
+      if (daysSinceReset >= 7) {
+        weeklyReferrals = 0;
+        needsReset = true;
+      }
+    }
+
+    // Update referrer with new referral
+    const referrerUpdate = {
+      referrals: increment(1),
+      weeklyReferrals: needsReset ? 1 : increment(1),
+      'balanceBreakdown.referral': increment(rewardAmount),
+      referredUsers: arrayUnion(newUserId.toString()),
+      referralHistory: arrayUnion({
+        userId: newUserId.toString(),
+        timestamp: serverTimestamp(),
+        reward: rewardAmount
+      }),
+      mysteryBoxes: increment(1) // Give 1 free spin
+    };
+
+    if (needsReset) {
+      referrerUpdate.weeklyReferralsLastReset = serverTimestamp();
+    }
+
+    await updateDoc(referredByRef, referrerUpdate);
+
+    return {
+      success: true,
+      message: 'Referral processed successfully',
+      reward: rewardAmount
+    };
+
+  } catch (error) {
+    console.error('[BOT] Error in processReferralDirect:', error);
+    return {
+      success: false,
+      message: 'Server error processing referral'
+    };
+  }
+}
+
+// =============================================================================
+// NOTIFICATION FUNCTIONS
+// =============================================================================
+
+// Send notification to admin
+async function notifyAdminDirect(type, data) {
+  try {
+    const adminConfigRef = doc(db, 'admin', 'config');
+    const adminConfigSnap = await getDoc(adminConfigRef);
+    
+    if (!adminConfigSnap.exists()) {
+      console.log('[BOT] Admin config not found');
+      return false;
+    }
+
+    const adminConfig = adminConfigSnap.data();
+    const adminChatId = adminConfig.telegramChatId;
+
+    if (!adminChatId) {
+      console.log('[BOT] Admin chat ID not configured');
+      return false;
+    }
+
+    const message = generateAdminMessage(type, data);
+    if (!message) {
+      console.log('[BOT] Invalid notification type:', type);
+      return false;
+    }
+
+    await sendMessage(adminChatId, message, { parse_mode: 'Markdown' });
+    return true;
+
+  } catch (error) {
+    console.error('[BOT] Error sending admin notification:', error);
+    return false;
+  }
+}
+
+// Send notification to user
+async function notifyUserDirect(userId, type, data) {
+  try {
+    const message = generateUserMessage(type, data);
+    if (!message) {
+      console.log('[BOT] Invalid user notification type:', type);
+      return false;
+    }
+
+    await sendMessage(userId, message, { parse_mode: 'Markdown' });
+    return true;
+
+  } catch (error) {
+    console.error('[BOT] Error sending user notification:', error);
+    return false;
+  }
+}
+
+// Generate admin notification messages
+function generateAdminMessage(type, data) {
+  const timestamp = new Date().toLocaleString();
+  
+  switch (type) {
+    case 'new_user':
+      return `🎉 *New User Joined!*
+
+👤 *User Info:*
+• ID: \`${data.userId}\`
+• Name: ${data.name || 'Unknown'}
+• Username: @${data.username || 'None'}
+
+🕐 *Time:* ${timestamp}`;
+
+    case 'referral':
+      return `💰 *New Referral!*
+
+👥 *Referral Info:*
+• Referrer: \`${data.referrerId}\`
+• New User: \`${data.newUserId}\` (${data.newUserName || 'Unknown'})
+• Reward: ${data.reward || 0} STON + 1 Free Spin
+
+🕐 *Time:* ${timestamp}`;
+
+    case 'task_submission':
+      return `📋 *Task Submission!*
+
+👤 *User:* \`${data.userId}\` (${data.userName || 'Unknown'})
+📝 *Task:* ${data.taskTitle || 'Unknown Task'}
+💰 *Reward:* ${data.reward || 0} STON
+🔗 *Target:* ${data.target || 'N/A'}
+
+*Action Required: Review and approve/reject*
+
+🕐 *Time:* ${timestamp}`;
+
+    case 'withdrawal_request':
+      return `💸 *Withdrawal Request!*
+
+👤 *User:* \`${data.userId}\` (${data.userName || 'Unknown'})
+💰 *Amount:* ${data.amount || 0} STON
+💳 *Method:* ${data.method || 'Unknown'}
+📍 *Address:* \`${data.address || 'Not provided'}\`
+💵 *Current Balance:* ${data.currentBalance || 0} STON
+
+*Action Required: Process withdrawal*
+
+🕐 *Time:* ${timestamp}`;
+
+    default:
+      return null;
+  }
+}
+
+// Generate user notification messages
+function generateUserMessage(type, data) {
+  switch (type) {
+    case 'task_approved':
+      return `✅ *Task Approved!*
+
+Your task submission has been approved!
+
+📝 *Task:* ${data.taskTitle || 'Unknown Task'}
+💰 *Reward:* ${data.reward || 0} STON added to your balance
+🎉 *Status:* Completed
+
+Keep completing tasks to earn more STON! 🚀`;
+
+    case 'task_rejected':
+      return `❌ *Task Rejected*
+
+Your task submission has been rejected.
+
+📝 *Task:* ${data.taskTitle || 'Unknown Task'}
+📝 *Reason:* ${data.reason || 'Requirements not met'}
+
+Please try again following the task requirements. 🔄`;
+
+    case 'withdrawal_approved':
+      return `✅ *Withdrawal Approved!*
+
+Your withdrawal request has been approved!
+
+💰 *Amount:* ${data.amount || 0} STON
+💳 *Method:* ${data.method || 'Unknown'}
+📍 *Address:* \`${data.address || 'Not provided'}\`
+⏱️ *Processing Time:* 24-48 hours
+
+Your tokens will be transferred soon! 🚀`;
+
+    case 'withdrawal_rejected':
+      return `❌ *Withdrawal Rejected*
+
+Your withdrawal request has been rejected.
+
+💰 *Amount:* ${data.amount || 0} STON
+📝 *Reason:* ${data.reason || 'Invalid request'}
+
+Your STON balance has been restored. Please try again. 🔄`;
+
+    case 'successful_referral':
+      return `🎉 *Successful Referral!*
+
+Your friend joined SkyTON through your referral link!
+
+👥 *New Member:* ${data.newUserName || 'Friend'}
+💰 *Your Reward:* ${data.reward || 0} STON
+🎰 *Bonus:* 1 Free Spin added
+
+Keep sharing to earn more rewards! 🚀
+
+*Share your link:* https://t.me/${getBotUsername()}?start=refID${data.referrerId}`;
+
+    default:
+      return null;
+  }
+}
+
+// =============================================================================
+// UTILITY FUNCTIONS
+// =============================================================================
+
 async function sendMessage(chatId, text, options = {}) {
   const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
   
@@ -369,10 +689,10 @@ async function sendMessage(chatId, text, options = {}) {
 
     if (!response.ok) {
       const error = await response.json();
-      console.error('Failed to send message:', error);
+      console.error('[BOT] Failed to send message:', error);
     }
   } catch (error) {
-    console.error('Error sending message:', error);
+    console.error('[BOT] Error sending message:', error);
   }
 }
 
@@ -391,18 +711,17 @@ async function answerCallbackQuery(callbackQueryId, text = null) {
       body: JSON.stringify(payload)
     });
   } catch (error) {
-    console.error('Error answering callback query:', error);
+    console.error('[BOT] Error answering callback query:', error);
   }
 }
 
 function getBotUsername() {
   // Extract bot username from token or use environment variable
-  return process.env.BOT_USERNAME || 'YourBotUsername';
+  return process.env.BOT_USERNAME || 'xSkyTON_Bot';
 }
 
-function getBaseUrl() {
-  // Get the base URL for API calls
-  return process.env.VERCEL_URL 
-    ? `https://${process.env.VERCEL_URL}` 
-    : process.env.VITE_WEB_APP_URL || 'https://your-app.vercel.app';
-}
+// =============================================================================
+// EXPORT NOTIFICATION FUNCTIONS FOR EXTERNAL USE
+// =============================================================================
+
+export { notifyAdminDirect, notifyUserDirect };
