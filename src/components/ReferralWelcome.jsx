@@ -13,7 +13,7 @@ const ReferralWelcome = () => {
   useEffect(() => {
     // Check for referral info
     const refInfo = getReferralInfo();
-    if (refInfo) {
+    if (refInfo && refInfo.isFirstTime) { // Only show for first-time referrals
       setReferralInfo(refInfo);
       setShowReferralMessage(true);
       
@@ -31,13 +31,13 @@ const ReferralWelcome = () => {
       // Auto-hide after 8 seconds
       setTimeout(() => {
         setShowReferralMessage(false);
-        clearReferralInfo();
+        clearReferralInfo(refInfo.userId);
       }, 8000);
     }
 
     // Check for welcome info
     const welInfo = getWelcomeInfo();
-    if (welInfo && !refInfo) { // Only show if no referral message
+    if (welInfo && welInfo.isFirstTime && !refInfo) { // Only show for first-time welcome and no referral
       setWelcomeInfo(welInfo);
       setShowWelcomeMessage(true);
       
@@ -55,7 +55,7 @@ const ReferralWelcome = () => {
       // Auto-hide after 6 seconds
       setTimeout(() => {
         setShowWelcomeMessage(false);
-        clearWelcomeInfo();
+        clearWelcomeInfo(welInfo.userId);
       }, 6000);
     }
   }, [toast]);
@@ -88,7 +88,7 @@ const ReferralWelcome = () => {
               <button
                 onClick={() => {
                   setShowReferralMessage(false);
-                  clearReferralInfo();
+                  clearReferralInfo(referralInfo.userId);
                 }}
                 className="text-white/80 hover:text-white text-xl"
               >
@@ -136,7 +136,7 @@ const ReferralWelcome = () => {
               <button
                 onClick={() => {
                   setShowWelcomeMessage(false);
-                  clearWelcomeInfo();
+                  clearWelcomeInfo(welcomeInfo.userId);
                 }}
                 className="text-white/80 hover:text-white text-xl"
               >

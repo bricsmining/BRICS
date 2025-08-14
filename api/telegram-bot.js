@@ -53,7 +53,23 @@ async function handleMessage(message) {
 
   // Handle /start command with referral parameter
   if (text && text.startsWith('/start ')) {
-    const referrerId = text.split(' ')[1];
+    const startParam = text.split(' ')[1];
+    let referrerId = null;
+    
+    // Extract referrer ID from different formats
+    if (startParam) {
+      if (startParam.startsWith('refID')) {
+        // New format: refID{tgID}
+        referrerId = startParam.replace('refID', '');
+      } else if (startParam.startsWith('User_')) {
+        // Old format: User_{tgID}
+        referrerId = startParam.replace('User_', '');
+      } else {
+        // Direct ID format
+        referrerId = startParam;
+      }
+    }
+    
     await handleStartWithReferral(chatId, userId, referrerId);
     return;
   }
@@ -104,8 +120,12 @@ Tap the button below to start mining STON tokens and earning rewards!
 async function handleStartWithReferral(chatId, userId, referrerId) {
   console.log(`Processing referral: ${userId} referred by ${referrerId}`);
 
-  // Validate referrer ID
-  if (!referrerId || referrerId === userId.toString()) {
+  // Validate referrer ID - prevent self-referral and empty referrals
+  if (!referrerId || 
+      referrerId === userId.toString() || 
+      referrerId === String(userId) ||
+      parseInt(referrerId) === parseInt(userId)) {
+    console.log('Invalid referral: Self-referral or empty referrer ID detected');
     // Invalid referral, treat as regular start
     await handleStart(chatId, userId);
     return;
@@ -122,8 +142,8 @@ async function handleStartWithReferral(chatId, userId, referrerId) {
       if (result.success) {
         console.log('Referral processed successfully:', result.message);
         
-        // Launch web app directly with referral info in URL
-        const webAppUrlWithReferral = `${WEB_APP_URL}?referred=true&referrer=${encodeURIComponent(referrerId)}&bonus=true`;
+        // Launch web app directly with referral info in URL and welcome tracking
+        const webAppUrlWithReferral = `${WEB_APP_URL}?referred=true&referrer=${encodeURIComponent(referrerId)}&bonus=true&firstTime=true&userId=${encodeURIComponent(userId)}`;
         
         await sendMessage(chatId, `
 🎉 *Welcome to SkyTON!*
@@ -268,7 +288,7 @@ async function handleCallbackQuery(callbackQuery) {
 
 // Handle get referral link
 async function handleGetReferralLink(chatId, userId) {
-  const referralLink = `https://t.me/${getBotUsername()}?start=${userId}`;
+  const referralLink = `https://t.me/${getBotUsername()}/app?start=refID${userId}`;
   
   await sendMessage(chatId, `
 🎯 *Your Referral Link*

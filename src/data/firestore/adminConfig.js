@@ -100,7 +100,7 @@ export const getEnvConfig = () => ({
   telegramBotToken: import.meta.env.VITE_TG_BOT_TOKEN || '',
   oxapayApiKey: import.meta.env.VITE_OXAPAY_API_KEY || '',
   oxapayPayoutApiKey: import.meta.env.VITE_OXAPAY_PAYOUT_API_KEY || '',
-  referralApiKey: import.meta.env.VITE_REFERRAL_API_KEY || '', // For referral system
+  referralApiKey: import.meta.env.ADMIN_API_KEY || '', // For referral system
 });
 
 // Broadcast message to all users

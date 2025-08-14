@@ -23,29 +23,83 @@ export const parseLaunchParams = () => {
   // Check for direct referral URL parameters (new feature)
   const urlParams = new URLSearchParams(window.location.search);
   const isReferred = urlParams.get('referred') === 'true';
-  const urlReferrerId = urlParams.get('referrer');
+  let urlReferrerId = urlParams.get('referrer');
   const hasBonus = urlParams.get('bonus') === 'true';
   const isWelcome = urlParams.get('welcome') === 'true';
   const hasError = urlParams.get('error');
+  const isFirstTime = urlParams.get('firstTime') === 'true';
+  const urlUserId = urlParams.get('userId');
+  
+  // Check for Mini App start parameter (direct referral from Mini App link)
+  const startParam = urlParams.get('start');
+  if (startParam && !urlReferrerId) {
+    if (startParam.startsWith('refID')) {
+      // Extract referrer ID from Mini App start parameter
+      urlReferrerId = startParam.replace('refID', '');
+      console.log('Mini App referral detected:', { startParam, urlReferrerId });
+    }
+  }
 
-  // Store referral info if present
-  if (isReferred && urlReferrerId) {
-    sessionStorage.setItem('referralInfo', JSON.stringify({
-      isReferred: true,
-      referrerId: urlReferrerId,
-      hasBonus: hasBonus,
-      timestamp: Date.now()
-    }));
-    console.log('Referral info detected and stored:', { referrerId: urlReferrerId, hasBonus });
+  // Store referral info if present (either from webhook or Mini App)
+  if ((isReferred && urlReferrerId) || (startParam && urlReferrerId)) {
+    const referralKey = `referralInfo_${urlUserId || 'unknown'}`;
+    const existingReferral = sessionStorage.getItem(referralKey);
+    
+    // For Mini App direct referrals, treat as first time and with bonus
+    const isMiniAppReferral = startParam && startParam.startsWith('refID');
+    const effectiveFirstTime = isFirstTime || isMiniAppReferral;
+    const effectiveHasBonus = hasBonus || isMiniAppReferral;
+    
+    if (!existingReferral || effectiveFirstTime) {
+      const referralData = {
+        isReferred: true,
+        referrerId: urlReferrerId,
+        hasBonus: effectiveHasBonus,
+        isFirstTime: effectiveFirstTime,
+        isMiniAppReferral: isMiniAppReferral,
+        userId: urlUserId,
+        timestamp: Date.now()
+      };
+      
+      sessionStorage.setItem(referralKey, JSON.stringify(referralData));
+      
+      // Also store in general location for backward compatibility
+      sessionStorage.setItem('referralInfo', JSON.stringify(referralData));
+      
+      console.log('Referral info detected and stored:', { 
+        referrerId: urlReferrerId, 
+        hasBonus: effectiveHasBonus, 
+        isFirstTime: effectiveFirstTime,
+        isMiniAppReferral 
+      });
+    } else {
+      console.log('Referral info already exists, skipping duplicate welcome');
+    }
   }
 
   // Store welcome info
   if (isWelcome) {
-    sessionStorage.setItem('welcomeInfo', JSON.stringify({
-      isWelcome: true,
-      hasError: hasError,
-      timestamp: Date.now()
-    }));
+    const welcomeKey = `welcomeInfo_${urlUserId || 'unknown'}`;
+    const existingWelcome = sessionStorage.getItem(welcomeKey);
+    
+    if (!existingWelcome || isFirstTime) {
+      sessionStorage.setItem(welcomeKey, JSON.stringify({
+        isWelcome: true,
+        hasError: hasError,
+        isFirstTime: isFirstTime,
+        userId: urlUserId,
+        timestamp: Date.now()
+      }));
+      
+      // Also store in general location for backward compatibility
+      sessionStorage.setItem('welcomeInfo', JSON.stringify({
+        isWelcome: true,
+        hasError: hasError,
+        isFirstTime: isFirstTime,
+        userId: urlUserId,
+        timestamp: Date.now()
+      }));
+    }
   }
 
   // 1. Get from URL hash or sessionStorage
@@ -126,10 +180,17 @@ export const parseLaunchParams = () => {
     }
   }
 
+  // Use Mini App referrer ID if detected and no standard referrer ID
+  if (urlReferrerId && !referrerId) {
+    referrerId = urlReferrerId;
+    console.log('Using Mini App referrer ID:', referrerId);
+  }
+
   return { telegramUser, referrerId };
 };
 
 export const clearTelegramSession = () => {
+  // Clear general session data
   sessionStorage.removeItem('tgWebAppHash');
   sessionStorage.removeItem('tgWebAppDataRaw');
   sessionStorage.removeItem('userId');
@@ -138,6 +199,14 @@ export const clearTelegramSession = () => {
   localStorage.removeItem('tgWebAppHash');
   localStorage.removeItem('tgWebAppDataRaw');
   localStorage.removeItem('userId');
+  
+  // Clear user-specific referral and welcome info
+  const keys = Object.keys(sessionStorage);
+  keys.forEach(key => {
+    if (key.startsWith('referralInfo_') || key.startsWith('welcomeInfo_')) {
+      sessionStorage.removeItem(key);
+    }
+  });
 };
 
 // Get referral info from URL parameters
@@ -181,16 +250,22 @@ export const getWelcomeInfo = () => {
 };
 
 // Clear referral info after it's been processed
-export const clearReferralInfo = () => {
+export const clearReferralInfo = (userId = null) => {
   sessionStorage.removeItem('referralInfo');
+  if (userId) {
+    sessionStorage.removeItem(`referralInfo_${userId}`);
+  }
 };
 
 // Clear welcome info after it's been processed
-export const clearWelcomeInfo = () => {
+export const clearWelcomeInfo = (userId = null) => {
   sessionStorage.removeItem('welcomeInfo');
+  if (userId) {
+    sessionStorage.removeItem(`welcomeInfo_${userId}`);
+  }
 };
 
 export const generateReferralLink = (userId) => {
   if (!userId) return '';
-  return `http://t.me/xSkyTON_Bot?start=User_${userId}`;
+  return `http://t.me/xSkyTON_Bot/app?start=refID${userId}`;
 };

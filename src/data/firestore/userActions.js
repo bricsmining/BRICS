@@ -66,8 +66,16 @@ export const getOrCreateUser = async (telegramUserData, referrerId = null) => {
 
       await setDoc(userRef, { ...newUser, joinedAt: serverTimestamp() });
       
-      // Note: Referral processing should be handled by your Telegram bot
-      // when it detects a new user joining with a start parameter
+      // Process Mini App referral if referrerId is provided
+      if (referrerId) {
+        try {
+          console.log('Processing Mini App referral:', { userId, referrerId });
+          await processMiniAppReferral(userId, referrerId);
+        } catch (error) {
+          console.error('Error processing Mini App referral:', error);
+          // Don't fail user creation if referral processing fails
+        }
+      }
       
       return { id: userId, ...newUser };
     }
@@ -255,6 +263,36 @@ export const toggleUserBanStatus = async (telegramId, newStatus) => {
     return true;
   } catch (error) {
     console.error(`Error updating ban status for ${telegramId}:`, error);
+    return false;
+  }
+};
+
+// Process Mini App referral by calling the referral API
+export const processMiniAppReferral = async (newUserId, referrerId) => {
+  try {
+    // Get the base URL for API calls
+    const baseUrl = window.location.origin;
+    const adminApiKey = import.meta.env.VITE_ADMIN_API_KEY;
+    
+    if (!adminApiKey) {
+      console.warn('Admin API key not configured for Mini App referrals');
+      return false;
+    }
+    
+    const referralUrl = `${baseUrl}/api/utils?action=refer&api=${encodeURIComponent(adminApiKey)}&new=${encodeURIComponent(newUserId)}&referreby=${encodeURIComponent(referrerId)}`;
+    
+    const response = await fetch(referralUrl);
+    const result = await response.json();
+    
+    if (result.success) {
+      console.log('Mini App referral processed successfully:', result.message);
+      return true;
+    } else {
+      console.error('Mini App referral processing failed:', result.message);
+      return false;
+    }
+  } catch (error) {
+    console.error('Error processing Mini App referral:', error);
     return false;
   }
 };
