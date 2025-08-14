@@ -3,13 +3,31 @@
  * Run this with: node webhook-setup.js
  */
 
-// Your bot configuration
-const BOT_TOKEN = "7689055729:AAEtSkOpdognz7LzD5IbE5s0JcqtkhNw0RI";
-const WEBHOOK_URL = "https://skyton.vercel.app/api/telegram-bot";
-const WEBHOOK_SECRET = "skyton-webhook-secret";
+// Your bot configuration from environment variables
+const BOT_TOKEN = process.env.TG_BOT_TOKEN || process.env.VITE_TG_BOT_TOKEN;
+const WEBHOOK_URL = process.env.WEBHOOK_URL || `${process.env.VITE_WEB_APP_URL || 'https://skyton.vercel.app'}/api/telegram-bot`;
+const WEBHOOK_SECRET = process.env.TELEGRAM_WEBHOOK_SECRET || 'skyton-webhook-secret';
+const ADMIN_API_KEY = process.env.ADMIN_API_KEY || 'adminsumon7891';
 
 async function setupWebhook() {
   console.log("🤖 Setting up Telegram bot webhook...\n");
+  
+  // Validate required environment variables
+  if (!BOT_TOKEN) {
+    console.error("❌ Bot token not found!");
+    console.log("Please set one of these environment variables:");
+    console.log("  - TG_BOT_TOKEN");
+    console.log("  - VITE_TG_BOT_TOKEN");
+    console.log("\nExample:");
+    console.log("  TG_BOT_TOKEN=your_bot_token node webhook-setup.js");
+    process.exit(1);
+  }
+  
+  console.log("📋 Configuration:");
+  console.log(`   Bot Token: ${BOT_TOKEN.substring(0, 10)}...`);
+  console.log(`   Webhook URL: ${WEBHOOK_URL}`);
+  console.log(`   Webhook Secret: ${WEBHOOK_SECRET}`);
+  console.log(`   Admin API Key: ${ADMIN_API_KEY ? ADMIN_API_KEY.substring(0, 5) + '...' : 'Not set'}\n`);
   
   try {
     // Step 1: Get bot info
@@ -132,8 +150,8 @@ async function setupWebhook() {
     console.log("\n📝 NEXT STEPS:");
     console.log("1. Add these environment variables to Vercel:");
     console.log(`   TG_BOT_TOKEN=${BOT_TOKEN}`);
-    console.log(`   ADMIN_API_KEY=adminsumon7891`);
-    console.log(`   VITE_WEB_APP_URL=https://skyton.vercel.app`);
+    console.log(`   ADMIN_API_KEY=${ADMIN_API_KEY}`);
+    console.log(`   VITE_WEB_APP_URL=${process.env.VITE_WEB_APP_URL || 'https://skyton.vercel.app'}`);
     console.log(`   TELEGRAM_WEBHOOK_SECRET=${WEBHOOK_SECRET}`);
     console.log(`   BOT_USERNAME=${botInfo.username}`);
     
