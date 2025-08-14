@@ -20,6 +20,7 @@ WEBHOOK_URL=https://skyton.vercel.app/api/telegram-bot
 
 # Bot Information
 BOT_USERNAME=xSkyTON_Bot
+VITE_BOT_USERNAME=xSkyTON_Bot  # For client-side referral links
 ```
 
 ### For Vercel Production:
@@ -29,6 +30,7 @@ ADMIN_API_KEY=adminsumon7891
 VITE_WEB_APP_URL=https://skyton.vercel.app
 TELEGRAM_WEBHOOK_SECRET=skyton-webhook-secret
 BOT_USERNAME=xSkyTON_Bot
+VITE_BOT_USERNAME=xSkyTON_Bot  # For client-side referral links
 ```
 
 ## Usage Examples
@@ -73,6 +75,7 @@ npm run bot:webhook-info
 | `VITE_WEB_APP_URL` | Your deployed web app URL | ✅ | `https://yourapp.vercel.app` |
 | `TELEGRAM_WEBHOOK_SECRET` | Secret token for webhook security | ⚠️ | `your_webhook_secret` |
 | `BOT_USERNAME` | Your bot's username (without @) | ⚠️ | `YourBot` |
+| `VITE_BOT_USERNAME` | Bot username for client-side referral links | ⚠️ | `YourBot` |
 | `WEBHOOK_URL` | Full webhook endpoint URL | ⚠️ | `https://yourapp.vercel.app/api/telegram-bot` |
 
 ✅ = Required  

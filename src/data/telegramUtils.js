@@ -363,5 +363,6 @@ export const clearWelcomeInfo = (userId = null) => {
 
 export const generateReferralLink = (userId) => {
   if (!userId) return '';
-  return `http://t.me/xSkyTON_Bot/app?start=refID${userId}`;
+  const botUsername = import.meta.env.VITE_BOT_USERNAME || 'xSkyTON_Bot';
+  return `https://t.me/${botUsername}/app?start=refID${userId}`;
 };
