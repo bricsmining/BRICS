@@ -16,6 +16,7 @@ import {
 import { defaultFirestoreUser } from '@/data/defaults';
 import { generateReferralLink } from '@/data/telegramUtils';
 import { getTask } from '@/data/firestore/taskActions';
+import { notifyNewUser, notifyTaskCompletion } from '@/utils/notifications';
 
 // Create or return existing user
 export const getOrCreateUser = async (telegramUserData, referrerId = null) => {
@@ -36,7 +37,7 @@ export const getOrCreateUser = async (telegramUserData, referrerId = null) => {
 
       if (!existingData.referralLink || 
           !existingData.referralLink.includes('/app?start=refID') ||
-          existingData.referralLink.includes('?start=User_')) {
+          existingData.referralLink.includes('?start=User_')) { 
         updates.referralLink = generateReferralLink(userId);
       }
 
@@ -68,6 +69,13 @@ export const getOrCreateUser = async (telegramUserData, referrerId = null) => {
 
       await setDoc(userRef, { ...newUser, joinedAt: serverTimestamp() });
       
+      // Send new user notification to admin
+      try {
+        await notifyNewUser(telegramUserData, referrerId);
+      } catch (error) {
+        console.error('Error sending new user notification:', error);
+      }
+
       // Process Mini App referral if referrerId is provided
       if (referrerId) {
         try {
@@ -149,6 +157,15 @@ export const completeTaskForUser = async (userId, taskId) => {
       [`balanceBreakdown.task`]: increment(task.reward || 0),
       pendingVerificationTasks: arrayRemove(taskId)
     });
+
+    // Send task completion notification to admin
+    try {
+      const userName = userData.firstName || userData.username || `User ${userId}`;
+      await notifyTaskCompletion(userId, userName, task.title, task.reward);
+    } catch (error) {
+      console.error('Error sending task completion notification:', error);
+    }
+
     return true;
   } catch (error) {
     console.error(`Error completing task ${taskId} for user ${userId}:`, error);

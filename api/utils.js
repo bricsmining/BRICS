@@ -7,6 +7,8 @@ import { db } from '../src/lib/serverFirebase.js';
 import { FieldValue } from 'firebase-admin/firestore';
 import { defaultFirestoreUser } from '../src/data/defaults.js';
 
+const BOT_TOKEN = process.env.TG_BOT_TOKEN;
+
 export default async function handler(req, res) {
   // Extract the action from query parameter
   const { action } = req.query;
@@ -136,6 +138,21 @@ async function handleReferral(req, res) {
     
     await referredByRef.update(updates);
 
+    // Send notifications
+    try {
+      // Get user data for notifications
+      const newUserData = newUserSnap.exists ? newUserSnap.data() : null;
+      const referrerData = referredBySnap.data();
+      
+      const newUserName = newUserData?.firstName || newUserData?.username || `User ${newUserId}`;
+      const referrerName = referrerData?.firstName || referrerData?.username || `User ${referredById}`;
+      
+      // Send notifications (async, don't wait)
+      sendNotifications(referredById, referrerName, newUserId, newUserName, rewardAmount);
+    } catch (notifError) {
+      console.error('Notification error (non-blocking):', notifError);
+    }
+
     return res.status(200).json({
       success: true,
       message: `Referral successful. ${rewardAmount} STON and 1 free spin rewarded to referrer.`
@@ -188,5 +205,94 @@ async function handleTelegramVerification(req, res) {
       success: false, 
       error: 'Internal server error' 
     });
+  }
+}
+
+// Send notifications for referral success
+async function sendNotifications(referrerId, referrerName, newUserId, newUserName, rewardAmount) {
+  if (!BOT_TOKEN) {
+    console.warn('Bot token not configured for notifications');
+    return;
+  }
+
+  try {
+    // Get admin chat ID
+    const adminConfigRef = db.collection('admin').doc('config');
+    const adminConfigSnap = await adminConfigRef.get();
+    
+    if (!adminConfigSnap.exists) {
+      console.warn('Admin config not found for notifications');
+      return;
+    }
+
+    const adminConfig = adminConfigSnap.data();
+    const adminChatId = adminConfig.telegramChatId;
+
+    if (!adminChatId) {
+      console.warn('Admin chat ID not configured');
+      return;
+    }
+
+    const timestamp = new Date().toLocaleString();
+
+    // Notify admin about referral
+    const adminMessage = `💰 *New Referral!*
+
+👥 *Referral Info:*
+• Referrer: \`${referrerId}\` (${referrerName})
+• New User: \`${newUserId}\` (${newUserName})
+• Reward: ${rewardAmount} STON + 1 Free Spin
+
+🕐 *Time:* ${timestamp}`;
+
+    await sendTelegramMessage(adminChatId, adminMessage);
+
+    // Notify referrer about successful referral
+    const userMessage = `🎉 *Successful Referral!*
+
+Your friend joined SkyTON through your referral link!
+
+👥 *New Member:* ${newUserName}
+💰 *Your Reward:* ${rewardAmount} STON
+🎰 *Bonus:* 1 Free Spin added
+
+Keep sharing to earn more rewards! 🚀
+
+*Share your link:* https://t.me/xSkyTON_Bot/app?start=refID${referrerId}`;
+
+    await sendTelegramMessage(referrerId, userMessage);
+
+  } catch (error) {
+    console.error('Error sending referral notifications:', error);
+  }
+}
+
+// Send Telegram message
+async function sendTelegramMessage(chatId, message) {
+  try {
+    const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
+    
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text: message,
+        parse_mode: 'Markdown'
+      })
+    });
+
+    const result = await response.json();
+    
+    if (result.ok) {
+      console.log(`✅ Notification sent to ${chatId}`);
+    } else {
+      console.error(`❌ Failed to send notification to ${chatId}:`, result.description);
+    }
+    
+    return result.ok;
+  } catch (error) {
+    console.error('Error sending Telegram message:', error);
+    return false;
   }
 }

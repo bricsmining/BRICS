@@ -18,6 +18,13 @@ import {
   completeTaskForUser,
   rejectManualVerificationForUser
 } from '@/data/firestore/userActions';
+import {
+  notifyTaskApproval,
+  notifyTaskRejection,
+  notifyWithdrawalApproval,
+  notifyWithdrawalRejection,
+  notifyWithdrawalRequest
+} from '@/utils/notifications';
 
 // Fetch all users, ordered by join date
 export const getAllUsers = async () => {
@@ -91,12 +98,50 @@ export const getPendingVerifications = async () => {
 
 // Approve a task (mark it complete and reward user)
 export const approveTask = async (userId, taskId) => {
-  return await completeTaskForUser(userId, taskId);
+  const success = await completeTaskForUser(userId, taskId);
+  
+  if (success) {
+    try {
+      // Get task and user info for notification
+      const taskRef = doc(db, 'tasks', taskId);
+      const taskSnap = await getDoc(taskRef);
+      const userRef = doc(db, 'users', userId);
+      const userSnap = await getDoc(userRef);
+      
+      if (taskSnap.exists() && userSnap.exists()) {
+        const task = taskSnap.data();
+        const user = userSnap.data();
+        
+        await notifyTaskApproval(userId, task.title, task.reward);
+      }
+    } catch (error) {
+      console.error('Error sending task approval notification:', error);
+    }
+  }
+  
+  return success;
 };
 
 // Reject a task (remove it from pending list)
-export const rejectTask = async (userId, taskId) => {
-  return await rejectManualVerificationForUser(userId, taskId);
+export const rejectTask = async (userId, taskId, reason = 'Requirements not met') => {
+  const success = await rejectManualVerificationForUser(userId, taskId);
+  
+  if (success) {
+    try {
+      // Get task info for notification
+      const taskRef = doc(db, 'tasks', taskId);
+      const taskSnap = await getDoc(taskRef);
+      
+      if (taskSnap.exists()) {
+        const task = taskSnap.data();
+        await notifyTaskRejection(userId, task.title, reason);
+      }
+    } catch (error) {
+      console.error('Error sending task rejection notification:', error);
+    }
+  }
+  
+  return success;
 };
 
 // ==================== WITHDRAWAL FUNCTIONS ====================
@@ -232,19 +277,16 @@ export const approveWithdrawal = async (withdrawalId, userId, amount) => {
         balance: increment(-parseFloat(amount))
       });
 
-      // Send success notification to admin
+      // Send user notification about approval
       try {
-        await fetch(`https://api.telegram.org/bot${import.meta.env.VITE_TG_BOT_TOKEN}/sendMessage`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            chat_id: '5063003944', // Admin chat ID
-            text: `✅ <b>Withdrawal Approved & Payout Initiated</b>\n\nUser: ${username || userId}\nAmount: ${amount} STON (${tonAmount} TON)\nWallet: <code>${walletAddress}</code>\nTrack ID: <code>${payoutResult.data.trackId}</code>\n\n💳 Payout is being processed by OxaPay`,
-            parse_mode: 'HTML'
-          })
-        });
+        await notifyWithdrawalApproval(
+          userId,
+          parseFloat(amount),
+          'TON Wallet',
+          walletAddress
+        );
       } catch (notificationError) {
-        console.error('Failed to send approval notification:', notificationError);
+        console.error('Failed to send approval notification to user:', notificationError);
       }
 
       console.log(`Withdrawal ${withdrawalId} approved and payout initiated for user ${userId}`);
@@ -300,22 +342,18 @@ export const rejectWithdrawal = async (withdrawalId) => {
       processedBy: 'admin'
     });
 
-    // Send notification to admin (optional)
+    // Send user notification about rejection
     try {
       const withdrawalDoc = await getDoc(withdrawalRef);
       const withdrawalData = withdrawalDoc.data();
       
-      await fetch(`https://api.telegram.org/bot${import.meta.env.VITE_TG_BOT_TOKEN}/sendMessage`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          chat_id: '5063003944', // Admin chat ID
-          text: `❌ <b>Withdrawal Rejected</b>\nUser: ${withdrawalData.username || withdrawalData.userId}\nAmount: ${withdrawalData.amount} STON\nReason: Admin decision`,
-          parse_mode: 'HTML'
-        })
-      });
+      await notifyWithdrawalRejection(
+        withdrawalData.userId,
+        withdrawalData.amount,
+        'Administrative decision'
+      );
     } catch (notificationError) {
-      console.error('Failed to send rejection notification:', notificationError);
+      console.error('Failed to send rejection notification to user:', notificationError);
     }
 
     console.log(`Withdrawal ${withdrawalId} rejected`);
@@ -341,6 +379,20 @@ export const createWithdrawalRequest = async (userId, amount, walletAddress, use
       status: 'pending',
       createdAt: serverTimestamp()
     });
+    
+    // Send admin notification
+    try {
+      await notifyWithdrawalRequest(
+        userId,
+        username || `User ${userId}`,
+        parseFloat(amount),
+        'TON Wallet',
+        walletAddress,
+        userBalance
+      );
+    } catch (error) {
+      console.error('Error sending withdrawal request notification:', error);
+    }
     
     console.log(`Withdrawal request created with ID: ${docRef.id} for user ${userId}, amount: ${amount} STON`);
     return true;
