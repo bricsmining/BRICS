@@ -122,31 +122,46 @@ async function handleStartWithReferral(chatId, userId, referrerId) {
       if (result.success) {
         console.log('Referral processed successfully:', result.message);
         
-        // Send welcome message with referral bonus info
+        // Launch web app directly with referral info in URL
+        const webAppUrlWithReferral = `${WEB_APP_URL}?referred=true&referrer=${encodeURIComponent(referrerId)}&bonus=true`;
+        
         await sendMessage(chatId, `
 🎉 *Welcome to SkyTON!*
 
 You've been invited by a friend and earned bonus rewards! 
 
-🎁 *Referral Bonus:*
+🎁 *Referral Bonus Applied:*
 • STON tokens added to your balance
-• Free spin on the reward wheel
+• Free spin on the reward wheel  
 • Special welcome bonus
 
-Ready to start mining? Tap the button below! 🚀
+Your SkyTON app is launching automatically... 🚀
         `, {
           parse_mode: 'Markdown',
           reply_markup: {
             inline_keyboard: [
-              [{ text: "🚀 Start Mining STON", web_app: { url: WEB_APP_URL } }],
-              [{ text: "🎯 Invite Friends", callback_data: "get_referral_link" }]
+              [{ text: "🚀 Open SkyTON Mining App", web_app: { url: webAppUrlWithReferral } }]
             ]
           }
         });
       } else {
         console.log('Referral processing failed:', result.message);
-        // Send regular welcome message
-        await handleStart(chatId, userId, 'Referral bonus could not be processed, but welcome anyway! 🚀');
+        // Send regular welcome message with web app launch
+        const webAppUrlWithInfo = `${WEB_APP_URL}?welcome=true`;
+        await sendMessage(chatId, `
+🚀 *Welcome to SkyTON!*
+
+Welcome to the mining community! 
+
+Ready to start earning STON tokens? Your app is launching... 🚀
+        `, {
+          parse_mode: 'Markdown',
+          reply_markup: {
+            inline_keyboard: [
+              [{ text: "🚀 Open SkyTON Mining App", web_app: { url: webAppUrlWithInfo } }]
+            ]
+          }
+        });
       }
     } else {
       console.error('ADMIN_API_KEY not configured');
@@ -154,7 +169,21 @@ Ready to start mining? Tap the button below! 🚀
     }
   } catch (error) {
     console.error('Error processing referral:', error);
-    await handleStart(chatId, userId, 'Welcome! There was an issue processing your referral bonus, but you can still start mining! 🚀');
+    const webAppUrlWithInfo = `${WEB_APP_URL}?welcome=true&error=referral_processing`;
+    await sendMessage(chatId, `
+🚀 *Welcome to SkyTON!*
+
+Welcome! There was a minor issue processing your referral bonus, but you can still start mining!
+
+Your app is launching... 🚀
+    `, {
+      parse_mode: 'Markdown',
+      reply_markup: {
+        inline_keyboard: [
+          [{ text: "🚀 Open SkyTON Mining App", web_app: { url: webAppUrlWithInfo } }]
+        ]
+      }
+    });
   }
 }
 

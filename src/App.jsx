@@ -12,6 +12,7 @@ import AdminPage from '@/pages/AdminPage';
 import StonDropGame from '@/pages/StonDropGame';
 import Navigation from '@/components/layout/Navigation';
 import { Toaster } from '@/components/ui/toaster';
+import ReferralWelcome from '@/components/ReferralWelcome';
 import { initializeAppData } from '@/data';
 import { Loader2 } from 'lucide-react';
 import { initializeAdNetworks, showRewardedAd } from '@/ads/adsController';
@@ -272,6 +273,7 @@ function App() {
           </nav>
         )}
         <Toaster />
+        <ReferralWelcome />
       </div>
     </UserContext.Provider>
   );

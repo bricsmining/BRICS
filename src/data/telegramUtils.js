@@ -20,6 +20,34 @@ restoreTelegramSession();
 export const parseLaunchParams = () => {
   let hash = window.location.hash ? window.location.hash.slice(1) : '';
 
+  // Check for direct referral URL parameters (new feature)
+  const urlParams = new URLSearchParams(window.location.search);
+  const isReferred = urlParams.get('referred') === 'true';
+  const urlReferrerId = urlParams.get('referrer');
+  const hasBonus = urlParams.get('bonus') === 'true';
+  const isWelcome = urlParams.get('welcome') === 'true';
+  const hasError = urlParams.get('error');
+
+  // Store referral info if present
+  if (isReferred && urlReferrerId) {
+    sessionStorage.setItem('referralInfo', JSON.stringify({
+      isReferred: true,
+      referrerId: urlReferrerId,
+      hasBonus: hasBonus,
+      timestamp: Date.now()
+    }));
+    console.log('Referral info detected and stored:', { referrerId: urlReferrerId, hasBonus });
+  }
+
+  // Store welcome info
+  if (isWelcome) {
+    sessionStorage.setItem('welcomeInfo', JSON.stringify({
+      isWelcome: true,
+      hasError: hasError,
+      timestamp: Date.now()
+    }));
+  }
+
   // 1. Get from URL hash or sessionStorage
   if (!hash) {
     hash = sessionStorage.getItem('tgWebAppHash') || '';
@@ -105,9 +133,61 @@ export const clearTelegramSession = () => {
   sessionStorage.removeItem('tgWebAppHash');
   sessionStorage.removeItem('tgWebAppDataRaw');
   sessionStorage.removeItem('userId');
+  sessionStorage.removeItem('referralInfo');
+  sessionStorage.removeItem('welcomeInfo');
   localStorage.removeItem('tgWebAppHash');
   localStorage.removeItem('tgWebAppDataRaw');
   localStorage.removeItem('userId');
+};
+
+// Get referral info from URL parameters
+export const getReferralInfo = () => {
+  try {
+    const referralInfo = sessionStorage.getItem('referralInfo');
+    if (referralInfo) {
+      const parsed = JSON.parse(referralInfo);
+      // Check if referral info is still fresh (within 24 hours)
+      if (Date.now() - parsed.timestamp < 24 * 60 * 60 * 1000) {
+        return parsed;
+      } else {
+        sessionStorage.removeItem('referralInfo');
+      }
+    }
+  } catch (error) {
+    console.error('Error parsing referral info:', error);
+    sessionStorage.removeItem('referralInfo');
+  }
+  return null;
+};
+
+// Get welcome info from URL parameters
+export const getWelcomeInfo = () => {
+  try {
+    const welcomeInfo = sessionStorage.getItem('welcomeInfo');
+    if (welcomeInfo) {
+      const parsed = JSON.parse(welcomeInfo);
+      // Check if welcome info is still fresh (within 1 hour)
+      if (Date.now() - parsed.timestamp < 60 * 60 * 1000) {
+        return parsed;
+      } else {
+        sessionStorage.removeItem('welcomeInfo');
+      }
+    }
+  } catch (error) {
+    console.error('Error parsing welcome info:', error);
+    sessionStorage.removeItem('welcomeInfo');
+  }
+  return null;
+};
+
+// Clear referral info after it's been processed
+export const clearReferralInfo = () => {
+  sessionStorage.removeItem('referralInfo');
+};
+
+// Clear welcome info after it's been processed
+export const clearWelcomeInfo = () => {
+  sessionStorage.removeItem('welcomeInfo');
 };
 
 export const generateReferralLink = (userId) => {
