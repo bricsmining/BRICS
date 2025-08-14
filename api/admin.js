@@ -146,7 +146,14 @@ async function handleBroadcast(req, res) {
     return res.status(401).json({ error: 'Unauthorized - Invalid API key' });
   }
 
-  const { message, adminEmail } = req.body;
+  const { 
+    message, 
+    adminEmail, 
+    mediaType = null, 
+    mediaUrl = null, 
+    buttons = null,
+    parseMode = 'Markdown'
+  } = req.body;
 
   if (!message || !adminEmail) {
     return res.status(400).json({ error: 'Missing message or adminEmail' });
@@ -169,31 +176,76 @@ async function handleBroadcast(req, res) {
     let failCount = 0;
     const promises = [];
     
-    console.log(`Broadcasting message to ${usersSnapshot.size} users...`);
+    console.log(`Broadcasting enhanced message to ${usersSnapshot.size} users...`);
+    console.log(`Media type: ${mediaType}, Buttons: ${buttons ? buttons.length : 0}`);
     
+    // Prepare broadcast options
+    const broadcastOptions = {
+      parse_mode: parseMode,
+      ...(buttons && { reply_markup: { inline_keyboard: buttons } })
+    };
+
     usersSnapshot.forEach((userDoc) => {
       const userData = userDoc.data();
       const telegramId = userData.telegramId || userData.id;
       
       if (telegramId) {
-        const promise = fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            chat_id: telegramId,
+        let promise;
+        
+        // Choose the appropriate sending method based on media type
+        if (mediaType && mediaUrl) {
+          switch (mediaType.toLowerCase()) {
+            case 'photo':
+              promise = sendTelegramMedia(botToken, 'sendPhoto', telegramId, {
+                photo: mediaUrl,
+                caption: message,
+                ...broadcastOptions
+              });
+              break;
+            case 'video':
+              promise = sendTelegramMedia(botToken, 'sendVideo', telegramId, {
+                video: mediaUrl,
+                caption: message,
+                ...broadcastOptions
+              });
+              break;
+            case 'audio':
+              promise = sendTelegramMedia(botToken, 'sendAudio', telegramId, {
+                audio: mediaUrl,
+                caption: message,
+                ...broadcastOptions
+              });
+              break;
+            case 'document':
+              promise = sendTelegramMedia(botToken, 'sendDocument', telegramId, {
+                document: mediaUrl,
+                caption: message,
+                ...broadcastOptions
+              });
+              break;
+            default:
+              promise = sendTelegramMedia(botToken, 'sendMessage', telegramId, {
+                text: message,
+                ...broadcastOptions
+              });
+          }
+        } else {
+          promise = sendTelegramMedia(botToken, 'sendMessage', telegramId, {
             text: message,
-            parse_mode: 'HTML'
-          })
-        }).then(response => {
+            ...broadcastOptions
+          });
+        }
+        
+        promise.then(response => {
           if (response.ok) {
             successCount++;
           } else {
             failCount++;
-            console.error(`Failed to send message to user ${telegramId}`);
+            console.error(`Failed to send broadcast to user ${telegramId}`);
           }
         }).catch((error) => {
           failCount++;
-          console.error(`Error sending message to user ${telegramId}:`, error);
+          console.error(`Error sending broadcast to user ${telegramId}:`, error);
         });
         
         promises.push(promise);
@@ -208,6 +260,10 @@ async function handleBroadcast(req, res) {
       const broadcastRef = doc(collection(db, 'admin', 'config', 'broadcasts'));
       await setDoc(broadcastRef, {
         message,
+        mediaType,
+        mediaUrl,
+        buttons,
+        parseMode,
         sentBy: adminEmail,
         sentAt: serverTimestamp(),
         successCount,
@@ -219,13 +275,15 @@ async function handleBroadcast(req, res) {
       // Don't fail the entire operation if logging fails
     }
     
-    console.log(`Broadcast completed: ${successCount} success, ${failCount} failed`);
+    console.log(`Enhanced broadcast completed: ${successCount} success, ${failCount} failed`);
     
     return res.status(200).json({
       success: true,
       successCount,
       failCount,
-      totalUsers: usersSnapshot.size
+      totalUsers: usersSnapshot.size,
+      mediaType,
+      buttonsCount: buttons ? buttons.length : 0
     });
     
   } catch (error) {
@@ -275,4 +333,18 @@ async function handleGetConfig(req, res) {
     console.error('Error in handleGetConfig:', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
+}
+
+// Enhanced Telegram media sending helper
+async function sendTelegramMedia(botToken, method, chatId, payload) {
+  const url = `https://api.telegram.org/bot${botToken}/${method}`;
+  
+  return fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      chat_id: chatId,
+      ...payload
+    })
+  });
 }

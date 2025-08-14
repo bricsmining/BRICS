@@ -139,6 +139,20 @@ export default function StonDropGame() {
             setScore(prev => prev + doubledScore);
             setHasDoubled(true);
             
+            // Notify admin via bot
+            try {
+              const { notifyAdmin } = await import('@/utils/botNotifications');
+              await notifyAdmin('game_reward', {
+                userId: userId,
+                userName: `User ${userId}`,
+                gameType: 'STON Drop',
+                reward: doubledScore,
+                multiplier: '2x'
+              });
+            } catch (notifError) {
+              console.error('Failed to send admin notification:', notifError);
+            }
+            
             toast({ 
               title: `Rewards Doubled!`,
               description: `You earned extra ${doubledScore} STON`,

@@ -493,11 +493,20 @@ const TasksSection = ({ tasks = [], user = {}, refreshUserData, isLoading }) => 
             const updatedUser = await getCurrentUser(user.id);
             if (updatedUser) refreshUserData(updatedUser);
             
-            // Notify admin
-            const userMention = user.username ? `@${user.username}` : `User ${user.id}`;
-            await sendAdminNotification(
-              `⚡ <b>Energy Ad Completed</b>\n${userMention} watched an ad and earned <b>+${result.energyGained} energy</b>\nDaily: ${result.dailyUsed}/10 | Hourly: ${result.hourlyUsed}/3`
-            );
+            // Notify admin via bot
+            try {
+              const { notifyAdmin } = await import('@/utils/botNotifications');
+              await notifyAdmin('energy_earning', {
+                userId: user.id,
+                userName: user.firstName || user.username || `User ${user.id}`,
+                energy: result.energyGained,
+                stonEquivalent: Math.floor(result.energyGained * 0.5), // Rough conversion
+                dailyUsed: result.dailyUsed,
+                hourlyUsed: result.hourlyUsed
+              });
+            } catch (notifError) {
+              console.error('Failed to send admin notification:', notifError);
+            }
 
             toast({
               title: `⚡ Energy Earned!`,
@@ -605,11 +614,21 @@ const TasksSection = ({ tasks = [], user = {}, refreshUserData, isLoading }) => 
             const updatedUser = await getCurrentUser(user.id);
             if (updatedUser) refreshUserData(updatedUser);
             
-            // Notify admin
-            const userMention = user.username ? `@${user.username}` : `User ${user.id}`;
-            await sendAdminNotification(
-              `🎁 <b>Mystery Box Ad Completed</b>\n${userMention} watched an ad and earned <b>+${result.boxesGained} Mystery Box</b>\nDaily: ${result.dailyUsed}/10 | Hourly: ${result.hourlyUsed}/3`
-            );
+            // Notify admin via bot
+            try {
+              const { notifyAdmin } = await import('@/utils/botNotifications');
+              await notifyAdmin('box_opening', {
+                userId: user.id,
+                userName: user.firstName || user.username || `User ${user.id}`,
+                boxType: 'Mystery Box',
+                reward: result.boxesGained,
+                source: 'Ad Reward',
+                dailyUsed: result.dailyUsed,
+                hourlyUsed: result.hourlyUsed
+              });
+            } catch (notifError) {
+              console.error('Failed to send admin notification:', notifError);
+            }
 
             toast({
               title: `🎁 Mystery Box Earned!`,
