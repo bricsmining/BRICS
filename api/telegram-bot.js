@@ -120,6 +120,7 @@ Tap the button below to start mining STON tokens and earning rewards!
 // Handle /start command with referral
 async function handleStartWithReferral(chatId, userId, referrerId) {
   console.log(`[BOT] Processing referral: ${userId} referred by ${referrerId}`);
+  console.log(`[BOT] Environment check - ADMIN_API_KEY: ${ADMIN_API_KEY ? 'SET' : 'NOT SET'}`);
 
   // Validate referrer ID - prevent self-referral and empty referrals
   if (!referrerId || 
@@ -135,10 +136,21 @@ async function handleStartWithReferral(chatId, userId, referrerId) {
   try {
     // Call the referral API
     if (ADMIN_API_KEY) {
+      console.log('[BOT] ADMIN_API_KEY available, processing referral');
       const referralUrl = `${getBaseUrl()}/api/utils?action=refer&api=${encodeURIComponent(ADMIN_API_KEY)}&new=${encodeURIComponent(userId)}&referreby=${encodeURIComponent(referrerId)}`;
+      console.log('[BOT] Calling referral URL:', referralUrl);
       
       const response = await fetch(referralUrl);
+      console.log('[BOT] Referral API response status:', response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('[BOT] Referral API HTTP error:', response.status, errorText);
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
+      }
+      
       const result = await response.json();
+      console.log('[BOT] Referral API response:', result);
 
       if (result.success) {
         console.log('[BOT] Referral API success:', result.message);
@@ -189,7 +201,8 @@ Ready to start earning STON tokens? Your app is launching... 🚀
       await handleStart(chatId, userId);
     }
   } catch (error) {
-    console.error('Error processing referral:', error);
+    console.error('[BOT] Error processing referral:', error);
+    console.error('[BOT] Error details:', error.message, error.stack);
     const webAppUrlWithInfo = `${WEB_APP_URL}?welcome=true&error=referral_processing`;
     await sendMessage(chatId, `
 🚀 *Welcome to SkyTON!*
