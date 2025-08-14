@@ -25,6 +25,8 @@ export const getOrCreateUser = async (telegramUserData, referrerId = null) => {
     referrerId: referrerId,
     referrerIdType: typeof referrerId 
   });
+  console.log("🔍 URL when getOrCreateUser called:", window.location.href);
+  console.log("🔍 URL search params:", window.location.search);
   
   if (!telegramUserData || !telegramUserData.id) {
     console.error("Missing Telegram data.");
