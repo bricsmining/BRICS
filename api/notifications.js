@@ -4,6 +4,11 @@
  */
 
 import { db } from '../src/lib/serverFirebase.js';
+import { 
+  collection, 
+  doc,
+  getDoc
+} from 'firebase/firestore';
 
 const BOT_TOKEN = process.env.TG_BOT_TOKEN;
 
@@ -52,10 +57,10 @@ async function handleAdminNotification(req, res) {
 
   try {
     // Get admin chat ID from Firebase
-    const adminConfigRef = db.collection('admin').doc('config');
-    const adminConfigSnap = await adminConfigRef.get();
+    const adminConfigRef = doc(db, 'admin', 'config');
+    const adminConfigSnap = await getDoc(adminConfigRef);
     
-    if (!adminConfigSnap.exists) {
+    if (!adminConfigSnap.exists()) {
       return res.status(404).json({ success: false, message: 'Admin config not found.' });
     }
 
@@ -271,7 +276,7 @@ Your friend joined SkyTON through your referral link!
 
 Keep sharing to earn more rewards! 🚀
 
-*Share your link:* https://t.me/xSkyTON_Bot/app?start=refID${data.referrerId}`;
+*Share your link:* https://t.me/${process.env.BOT_USERNAME || 'xSkyTON_Bot'}/app?start=refID${data.referrerId}`;
 
     default:
       return null;
