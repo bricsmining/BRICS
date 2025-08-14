@@ -5,8 +5,8 @@
 ### For Development/Local Setup:
 ```bash
 # Telegram Bot Configuration
-TG_BOT_TOKEN=7689055729:AAEC_PcPfbQqX2LX9uaUmE7yFOke7F616mo
-VITE_TG_BOT_TOKEN=7689055729:AAEC_PcPfbQqX2LX9uaUmE7yFOke7F616mo
+TG_BOT_TOKEN=7689055729:AAE7bP3Sad7bN26PdOdLzpMNnbr1DaqQenU
+VITE_TG_BOT_TOKEN=7689055729:AAE7bP3Sad7bN26PdOdLzpMNnbr1DaqQenU
 
 # API Configuration  
 ADMIN_API_KEY=adminsumon7891
@@ -25,7 +25,7 @@ VITE_BOT_USERNAME=xSkyTON_Bot  # For client-side referral links
 
 ### For Vercel Production:
 ```bash
-TG_BOT_TOKEN=7689055729:AAEC_PcPfbQqX2LX9uaUmE7yFOke7F616mo
+TG_BOT_TOKEN=7689055729:AAE7bP3Sad7bN26PdOdLzpMNnbr1DaqQenU
 ADMIN_API_KEY=adminsumon7891
 VITE_WEB_APP_URL=https://skyton.vercel.app
 TELEGRAM_WEBHOOK_SECRET=skyton-webhook-secret

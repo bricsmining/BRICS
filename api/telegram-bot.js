@@ -717,7 +717,7 @@ async function answerCallbackQuery(callbackQueryId, text = null) {
 
 function getBotUsername() {
   // Extract bot username from token or use environment variable
-  return process.env.BOT_USERNAME || 'xSkyTOP_Bot';
+  return process.env.BOT_USERNAME || 'xSkyTON_Bot';
 }
 
 // =============================================================================

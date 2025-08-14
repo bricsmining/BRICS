@@ -365,7 +365,7 @@ export const clearWelcomeInfo = (userId = null) => {
 
 export const generateReferralLink = (userId) => {
   if (!userId) return '';
-  const botUsername = import.meta.env.VITE_BOT_USERNAME || 'xSkyTOP_Bot';
+  const botUsername = import.meta.env.VITE_BOT_USERNAME || 'xSkyTON_Bot';
   // Bot-first approach: User goes to bot chat first, then bot launches Web App
   return `https://t.me/${botUsername}?start=refID${userId}`;
 };
