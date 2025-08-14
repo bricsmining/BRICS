@@ -14,7 +14,7 @@ import {
   Timestamp
 } from "firebase/firestore";
 import { defaultFirestoreUser } from '@/data/defaults';
-import { generateReferralLink } from '@/data/telegramUtils';
+import { generateReferralLink, processReferralInfo } from '@/data/telegramUtils';
 import { getTask } from '@/data/firestore/taskActions';
 import { notifyNewUser, notifyTaskCompletion } from '@/utils/notifications';
 
@@ -52,10 +52,12 @@ export const getOrCreateUser = async (telegramUserData, referrerId = null) => {
 
       if (Object.keys(updates).length > 0) {
         await updateDoc(userRef, updates);
-        return { id: userId, ...existingData, ...updates };
       }
-
-      return { id: userId, ...existingData };
+      
+      // Process any pending referral info for existing user
+      processReferralInfo(userId);
+      
+      return { id: userId, ...existingData, ...(Object.keys(updates).length > 0 ? updates : {}) };
     } else {
       const newUser = defaultFirestoreUser(
         userId,
@@ -68,6 +70,9 @@ export const getOrCreateUser = async (telegramUserData, referrerId = null) => {
       newUser.referralLink = generateReferralLink(userId);
 
       await setDoc(userRef, { ...newUser, joinedAt: serverTimestamp() });
+      
+      // Process any pending referral info for new user
+      processReferralInfo(userId);
       
       // Send new user notification to admin
       try {

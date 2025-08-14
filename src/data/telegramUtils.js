@@ -40,66 +40,48 @@ export const parseLaunchParams = () => {
     }
   }
 
-  // Store referral info if present (either from webhook or Mini App)
+  // Store temporary referral parameters for later processing (after we get user ID)
   if ((isReferred && urlReferrerId) || (startParam && urlReferrerId)) {
-    const referralKey = `referralInfo_${urlUserId || 'unknown'}`;
-    const existingReferral = sessionStorage.getItem(referralKey);
-    
-    // For Mini App direct referrals, treat as first time and with bonus
     const isMiniAppReferral = startParam && startParam.startsWith('refID');
     const effectiveFirstTime = isFirstTime || isMiniAppReferral;
     const effectiveHasBonus = hasBonus || isMiniAppReferral;
     
-    if (!existingReferral || effectiveFirstTime) {
-      const referralData = {
-        isReferred: true,
-        referrerId: urlReferrerId,
-        hasBonus: effectiveHasBonus,
-        isFirstTime: effectiveFirstTime,
-        isMiniAppReferral: isMiniAppReferral,
-        userId: urlUserId,
-        timestamp: Date.now()
-      };
-      
-      sessionStorage.setItem(referralKey, JSON.stringify(referralData));
-      
-      // Also store in general location for backward compatibility
-      sessionStorage.setItem('referralInfo', JSON.stringify(referralData));
-      
-      console.log('Referral info detected and stored:', { 
-        referrerId: urlReferrerId, 
-        hasBonus: effectiveHasBonus, 
-        isFirstTime: effectiveFirstTime,
-        isMiniAppReferral 
-      });
-    } else {
-      console.log('Referral info already exists, skipping duplicate welcome');
-    }
+    // Store temporary referral data without user-specific key
+    const tempReferralData = {
+      isReferred: true,
+      referrerId: urlReferrerId,
+      hasBonus: effectiveHasBonus,
+      isFirstTime: effectiveFirstTime,
+      isMiniAppReferral: isMiniAppReferral,
+      userId: urlUserId, // might be null for Mini App referrals
+      timestamp: Date.now(),
+      needsProcessing: true // flag to indicate this needs to be processed later
+    };
+    
+    // Store temporarily - will be re-stored with proper user ID later
+    sessionStorage.setItem('tempReferralInfo', JSON.stringify(tempReferralData));
+    
+    console.log('Temporary referral info stored for processing:', { 
+      referrerId: urlReferrerId, 
+      hasBonus: effectiveHasBonus, 
+      isFirstTime: effectiveFirstTime,
+      isMiniAppReferral 
+    });
   }
 
-  // Store welcome info
+  // Store temporary welcome info for later processing (similar to referral info)
   if (isWelcome) {
-    const welcomeKey = `welcomeInfo_${urlUserId || 'unknown'}`;
-    const existingWelcome = sessionStorage.getItem(welcomeKey);
+    const tempWelcomeData = {
+      isWelcome: true,
+      hasError: hasError,
+      isFirstTime: isFirstTime,
+      userId: urlUserId, // might be null
+      timestamp: Date.now(),
+      needsProcessing: true
+    };
     
-    if (!existingWelcome || isFirstTime) {
-      sessionStorage.setItem(welcomeKey, JSON.stringify({
-        isWelcome: true,
-        hasError: hasError,
-        isFirstTime: isFirstTime,
-        userId: urlUserId,
-        timestamp: Date.now()
-      }));
-      
-      // Also store in general location for backward compatibility
-      sessionStorage.setItem('welcomeInfo', JSON.stringify({
-        isWelcome: true,
-        hasError: hasError,
-        isFirstTime: isFirstTime,
-        userId: urlUserId,
-        timestamp: Date.now()
-      }));
-    }
+    sessionStorage.setItem('tempWelcomeInfo', JSON.stringify(tempWelcomeData));
+    console.log('Temporary welcome info stored for processing:', { isWelcome: true, hasError: !!hasError, isFirstTime });
   }
 
   // 1. Get from URL hash or sessionStorage
@@ -191,6 +173,99 @@ export const parseLaunchParams = () => {
   return { telegramUser, referrerId };
 };
 
+// Process temporary referral and welcome info once we have the actual user ID
+export const processReferralInfo = (userId) => {
+  if (!userId) return { referralData: null, welcomeData: null };
+  
+  let processedReferral = null;
+  let processedWelcome = null;
+  
+  // Process referral info
+  const tempReferralData = sessionStorage.getItem('tempReferralInfo');
+  if (tempReferralData) {
+    try {
+      const referralData = JSON.parse(tempReferralData);
+      if (referralData.needsProcessing) {
+        // Update referral data with actual user ID
+        referralData.userId = userId;
+        referralData.needsProcessing = false;
+        
+        // Store with user-specific key
+        const referralKey = `referralInfo_${userId}`;
+        const existingReferral = sessionStorage.getItem(referralKey);
+        
+        if (!existingReferral || referralData.isFirstTime) {
+          sessionStorage.setItem(referralKey, JSON.stringify(referralData));
+          
+          // Also store in general location for backward compatibility
+          sessionStorage.setItem('referralInfo', JSON.stringify(referralData));
+          
+          console.log('✅ Referral info processed and stored with user ID:', { 
+            userId,
+            referrerId: referralData.referrerId, 
+            hasBonus: referralData.hasBonus, 
+            isFirstTime: referralData.isFirstTime,
+            isMiniAppReferral: referralData.isMiniAppReferral 
+          });
+          
+          processedReferral = referralData;
+        } else {
+          console.log('Referral info already exists for user, skipping duplicate');
+        }
+        
+        // Clear temporary data
+        sessionStorage.removeItem('tempReferralInfo');
+      }
+    } catch (error) {
+      console.error('Error processing referral info:', error);
+      sessionStorage.removeItem('tempReferralInfo');
+    }
+  }
+  
+  // Process welcome info
+  const tempWelcomeData = sessionStorage.getItem('tempWelcomeInfo');
+  if (tempWelcomeData) {
+    try {
+      const welcomeData = JSON.parse(tempWelcomeData);
+      if (welcomeData.needsProcessing) {
+        // Update welcome data with actual user ID
+        welcomeData.userId = userId;
+        welcomeData.needsProcessing = false;
+        
+        // Store with user-specific key
+        const welcomeKey = `welcomeInfo_${userId}`;
+        const existingWelcome = sessionStorage.getItem(welcomeKey);
+        
+        if (!existingWelcome || welcomeData.isFirstTime) {
+          sessionStorage.setItem(welcomeKey, JSON.stringify(welcomeData));
+          
+          // Also store in general location for backward compatibility
+          sessionStorage.setItem('welcomeInfo', JSON.stringify(welcomeData));
+          
+          console.log('✅ Welcome info processed and stored with user ID:', { 
+            userId,
+            isWelcome: welcomeData.isWelcome, 
+            hasError: welcomeData.hasError, 
+            isFirstTime: welcomeData.isFirstTime
+          });
+          
+          processedWelcome = welcomeData;
+        } else {
+          console.log('Welcome info already exists for user, skipping duplicate');
+        }
+        
+        // Clear temporary data
+        sessionStorage.removeItem('tempWelcomeInfo');
+      }
+    } catch (error) {
+      console.error('Error processing welcome info:', error);
+      sessionStorage.removeItem('tempWelcomeInfo');
+    }
+  }
+  
+  return { referralData: processedReferral, welcomeData: processedWelcome };
+};
+
 export const clearTelegramSession = () => {
   // Clear general session data
   sessionStorage.removeItem('tgWebAppHash');
@@ -198,6 +273,8 @@ export const clearTelegramSession = () => {
   sessionStorage.removeItem('userId');
   sessionStorage.removeItem('referralInfo');
   sessionStorage.removeItem('welcomeInfo');
+  sessionStorage.removeItem('tempReferralInfo');
+  sessionStorage.removeItem('tempWelcomeInfo');
   localStorage.removeItem('tgWebAppHash');
   localStorage.removeItem('tgWebAppDataRaw');
   localStorage.removeItem('userId');
