@@ -18,6 +18,8 @@ export function restoreTelegramSession() {
 restoreTelegramSession();
 
 export const parseLaunchParams = () => {
+  console.log('[WEBAPP] parseLaunchParams called');
+  console.log('[WEBAPP] URL:', window.location.href);
   
   let hash = window.location.hash ? window.location.hash.slice(1) : '';
 
@@ -30,12 +32,17 @@ export const parseLaunchParams = () => {
   const hasError = urlParams.get('error');
   const isFirstTime = urlParams.get('firstTime') === 'true';
   const urlUserId = urlParams.get('userId');
-  
+
+  console.log('[WEBAPP] URL parameters:', {
+    isReferred, urlReferrerId, hasBonus, isWelcome, hasError, isFirstTime, urlUserId
+  });
+
   // For bot-first approach, check for start_param from Telegram Web App API
   let startParam = null;
   try {
     if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe) {
       startParam = window.Telegram.WebApp.initDataUnsafe.start_param;
+      console.log('[WEBAPP] Telegram start_param:', startParam);
     }
   } catch (error) {
     console.error('Error accessing Telegram WebApp API:', error);
@@ -44,6 +51,7 @@ export const parseLaunchParams = () => {
   // Extract referrer ID from start parameter
   if (startParam && startParam.startsWith('refID') && !urlReferrerId) {
     urlReferrerId = startParam.replace('refID', '');
+    console.log('[WEBAPP] Extracted referrerId from start_param:', urlReferrerId);
   }
 
   // Store temporary referral parameters for later processing (after we get user ID)
@@ -174,6 +182,12 @@ export const parseLaunchParams = () => {
   if (urlReferrerId) {
     referrerId = urlReferrerId;
   }
+
+  console.log('[WEBAPP] Final result:', {
+    telegramUserId: telegramUser?.id,
+    referrerId: referrerId,
+    source: startParam ? 'start_param' : (isReferred ? 'URL_params' : 'none')
+  });
 
   return { telegramUser, referrerId };
 };

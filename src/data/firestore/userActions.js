@@ -20,6 +20,11 @@ import { notifyNewUser, notifyTaskCompletion } from '@/utils/notifications';
 
 // Create or return existing user
 export const getOrCreateUser = async (telegramUserData, referrerId = null) => {
+  console.log('[WEBAPP] getOrCreateUser called:', {
+    userId: telegramUserData?.id,
+    referrerId: referrerId,
+    referrerType: typeof referrerId
+  });
   
   if (!telegramUserData || !telegramUserData.id) {
     console.error("Missing Telegram data.");
@@ -72,6 +77,7 @@ export const getOrCreateUser = async (telegramUserData, referrerId = null) => {
       
       return { id: userId, ...existingData, ...(Object.keys(updates).length > 0 ? updates : {}) };
     } else {
+      console.log('[WEBAPP] Creating new user with referrerId:', referrerId);
       const newUser = defaultFirestoreUser(
         userId,
         telegramUserData.username,
@@ -79,6 +85,7 @@ export const getOrCreateUser = async (telegramUserData, referrerId = null) => {
         telegramUserData.lastName,
         referrerId
       );
+      console.log('[WEBAPP] New user invitedBy field:', newUser.invitedBy);
       newUser.profilePicUrl = telegramUserData.profilePicUrl;
       newUser.referralLink = generateReferralLink(userId);
 

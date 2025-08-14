@@ -119,7 +119,7 @@ Tap the button below to start mining STON tokens and earning rewards!
 
 // Handle /start command with referral
 async function handleStartWithReferral(chatId, userId, referrerId) {
-  console.log(`Processing referral: ${userId} referred by ${referrerId}`);
+  console.log(`[BOT] Processing referral: ${userId} referred by ${referrerId}`);
 
   // Validate referrer ID - prevent self-referral and empty referrals
   if (!referrerId || 
@@ -141,7 +141,7 @@ async function handleStartWithReferral(chatId, userId, referrerId) {
       const result = await response.json();
 
       if (result.success) {
-        console.log('Referral processed successfully:', result.message);
+        console.log('[BOT] Referral API success:', result.message);
         
         // Launch web app directly with referral info in URL and welcome tracking
         const webAppUrlWithReferral = `${WEB_APP_URL}?referred=true&referrer=${encodeURIComponent(referrerId)}&bonus=true&firstTime=true&userId=${encodeURIComponent(userId)}`;
@@ -166,7 +166,7 @@ Your SkyTON app is launching automatically... 🚀
           }
         });
       } else {
-        console.log('Referral processing failed:', result.message);
+        console.log('[BOT] Referral API failed:', result.message);
         // Send regular welcome message with web app launch
         const webAppUrlWithInfo = `${WEB_APP_URL}?welcome=true`;
         await sendMessage(chatId, `
