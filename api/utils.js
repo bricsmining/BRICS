@@ -70,12 +70,30 @@ async function handleReferral(req, res) {
 
     const rewardAmount = referTaskSnap.data().reward || 0;
 
+    // Check if user already exists
     if (newUserSnap.exists) {
-      return res.status(409).json({ success: false, message: 'User already joined.' });
+      const existingUserData = newUserSnap.data();
+      
+      // If user already has a referrer, don't process referral again
+      if (existingUserData.invitedBy && existingUserData.invitedBy !== referredById) {
+        return res.status(409).json({ 
+          success: false, 
+          message: 'User already has a different referrer.' 
+        });
+      }
+      
+      // If user doesn't have a referrer yet, update with referral info
+      if (!existingUserData.invitedBy) {
+        await newUserRef.update({
+          invitedBy: referredById
+        });
+        console.log(`Updated existing user ${newUserId} with referrer ${referredById}`);
+      }
+    } else {
+      // Create the new user with referral metadata
+      await newUserRef.set(defaultFirestoreUser(newUserId, null, null, null, referredById));
+      console.log(`Created new user ${newUserId} with referrer ${referredById}`);
     }
-
-    // Create the new user with referral metadata
-    await newUserRef.set(defaultFirestoreUser(newUserId, null, null, null, referredById));
 
     // Update referrer's stats with dynamic reward AND free spin
     const referrerData = referredBySnap.data();

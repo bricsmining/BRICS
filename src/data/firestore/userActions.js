@@ -277,9 +277,12 @@ export const processMiniAppReferral = async (newUserId, referrerId) => {
     const adminApiKey = import.meta.env.VITE_ADMIN_API_KEY;
     
     if (!adminApiKey) {
-      console.warn('Admin API key not configured for Mini App referrals');
+      console.error('❌ VITE_ADMIN_API_KEY not configured!');
+      console.error('📝 Add VITE_ADMIN_API_KEY=adminsumon7891 to Vercel environment variables');
       return false;
     }
+    
+    console.log('🔑 Using admin API key:', adminApiKey.substring(0, 5) + '...');
     
     const referralUrl = `${baseUrl}/api/utils?action=refer&api=${encodeURIComponent(adminApiKey)}&new=${encodeURIComponent(newUserId)}&referreby=${encodeURIComponent(referrerId)}`;
     
