@@ -44,8 +44,16 @@ async function handleReferral(req, res) {
     return res.status(403).json({ success: false, message: 'Invalid API key.' });
   }
 
-  if (!newUserId || !referredById || newUserId === referredById) {
-    return res.status(400).json({ success: false, message: 'Invalid referral data.' });
+  if (!newUserId || !referredById) {
+    return res.status(400).json({ success: false, message: 'Missing user IDs.' });
+  }
+
+  // Prevent self-referral with multiple checks
+  if (newUserId === referredById || 
+      String(newUserId) === String(referredById) ||
+      parseInt(newUserId) === parseInt(referredById)) {
+    console.log(`Self-referral attempt blocked: ${newUserId} trying to refer themselves`);
+    return res.status(400).json({ success: false, message: 'Self-referral not allowed.' });
   }
 
   try {

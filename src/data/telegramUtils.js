@@ -135,7 +135,8 @@ export const parseLaunchParams = () => {
         fullName: `${unsafe.user.first_name || ''} ${unsafe.user.last_name || ''}`.trim(),
         profilePicUrl: unsafe.user.photo_url || null,
       };
-      referrerId = String(unsafe.user.id);
+      // Don't set referrerId to current user's ID - this was causing self-referral bug
+      // referrerId will be set from URL parameters instead
 
       // Persist these details
       sessionStorage.setItem('userId', telegramUser.id);
@@ -159,7 +160,8 @@ export const parseLaunchParams = () => {
         const userData = JSON.parse(decodeURIComponent(userParam));
         const firstName = userData.first_name || '';
         const lastName = userData.last_name || '';
-        referrerId = String(userData.id);
+        // Don't set referrerId to current user's ID - this was causing self-referral bug
+        // referrerId will be set from URL parameters instead
 
         telegramUser = {
           id: String(userData.id),
@@ -180,8 +182,8 @@ export const parseLaunchParams = () => {
     }
   }
 
-  // Use Mini App referrer ID if detected and no standard referrer ID
-  if (urlReferrerId && !referrerId) {
+  // Use Mini App referrer ID if detected (this should be the primary source for referrals)
+  if (urlReferrerId) {
     referrerId = urlReferrerId;
     console.log('Using Mini App referrer ID:', referrerId);
   }

@@ -78,12 +78,17 @@ export const getOrCreateUser = async (telegramUserData, referrerId = null) => {
 
       // Process Mini App referral if referrerId is provided
       if (referrerId) {
-        try {
-          console.log('Processing Mini App referral:', { userId, referrerId });
-          await processMiniAppReferral(userId, referrerId);
-        } catch (error) {
-          console.error('Error processing Mini App referral:', error);
-          // Don't fail user creation if referral processing fails
+        // Double-check for self-referral before processing
+        if (userId === referrerId || String(userId) === String(referrerId)) {
+          console.error('❌ Self-referral detected and blocked:', { userId, referrerId });
+        } else {
+          try {
+            console.log('✅ Processing Mini App referral:', { userId, referrerId });
+            await processMiniAppReferral(userId, referrerId);
+          } catch (error) {
+            console.error('Error processing Mini App referral:', error);
+            // Don't fail user creation if referral processing fails
+          }
         }
       }
       
