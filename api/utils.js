@@ -1,8 +1,41 @@
+/**
+ * Consolidated Utils API handler
+ * Handles utility operations like referrals, telegram verification, etc.
+ */
+
 import { db } from '../src/lib/serverFirebase.js';
 import { FieldValue } from 'firebase-admin/firestore';
 import { defaultFirestoreUser } from '../src/data/defaults.js';
 
 export default async function handler(req, res) {
+  // Extract the action from query parameter
+  const { action } = req.query;
+  
+  try {
+    switch (action) {
+      case 'refer':
+        return await handleReferral(req, res);
+      
+      case 'verify-telegram':
+        return await handleTelegramVerification(req, res);
+      
+      default:
+        return res.status(400).json({ 
+          error: 'Invalid action parameter',
+          availableActions: ['refer', 'verify-telegram']
+        });
+    }
+  } catch (error) {
+    console.error('Error in consolidated utils handler:', error);
+    return res.status(500).json({ 
+      error: 'Internal server error',
+      action: action || 'unknown'
+    });
+  }
+}
+
+// Referral handler
+async function handleReferral(req, res) {
   const { api, new: newUserId, referreby: referredById } = req.query;
 
   if (!api || api !== process.env.ADMIN_API_KEY) {
@@ -96,3 +129,46 @@ export default async function handler(req, res) {
   }
 }
 
+// Telegram verification handler
+async function handleTelegramVerification(req, res) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  const { userId, channelUsername, taskId } = req.body;
+  const botToken = process.env.TG_BOT_TOKEN;
+
+  if (!botToken || !userId || !channelUsername) {
+    return res.status(400).json({ error: 'Missing required parameters' });
+  }
+
+  try {
+    const apiUrl = `https://api.telegram.org/bot${botToken}/getChatMember?chat_id=@${channelUsername}&user_id=${userId}`;
+    const response = await fetch(apiUrl);
+    const data = await response.json();
+
+    if (data.ok) {
+      const status = data.result.status;
+      const isMember = ['member', 'administrator', 'creator'].includes(status);
+      
+      return res.status(200).json({ 
+        success: true, 
+        isMember,
+        status 
+      });
+    } else {
+      console.error('Telegram API error:', data);
+      return res.status(400).json({ 
+        success: false, 
+        error: data.description || 'Failed to verify membership',
+        errorCode: data.error_code 
+      });
+    }
+  } catch (error) {
+    console.error('Error verifying Telegram membership:', error);
+    return res.status(500).json({ 
+      success: false, 
+      error: 'Internal server error' 
+    });
+  }
+}

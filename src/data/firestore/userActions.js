@@ -18,7 +18,7 @@ import { generateReferralLink } from '@/data/telegramUtils';
 import { getTask } from '@/data/firestore/taskActions';
 
 // Create or return existing user
-export const getOrCreateUser = async (telegramUserData) => {
+export const getOrCreateUser = async (telegramUserData, referrerId = null) => {
   if (!telegramUserData || !telegramUserData.id) {
     console.error("Missing Telegram data.");
     return null;
@@ -59,12 +59,16 @@ export const getOrCreateUser = async (telegramUserData) => {
         telegramUserData.username,
         telegramUserData.firstName,
         telegramUserData.lastName,
-        null
+        referrerId
       );
       newUser.profilePicUrl = telegramUserData.profilePicUrl;
       newUser.referralLink = generateReferralLink(userId);
 
       await setDoc(userRef, { ...newUser, joinedAt: serverTimestamp() });
+      
+      // Note: Referral processing should be handled by your Telegram bot
+      // when it detects a new user joining with a start parameter
+      
       return { id: userId, ...newUser };
     }
   } catch (error) {
