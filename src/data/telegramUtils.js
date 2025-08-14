@@ -18,6 +18,11 @@ export function restoreTelegramSession() {
 restoreTelegramSession();
 
 export const parseLaunchParams = () => {
+  console.log("🔍 parseLaunchParams called");
+  console.log("🔍 window.location.href:", window.location.href);
+  console.log("🔍 window.location.search:", window.location.search);
+  console.log("🔍 window.location.hash:", window.location.hash);
+  
   let hash = window.location.hash ? window.location.hash.slice(1) : '';
 
   // Check for direct referral URL parameters (new feature)
@@ -29,6 +34,11 @@ export const parseLaunchParams = () => {
   const hasError = urlParams.get('error');
   const isFirstTime = urlParams.get('firstTime') === 'true';
   const urlUserId = urlParams.get('userId');
+  
+  console.log("🔍 URL params:", {
+    isReferred, urlReferrerId, hasBonus, isWelcome, 
+    hasError, isFirstTime, urlUserId
+  });
   
   // Check for Mini App start parameter (direct referral from Mini App link)
   const startParam = urlParams.get('start');
@@ -167,8 +177,15 @@ export const parseLaunchParams = () => {
   // Use Mini App referrer ID if detected (this should be the primary source for referrals)
   if (urlReferrerId) {
     referrerId = urlReferrerId;
-    console.log('Using Mini App referrer ID:', referrerId);
+    console.log('✅ Using Mini App referrer ID:', referrerId);
+  } else {
+    console.log('❌ No referrer ID detected');
   }
+
+  console.log("🔍 Final parseLaunchParams result:", { 
+    telegramUserId: telegramUser?.id, 
+    referrerId: referrerId 
+  });
 
   return { telegramUser, referrerId };
 };

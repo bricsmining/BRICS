@@ -10,7 +10,11 @@ import { defaultFirestoreTasks } from '@/data/defaults';
  */
 export const initializeAppData = async () => {
   console.log("Initializing App Data...");
+  console.log("🔍 Current URL:", window.location.href);
+  console.log("🔍 Search params:", window.location.search);
   const { telegramUser, referrerId } = parseLaunchParams();
+  console.log("🔍 Parsed referrerId:", referrerId);
+  console.log("🔍 Parsed telegramUser:", telegramUser);
 
   // Seed tasks if they don’t already exist
   await seedInitialTasks(defaultFirestoreTasks);

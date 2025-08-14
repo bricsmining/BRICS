@@ -20,6 +20,12 @@ import { notifyNewUser, notifyTaskCompletion } from '@/utils/notifications';
 
 // Create or return existing user
 export const getOrCreateUser = async (telegramUserData, referrerId = null) => {
+  console.log("🔍 getOrCreateUser called with:", { 
+    userId: telegramUserData?.id, 
+    referrerId: referrerId,
+    referrerIdType: typeof referrerId 
+  });
+  
   if (!telegramUserData || !telegramUserData.id) {
     console.error("Missing Telegram data.");
     return null;
@@ -41,6 +47,26 @@ export const getOrCreateUser = async (telegramUserData, referrerId = null) => {
         updates.referralLink = generateReferralLink(userId);
       }
 
+      // Handle referral for existing users who don't have a referrer yet
+      if (referrerId && !existingData.invitedBy) {
+        console.log("🔍 Existing user missing referrer, setting invitedBy:", referrerId);
+        updates.invitedBy = referrerId;
+        
+        // Also process the referral API call for rewards
+        try {
+          console.log('✅ Processing referral for existing user:', { userId, referrerId });
+          await processMiniAppReferral(userId, referrerId);
+        } catch (error) {
+          console.error('Error processing referral for existing user:', error);
+        }
+      } else if (referrerId && existingData.invitedBy && existingData.invitedBy !== referrerId) {
+        console.log("🚨 Existing user already has different referrer:", {
+          userId, 
+          existingReferrer: existingData.invitedBy, 
+          newReferrer: referrerId
+        });
+      }
+
       if (telegramUserData.username && existingData.username !== telegramUserData.username)
         updates.username = telegramUserData.username;
       if (telegramUserData.firstName && existingData.firstName !== telegramUserData.firstName)
@@ -59,6 +85,7 @@ export const getOrCreateUser = async (telegramUserData, referrerId = null) => {
       
       return { id: userId, ...existingData, ...(Object.keys(updates).length > 0 ? updates : {}) };
     } else {
+      console.log("🔍 Creating new user with referrerId:", referrerId);
       const newUser = defaultFirestoreUser(
         userId,
         telegramUserData.username,
@@ -66,6 +93,7 @@ export const getOrCreateUser = async (telegramUserData, referrerId = null) => {
         telegramUserData.lastName,
         referrerId
       );
+      console.log("🔍 New user object invitedBy:", newUser.invitedBy);
       newUser.profilePicUrl = telegramUserData.profilePicUrl;
       newUser.referralLink = generateReferralLink(userId);
 
