@@ -60,11 +60,56 @@ export const parseLaunchParams = () => {
     console.error('Error accessing Telegram WebApp API:', error);
   }
   
-  // Fallback: check URL params (for testing/debugging)
+  // For direct Web App links, extract from URL fragments or tgWebAppData
   if (!startParam) {
+    // Try to extract from URL search params
     startParam = urlParams.get('start');
-    console.log('🔄 Fallback URL start param:', startParam);
+    console.log('🔄 URL search start param:', startParam);
+    
+    // Try to extract from hash parameters (sometimes Telegram puts it there)
+    if (!startParam && hash) {
+      const hashParams = new URLSearchParams(hash);
+      startParam = hashParams.get('start');
+      console.log('🔄 Hash start param:', startParam);
+    }
+    
+    // Try to extract from tgWebAppData if present
+    if (!startParam && hash.includes('tgWebAppData=')) {
+      try {
+        const tgWebAppData = hash.split('tgWebAppData=')[1]?.split('&')[0];
+        if (tgWebAppData) {
+          const decodedData = decodeURIComponent(tgWebAppData);
+          console.log('🔍 Checking tgWebAppData for start_param:', decodedData);
+          // Look for start_param in the data
+          if (decodedData.includes('start_param')) {
+            const startMatch = decodedData.match(/start_param[=:]([^&]+)/);
+            if (startMatch) {
+              startParam = startMatch[1];
+              console.log('🎯 Found start_param in tgWebAppData:', startParam);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error parsing tgWebAppData:', error);
+      }
+    }
   }
+  
+  // ALTERNATIVE: Check for referral info in URL fragment (after #)
+  if (!startParam && hash) {
+    // Look for start=refIDXXX in the hash
+    const hashStartMatch = hash.match(/[&#]start=([^&]+)/);
+    if (hashStartMatch) {
+      startParam = hashStartMatch[1];
+      console.log('🎯 Found start param in URL fragment:', startParam);
+    }
+  }
+  
+  // IMPORTANT: For direct Web App links, the start parameter might not be available
+  // In this case, you need to use a different approach:
+  // 1. Store referral info in localStorage when the referral link is clicked
+  // 2. Or pass referral info through URL fragments (implemented above)
+  // 3. Or use bot-first approach: t.me/bot?start=refIDXXX
   
   if (startParam && !urlReferrerId) {
     console.log('🔍 Processing startParam:', startParam);
