@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { motion } from 'framer-motion';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { LogOut, Loader2, Users, ListChecks, CheckSquare, Wallet, Settings, Shield } from 'lucide-react';
+import { LogOut, Loader2, Users, ListChecks, CheckSquare, Wallet, Settings, Shield, Send } from 'lucide-react';
 import { UserContext } from '@/App';
 
 import AdminAuth from '@/components/admin/AdminAuth';
@@ -10,6 +10,7 @@ import UserManagementTab from '@/components/admin/UserManagementTab';
 import TaskManagementTab from '@/components/admin/TaskManagementTab';
 import PendingVerificationTab from '@/components/admin/PendingVerificationTab';
 import PendingWithdrawTab from '@/components/admin/PendingWithdrawTab';
+import BroadcastTab from '@/components/admin/BroadcastTab';
 
 import {
   getAllUsers,
@@ -358,9 +359,12 @@ const AdminPage = () => {
         </div>
 
         <Tabs value={tab} onValueChange={handleTabChange} className="w-full bg-[#0f0f0f]">
-          <TabsList className="grid grid-cols-5 bg-[#1a1a1a] text-white rounded-lg shadow-md">
+          <TabsList className="grid grid-cols-6 bg-[#1a1a1a] text-white rounded-lg shadow-md">
             <TabsTrigger value="settings" className="flex items-center justify-center gap-1 py-2 rounded-lg data-[state=active]:bg-primary/80 transition-all duration-200">
               <Settings className="h-4 w-4" /> Settings
+            </TabsTrigger>
+            <TabsTrigger value="broadcast" className="flex items-center justify-center gap-1 py-2 rounded-lg data-[state=active]:bg-primary/80 transition-all duration-200">
+              <Send className="h-4 w-4" /> Broadcast
             </TabsTrigger>
             <TabsTrigger value="users" className="flex items-center justify-center gap-1 py-2 rounded-lg data-[state=active]:bg-primary/80 transition-all duration-200">
               <Users className="h-4 w-4" /> Users
@@ -378,6 +382,10 @@ const AdminPage = () => {
 
           <TabsContent value="settings" className="pt-4">
             <AdminSettings adminData={adminData} />
+          </TabsContent>
+
+          <TabsContent value="broadcast" className="pt-4">
+            <BroadcastTab />
           </TabsContent>
 
           <TabsContent value="users" className="pt-4">
