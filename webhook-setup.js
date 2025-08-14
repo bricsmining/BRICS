@@ -144,7 +144,7 @@ async function setupWebhook() {
     console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
     console.log(`🤖 Bot: @${botInfo.username}`);
     console.log(`🔗 Start link: https://t.me/${botInfo.username}`);
-    console.log(`🎯 Referral example: https://t.me/${botInfo.username}?start=123456`);
+    console.log(`🎯 Referral example: https://t.me/${botInfo.username}/app?start=refID123456`);
     console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
     
     console.log("\n📝 NEXT STEPS:");
@@ -160,7 +160,7 @@ async function setupWebhook() {
     console.log(`   • Open: https://t.me/${botInfo.username}`);
     console.log("   • Send: /start");
     console.log("   • Check if web app button works");
-    console.log(`   • Test referral: https://t.me/${botInfo.username}?start=123456`);
+    console.log(`   • Test referral: https://t.me/${botInfo.username}/app?start=refID123456`);
     
   } catch (error) {
     console.error("❌ Setup failed:", error.message);

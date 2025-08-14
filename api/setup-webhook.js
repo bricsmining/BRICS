@@ -160,13 +160,13 @@ export default async function handler(req, res) {
       links: {
         bot_link: `https://t.me/${botInfo.username}`,
         start_link: `https://t.me/${botInfo.username}`,
-        referral_example: `https://t.me/${botInfo.username}?start=123456`
+        referral_example: `https://t.me/${botInfo.username}/app?start=refID123456`
       },
       next_steps: [
         "Add the same environment variables to your Vercel project",
         "Redeploy your Vercel project if needed",
         `Test your bot: https://t.me/${botInfo.username}`,
-        `Test referral: https://t.me/${botInfo.username}?start=123456`
+        `Test referral: https://t.me/${botInfo.username}/app?start=refID123456`
       ]
     };
 

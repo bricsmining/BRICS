@@ -34,7 +34,9 @@ export const getOrCreateUser = async (telegramUserData, referrerId = null) => {
       const existingData = userSnap.data();
       const updates = {};
 
-      if (!existingData.referralLink || !existingData.referralLink.includes('?start=')) {
+      if (!existingData.referralLink || 
+          !existingData.referralLink.includes('/app?start=refID') ||
+          existingData.referralLink.includes('?start=User_')) {
         updates.referralLink = generateReferralLink(userId);
       }
 
