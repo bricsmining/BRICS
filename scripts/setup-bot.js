@@ -13,7 +13,7 @@ async function setupBot() {
     process.exit(1);
   }
 
-  console.log('🤖 Setting up Telegram bot...');
+     console.log('🤖 Setting up Telegram bot...');
 
   try {
     // Set webhook
@@ -62,10 +62,10 @@ async function setBotCommands() {
   console.log('📋 Setting bot commands...');
   
   const commands = [
-    { command: 'start', description: 'Start the bot and open SkyTON app' },
-    { command: 'help', description: 'Show help information' },
-    { command: 'stats', description: 'View your mining stats' },
-    { command: 'invite', description: 'Get your referral link' }
+         { command: 'start', description: 'Start the bot and open SkyTON app' },
+     { command: 'help', description: 'Show help information' },
+     { command: 'stats', description: 'View your mining stats' },
+     { command: 'invite', description: 'Get your referral link' }
   ];
 
   const url = `https://api.telegram.org/bot${BOT_TOKEN}/setMyCommands`;
@@ -103,7 +103,8 @@ async function getBotInfo() {
     
     console.log(`\n🔗 Bot links:
     • Start: https://t.me/${bot.username}
-    • Referral example: https://t.me/${bot.username}?start=123456`);
+    • Web App: https://t.me/${bot.username}/app
+    • Referral example: https://t.me/${bot.username}?start=refID123456`);
   } else {
     throw new Error(`Failed to get bot info: ${result.description}`);
   }
@@ -122,7 +123,8 @@ async function getWebhookInfo() {
     • URL: ${info.url || 'Not set'}
     • Pending updates: ${info.pending_update_count}
     • Last error: ${info.last_error_message || 'None'}
-    • Max connections: ${info.max_connections || 'Default'}`);
+    • Max connections: ${info.max_connections || 'Default'}
+    • Last error date: ${info.last_error_date ? new Date(info.last_error_date * 1000) : 'None'}`);
   }
 }
 
@@ -137,6 +139,38 @@ async function deleteWebhook() {
     console.log('✅ Webhook deleted successfully');
   } else {
     throw new Error(`Failed to delete webhook: ${result.description}`);
+  }
+}
+
+async function testWebhook() {
+  console.log('🧪 Testing webhook endpoint...');
+  
+  try {
+    const testResponse = await fetch(WEBHOOK_URL, {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'X-Telegram-Bot-Api-Secret-Token': WEBHOOK_SECRET
+      },
+      body: JSON.stringify({
+        update_id: 999999,
+        message: {
+          message_id: 1,
+          from: { id: 123456, first_name: "Test", username: "testuser" },
+          chat: { id: 123456, type: "private" },
+          date: Math.floor(Date.now() / 1000),
+          text: "/start"
+        }
+      })
+    });
+    
+    if (testResponse.ok) {
+      console.log('✅ Webhook endpoint is responding correctly');
+    } else {
+      console.log(`⚠️ Webhook endpoint returned status: ${testResponse.status}`);
+    }
+  } catch (error) {
+    console.log(`❌ Could not reach webhook endpoint: ${error.message}`);
   }
 }
 
@@ -156,6 +190,9 @@ switch (command) {
   case 'delete-webhook':
     deleteWebhook();
     break;
+  case 'test-webhook':
+    testWebhook();
+    break;
   default:
     console.log(`
 🤖 Telegram Bot Setup
@@ -168,6 +205,7 @@ Commands:
   info          - Get bot information
   webhook-info  - Get webhook information
   delete-webhook - Delete webhook
+  test-webhook  - Test webhook endpoint
 
 Environment Variables Required:
   TG_BOT_TOKEN           - Your bot token from @BotFather

@@ -1,7 +1,7 @@
 /**
  * Simple Webhook Setup Script
  * Run this with: node webhook-setup.js
- */
+eewj */
 
 // Your bot configuration from environment variables
 const BOT_TOKEN = process.env.TG_BOT_TOKEN || process.env.VITE_TG_BOT_TOKEN;
@@ -24,10 +24,10 @@ async function setupWebhook() {
   }
   
   console.log("📋 Configuration:");
-  console.log(`   Bot Token: ${BOT_TOKEN.substring(0, 10)}...`);
+  console.log(`   Bot Token: ${BOT_TOKEN.substring(0, 15)}...`);
   console.log(`   Webhook URL: ${WEBHOOK_URL}`);
   console.log(`   Webhook Secret: ${WEBHOOK_SECRET}`);
-  console.log(`   Admin API Key: ${ADMIN_API_KEY ? ADMIN_API_KEY.substring(0, 5) + '...' : 'Not set'}\n`);
+  console.log(`   Admin API Key: ${ADMIN_API_KEY ? ADMIN_API_KEY.substring(0, 8) + '...' : 'Not set'}\n`);
   
   try {
     // Step 1: Get bot info
@@ -41,7 +41,8 @@ async function setupWebhook() {
     
     const botInfo = botInfoResult.result;
     console.log(`✅ Bot found: @${botInfo.username} (${botInfo.first_name})`);
-    console.log(`   Bot ID: ${botInfo.id}\n`);
+    console.log(`   Bot ID: ${botInfo.id}`);
+    console.log();
     
     // Step 2: Delete existing webhook (clean slate)
     console.log("2️⃣ Removing old webhook...");
@@ -106,7 +107,11 @@ async function setupWebhook() {
       console.log("✅ Webhook verification:");
       console.log(`   URL: ${info.url || 'Not set'}`);
       console.log(`   Pending updates: ${info.pending_update_count}`);
-      console.log(`   Last error: ${info.last_error_message || 'None'}\n`);
+      console.log(`   Last error: ${info.last_error_message || 'None'}`);
+      if (info.last_error_date) {
+        console.log(`   Last error date: ${new Date(info.last_error_date * 1000)}`);
+      }
+      console.log();
     }
     
     // Step 6: Test webhook endpoint
@@ -122,7 +127,7 @@ async function setupWebhook() {
           update_id: 999999,
           message: {
             message_id: 1,
-            from: { id: 123456, first_name: "Test" },
+            from: { id: 123456, first_name: "Test", username: "testuser" },
             chat: { id: 123456, type: "private" },
             date: Math.floor(Date.now() / 1000),
             text: "/start"
@@ -131,7 +136,7 @@ async function setupWebhook() {
       });
       
       if (testResponse.ok) {
-        console.log("✅ Webhook endpoint is responding\n");
+        console.log("✅ Webhook endpoint is responding correctly\n");
       } else {
         console.log(`⚠️ Webhook endpoint returned status: ${testResponse.status}\n`);
       }
@@ -142,25 +147,33 @@ async function setupWebhook() {
     // Success summary
     console.log("🎉 SETUP COMPLETE!");
     console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-    console.log(`🤖 Bot: @${botInfo.username}`);
+    console.log(`🤖 Bot: @${botInfo.username} (${botInfo.first_name})`);
+    console.log(`🆔 Bot ID: ${botInfo.id}`);
     console.log(`🔗 Start link: https://t.me/${botInfo.username}`);
-    console.log(`🎯 Referral example: https://t.me/${botInfo.username}/app?start=refID123456`);
+    console.log(`🎯 Referral example: https://t.me/${botInfo.username}?start=refID123456`);
+    console.log(`📱 Web App: https://t.me/${botInfo.username}/app`);
     console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
     
     console.log("\n📝 NEXT STEPS:");
-    console.log("1. Add these environment variables to Vercel:");
+    console.log("1. Add these environment variables to your Vercel project:");
     console.log(`   TG_BOT_TOKEN=${BOT_TOKEN}`);
     console.log(`   ADMIN_API_KEY=${ADMIN_API_KEY}`);
-    console.log(`   VITE_WEB_APP_URL=${process.env.VITE_WEB_APP_URL || 'https://skyton.vercel.app'}`);
+    console.log(`   VITE_WEB_APP_URL=${process.env.VITE_WEB_APP_URL || 'https://sky-ton-2.vercel.app'}`);
     console.log(`   TELEGRAM_WEBHOOK_SECRET=${WEBHOOK_SECRET}`);
     console.log(`   BOT_USERNAME=${botInfo.username}`);
+    console.log(`   VITE_BOT_USERNAME=${botInfo.username}`);
     
     console.log("\n2. Redeploy your Vercel project after adding variables");
     console.log("\n3. Test your bot:");
     console.log(`   • Open: https://t.me/${botInfo.username}`);
     console.log("   • Send: /start");
     console.log("   • Check if web app button works");
-    console.log(`   • Test referral: https://t.me/${botInfo.username}/app?start=refID123456`);
+    console.log(`   • Test referral: https://t.me/${botInfo.username}?start=refID123456`);
+    
+    console.log("\n4. Test comprehensive bot system:");
+    console.log("   • Admin notifications should work");
+    console.log("   • Referral system should set invitedBy properly");
+    console.log("   • Broadcast system ready for admin use");
     
   } catch (error) {
     console.error("❌ Setup failed:", error.message);
@@ -168,6 +181,7 @@ async function setupWebhook() {
     console.log(`Set webhook: https://api.telegram.org/bot${BOT_TOKEN}/setWebhook?url=${encodeURIComponent(WEBHOOK_URL)}&secret_token=${WEBHOOK_SECRET}`);
     console.log(`Get bot info: https://api.telegram.org/bot${BOT_TOKEN}/getMe`);
     console.log(`Check webhook: https://api.telegram.org/bot${BOT_TOKEN}/getWebhookInfo`);
+    console.log(`Delete webhook: https://api.telegram.org/bot${BOT_TOKEN}/deleteWebhook`);
   }
 }
 

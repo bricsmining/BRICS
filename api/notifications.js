@@ -276,7 +276,7 @@ Your friend joined SkyTON through your referral link!
 
 Keep sharing to earn more rewards! 🚀
 
-*Share your link:* https://t.me/${process.env.BOT_USERNAME || 'xSkyTON_Bot'}?start=refID${data.referrerId}`;
+*Share your link:* https://t.me/${process.env.BOT_USERNAME || 'xSkyTOP_Bot'}?start=refID${data.referrerId}`;
 
     default:
       return null;
