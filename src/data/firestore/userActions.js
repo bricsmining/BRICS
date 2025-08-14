@@ -89,6 +89,8 @@ export const getOrCreateUser = async (telegramUserData, referrerId = null) => {
         } else {
           try {
             console.log('✅ Processing Mini App referral:', { userId, referrerId });
+            // Only call API for NEW users since we already set invitedBy in defaultFirestoreUser
+            // The API will handle rewarding the referrer and creating bidirectional links
             await processMiniAppReferral(userId, referrerId);
           } catch (error) {
             console.error('Error processing Mini App referral:', error);

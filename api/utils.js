@@ -84,7 +84,7 @@ async function handleReferral(req, res) {
     if (newUserSnap.exists) {
       const existingUserData = newUserSnap.data();
       
-      // If user already has a referrer, don't process referral again
+      // If user already has a different referrer, reject
       if (existingUserData.invitedBy && existingUserData.invitedBy !== referredById) {
         return res.status(409).json({ 
           success: false, 
@@ -99,6 +99,11 @@ async function handleReferral(req, res) {
         });
         console.log(`Updated existing user ${newUserId} with referrer ${referredById}`);
       }
+      
+      // If user already has the correct referrer, continue to reward process
+      if (existingUserData.invitedBy === referredById) {
+        console.log(`User ${newUserId} already has correct referrer ${referredById}, processing rewards`);
+      }
     } else {
       // Create the new user with referral metadata
       await newUserRef.set(defaultFirestoreUser(newUserId, null, null, null, referredById));
@@ -108,6 +113,17 @@ async function handleReferral(req, res) {
     // Update referrer's stats with dynamic reward AND free spin
     const referrerData = referredBySnap.data();
     const currentDate = new Date();
+    
+    // Check if this user is already in referredUsers to prevent duplicate rewards
+    const existingReferredUsers = referrerData.referredUsers || [];
+    if (existingReferredUsers.includes(newUserId)) {
+      console.log(`User ${newUserId} already referred by ${referredById}, skipping duplicate reward`);
+      return res.status(200).json({
+        success: true,
+        message: 'Referral already processed (no duplicate rewards)',
+        existingReferral: true
+      });
+    }
     
     // Check if we need to reset weekly referrals
     const lastReset = referrerData.weeklyReferralsLastReset;
