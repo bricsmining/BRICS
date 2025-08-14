@@ -67,11 +67,22 @@ export const parseLaunchParams = () => {
   }
   
   if (startParam && !urlReferrerId) {
+    console.log('🔍 Processing startParam:', startParam);
     if (startParam.startsWith('refID')) {
       // Extract referrer ID from Mini App start parameter
       urlReferrerId = startParam.replace('refID', '');
       console.log('✅ Mini App referral detected:', { startParam, urlReferrerId });
+      console.log('🎯 Extracted referrerId:', urlReferrerId, 'Type:', typeof urlReferrerId);
+    } else {
+      console.log('❌ startParam does not start with refID:', startParam);
     }
+  } else {
+    console.log('🔍 startParam check:', { 
+      startParam, 
+      urlReferrerId, 
+      condition1: !!startParam, 
+      condition2: !urlReferrerId 
+    });
   }
 
   // Store temporary referral parameters for later processing (after we get user ID)
@@ -208,7 +219,11 @@ export const parseLaunchParams = () => {
 
   console.log("🔍 Final parseLaunchParams result:", { 
     telegramUserId: telegramUser?.id, 
-    referrerId: referrerId 
+    referrerId: referrerId,
+    referrerIdType: typeof referrerId,
+    isNull: referrerId === null,
+    isUndefined: referrerId === undefined,
+    isEmpty: referrerId === ''
   });
 
   return { telegramUser, referrerId };
