@@ -23,6 +23,14 @@ export const parseLaunchParams = () => {
   console.log("🔍 window.location.search:", window.location.search);
   console.log("🔍 window.location.hash:", window.location.hash);
   
+  // Debug Telegram Web App API availability
+  console.log("🔍 Telegram WebApp API available:", !!window.Telegram);
+  console.log("🔍 Telegram.WebApp available:", !!(window.Telegram && window.Telegram.WebApp));
+  console.log("🔍 initDataUnsafe available:", !!(window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe));
+  if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe) {
+    console.log("🔍 Full initDataUnsafe:", window.Telegram.WebApp.initDataUnsafe);
+  }
+  
   let hash = window.location.hash ? window.location.hash.slice(1) : '';
 
   // Check for direct referral URL parameters (new feature)
@@ -41,12 +49,28 @@ export const parseLaunchParams = () => {
   });
   
   // Check for Mini App start parameter (direct referral from Mini App link)
-  const startParam = urlParams.get('start');
+  // Use official Telegram Web App API to get start_param
+  let startParam = null;
+  try {
+    if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe) {
+      startParam = window.Telegram.WebApp.initDataUnsafe.start_param;
+      console.log('🎯 Official Telegram start_param:', startParam);
+    }
+  } catch (error) {
+    console.error('Error accessing Telegram WebApp API:', error);
+  }
+  
+  // Fallback: check URL params (for testing/debugging)
+  if (!startParam) {
+    startParam = urlParams.get('start');
+    console.log('🔄 Fallback URL start param:', startParam);
+  }
+  
   if (startParam && !urlReferrerId) {
     if (startParam.startsWith('refID')) {
       // Extract referrer ID from Mini App start parameter
       urlReferrerId = startParam.replace('refID', '');
-      console.log('Mini App referral detected:', { startParam, urlReferrerId });
+      console.log('✅ Mini App referral detected:', { startParam, urlReferrerId });
     }
   }
 
