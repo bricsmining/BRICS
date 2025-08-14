@@ -135,13 +135,10 @@ async function handleStartWithReferral(chatId, userId, referrerId) {
   try {
     // Call the referral API
     if (ADMIN_API_KEY) {
-      console.log('🔑 ADMIN_API_KEY is set, processing referral via API');
       const referralUrl = `${getBaseUrl()}/api/utils?action=refer&api=${encodeURIComponent(ADMIN_API_KEY)}&new=${encodeURIComponent(userId)}&referreby=${encodeURIComponent(referrerId)}`;
-      console.log('🌐 Calling referral API:', referralUrl);
       
       const response = await fetch(referralUrl);
       const result = await response.json();
-      console.log('📥 Referral API response:', result);
 
       if (result.success) {
         console.log('Referral processed successfully:', result.message);
@@ -188,8 +185,7 @@ Ready to start earning STON tokens? Your app is launching... 🚀
         });
       }
     } else {
-      console.error('❌ ADMIN_API_KEY not configured - cannot process referral via API');
-      console.log('🔄 Falling back to regular start');
+      console.error('ADMIN_API_KEY not configured - falling back to regular start');
       await handleStart(chatId, userId);
     }
   } catch (error) {
@@ -293,7 +289,7 @@ async function handleCallbackQuery(callbackQuery) {
 
 // Handle get referral link
 async function handleGetReferralLink(chatId, userId) {
-  const referralLink = `https://t.me/${getBotUsername()}/app?start=refID${userId}`;
+  const referralLink = `https://t.me/${getBotUsername()}?start=refID${userId}`;
   
   await sendMessage(chatId, `
 🎯 *Your Referral Link*

@@ -20,13 +20,6 @@ import { notifyNewUser, notifyTaskCompletion } from '@/utils/notifications';
 
 // Create or return existing user
 export const getOrCreateUser = async (telegramUserData, referrerId = null) => {
-  console.log("🔍 getOrCreateUser called with:", { 
-    userId: telegramUserData?.id, 
-    referrerId: referrerId,
-    referrerIdType: typeof referrerId 
-  });
-  console.log("🔍 URL when getOrCreateUser called:", window.location.href);
-  console.log("🔍 URL search params:", window.location.search);
   
   if (!telegramUserData || !telegramUserData.id) {
     console.error("Missing Telegram data.");
@@ -51,22 +44,14 @@ export const getOrCreateUser = async (telegramUserData, referrerId = null) => {
 
       // Handle referral for existing users who don't have a referrer yet
       if (referrerId && !existingData.invitedBy) {
-        console.log("🔍 Existing user missing referrer, setting invitedBy:", referrerId);
         updates.invitedBy = referrerId;
         
         // Also process the referral API call for rewards
         try {
-          console.log('✅ Processing referral for existing user:', { userId, referrerId });
           await processMiniAppReferral(userId, referrerId);
         } catch (error) {
           console.error('Error processing referral for existing user:', error);
         }
-      } else if (referrerId && existingData.invitedBy && existingData.invitedBy !== referrerId) {
-        console.log("🚨 Existing user already has different referrer:", {
-          userId, 
-          existingReferrer: existingData.invitedBy, 
-          newReferrer: referrerId
-        });
       }
 
       if (telegramUserData.username && existingData.username !== telegramUserData.username)
@@ -87,7 +72,6 @@ export const getOrCreateUser = async (telegramUserData, referrerId = null) => {
       
       return { id: userId, ...existingData, ...(Object.keys(updates).length > 0 ? updates : {}) };
     } else {
-      console.log("🔍 Creating new user with referrerId:", referrerId);
       const newUser = defaultFirestoreUser(
         userId,
         telegramUserData.username,
@@ -95,7 +79,6 @@ export const getOrCreateUser = async (telegramUserData, referrerId = null) => {
         telegramUserData.lastName,
         referrerId
       );
-      console.log("🔍 New user object invitedBy:", newUser.invitedBy);
       newUser.profilePicUrl = telegramUserData.profilePicUrl;
       newUser.referralLink = generateReferralLink(userId);
 
@@ -118,9 +101,7 @@ export const getOrCreateUser = async (telegramUserData, referrerId = null) => {
           console.error('❌ Self-referral detected and blocked:', { userId, referrerId });
         } else {
           try {
-            console.log('✅ Processing Mini App referral:', { userId, referrerId });
-            // Only call API for NEW users since we already set invitedBy in defaultFirestoreUser
-            // The API will handle rewarding the referrer and creating bidirectional links
+            // Process referral rewards via API
             await processMiniAppReferral(userId, referrerId);
           } catch (error) {
             console.error('Error processing Mini App referral:', error);

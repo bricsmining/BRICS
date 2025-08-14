@@ -18,18 +18,6 @@ export function restoreTelegramSession() {
 restoreTelegramSession();
 
 export const parseLaunchParams = () => {
-  console.log("🔍 parseLaunchParams called");
-  console.log("🔍 window.location.href:", window.location.href);
-  console.log("🔍 window.location.search:", window.location.search);
-  console.log("🔍 window.location.hash:", window.location.hash);
-  
-  // Debug Telegram Web App API availability
-  console.log("🔍 Telegram WebApp API available:", !!window.Telegram);
-  console.log("🔍 Telegram.WebApp available:", !!(window.Telegram && window.Telegram.WebApp));
-  console.log("🔍 initDataUnsafe available:", !!(window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe));
-  if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe) {
-    console.log("🔍 Full initDataUnsafe:", window.Telegram.WebApp.initDataUnsafe);
-  }
   
   let hash = window.location.hash ? window.location.hash.slice(1) : '';
 
@@ -43,91 +31,19 @@ export const parseLaunchParams = () => {
   const isFirstTime = urlParams.get('firstTime') === 'true';
   const urlUserId = urlParams.get('userId');
   
-  console.log("🔍 URL params:", {
-    isReferred, urlReferrerId, hasBonus, isWelcome, 
-    hasError, isFirstTime, urlUserId
-  });
-  
-  // Check for Mini App start parameter (direct referral from Mini App link)
-  // Use official Telegram Web App API to get start_param
+  // For bot-first approach, check for start_param from Telegram Web App API
   let startParam = null;
   try {
     if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe) {
       startParam = window.Telegram.WebApp.initDataUnsafe.start_param;
-      console.log('🎯 Official Telegram start_param:', startParam);
     }
   } catch (error) {
     console.error('Error accessing Telegram WebApp API:', error);
   }
   
-  // For direct Web App links, extract from URL fragments or tgWebAppData
-  if (!startParam) {
-    // Try to extract from URL search params
-    startParam = urlParams.get('start');
-    console.log('🔄 URL search start param:', startParam);
-    
-    // Try to extract from hash parameters (sometimes Telegram puts it there)
-    if (!startParam && hash) {
-      const hashParams = new URLSearchParams(hash);
-      startParam = hashParams.get('start');
-      console.log('🔄 Hash start param:', startParam);
-    }
-    
-    // Try to extract from tgWebAppData if present
-    if (!startParam && hash.includes('tgWebAppData=')) {
-      try {
-        const tgWebAppData = hash.split('tgWebAppData=')[1]?.split('&')[0];
-        if (tgWebAppData) {
-          const decodedData = decodeURIComponent(tgWebAppData);
-          console.log('🔍 Checking tgWebAppData for start_param:', decodedData);
-          // Look for start_param in the data
-          if (decodedData.includes('start_param')) {
-            const startMatch = decodedData.match(/start_param[=:]([^&]+)/);
-            if (startMatch) {
-              startParam = startMatch[1];
-              console.log('🎯 Found start_param in tgWebAppData:', startParam);
-            }
-          }
-        }
-      } catch (error) {
-        console.error('Error parsing tgWebAppData:', error);
-      }
-    }
-  }
-  
-  // ALTERNATIVE: Check for referral info in URL fragment (after #)
-  if (!startParam && hash) {
-    // Look for start=refIDXXX in the hash
-    const hashStartMatch = hash.match(/[&#]start=([^&]+)/);
-    if (hashStartMatch) {
-      startParam = hashStartMatch[1];
-      console.log('🎯 Found start param in URL fragment:', startParam);
-    }
-  }
-  
-  // IMPORTANT: For direct Web App links, the start parameter might not be available
-  // In this case, you need to use a different approach:
-  // 1. Store referral info in localStorage when the referral link is clicked
-  // 2. Or pass referral info through URL fragments (implemented above)
-  // 3. Or use bot-first approach: t.me/bot?start=refIDXXX
-  
-  if (startParam && !urlReferrerId) {
-    console.log('🔍 Processing startParam:', startParam);
-    if (startParam.startsWith('refID')) {
-      // Extract referrer ID from Mini App start parameter
-      urlReferrerId = startParam.replace('refID', '');
-      console.log('✅ Mini App referral detected:', { startParam, urlReferrerId });
-      console.log('🎯 Extracted referrerId:', urlReferrerId, 'Type:', typeof urlReferrerId);
-    } else {
-      console.log('❌ startParam does not start with refID:', startParam);
-    }
-  } else {
-    console.log('🔍 startParam check:', { 
-      startParam, 
-      urlReferrerId, 
-      condition1: !!startParam, 
-      condition2: !urlReferrerId 
-    });
+  // Extract referrer ID from start parameter
+  if (startParam && startParam.startsWith('refID') && !urlReferrerId) {
+    urlReferrerId = startParam.replace('refID', '');
   }
 
   // Store temporary referral parameters for later processing (after we get user ID)
@@ -254,22 +170,10 @@ export const parseLaunchParams = () => {
     }
   }
 
-  // Use Mini App referrer ID if detected (this should be the primary source for referrals)
+  // Use referrer ID if detected
   if (urlReferrerId) {
     referrerId = urlReferrerId;
-    console.log('✅ Using Mini App referrer ID:', referrerId);
-  } else {
-    console.log('❌ No referrer ID detected');
   }
-
-  console.log("🔍 Final parseLaunchParams result:", { 
-    telegramUserId: telegramUser?.id, 
-    referrerId: referrerId,
-    referrerIdType: typeof referrerId,
-    isNull: referrerId === null,
-    isUndefined: referrerId === undefined,
-    isEmpty: referrerId === ''
-  });
 
   return { telegramUser, referrerId };
 };
@@ -448,5 +352,6 @@ export const clearWelcomeInfo = (userId = null) => {
 export const generateReferralLink = (userId) => {
   if (!userId) return '';
   const botUsername = import.meta.env.VITE_BOT_USERNAME || 'xSkyTON_Bot';
-  return `https://t.me/${botUsername}/app?start=refID${userId}`;
+  // Bot-first approach: User goes to bot chat first, then bot launches Web App
+  return `https://t.me/${botUsername}?start=refID${userId}`;
 };
