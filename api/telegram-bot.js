@@ -101,37 +101,20 @@ async function handleMessage(message) {
 
   // Handle other commands
   if (text === '/help') {
-    await sendMessage(chatId, `
-🤖 *SkyTON Bot Commands*
-
-/start - Start the bot and open the app
-/help - Show this help message
-/stats - View your mining stats
-/invite - Get your referral link
-
-Ready to start mining STON tokens? Tap the button below! 🚀
-    `, {
-      parse_mode: 'Markdown',
-      reply_markup: {
-        inline_keyboard: [[
-          { text: "🚀 Open SkyTON", web_app: { url: WEB_APP_URL } }
-        ]]
-      }
-    });
+    await handleShowHelp(chatId, userId);
     return;
   }
 
   // Default response for unknown messages
+  const adminConfig = await getAdminConfig();
+  const keyboard = await buildInlineKeyboard(adminConfig);
+  
   await sendMessage(chatId, `
 Welcome to SkyTON! 🚀
 
 Tap the button below to start mining STON tokens and earning rewards!
   `, {
-    reply_markup: {
-      inline_keyboard: [[
-        { text: "🚀 Open SkyTON", web_app: { url: WEB_APP_URL } }
-      ]]
-    }
+    reply_markup: { inline_keyboard: keyboard }
   });
 }
 
@@ -167,6 +150,10 @@ async function handleStartWithReferral(chatId, userId, referrerId, userInfo) {
       // Send welcome message with referral bonus
       const webAppUrlWithReferral = `${WEB_APP_URL}?referred=true&referrer=${encodeURIComponent(referrerId)}&bonus=true&firstTime=true&userId=${encodeURIComponent(userId)}`;
       
+      // Get admin configuration for dynamic buttons
+      const adminConfig = await getAdminConfig();
+      const channelUsername = adminConfig?.channelUsername || 'xSkyTON';
+      
       await sendMessage(chatId, `
 🎉 *Welcome to SkyTON!*
 
@@ -182,7 +169,12 @@ Your SkyTON app is launching automatically... 🚀
         parse_mode: 'Markdown',
         reply_markup: {
           inline_keyboard: [
-            [{ text: "🚀 Open SkyTON Mining App", web_app: { url: webAppUrlWithReferral } }]
+            [{ text: "🚀 Open SkyTON Mining App", web_app: { url: webAppUrlWithReferral } }],
+            [{ text: "📢 Join Channel", url: `https://t.me/${channelUsername}` }],
+            [
+              { text: "🎯 Invite Friends", callback_data: "get_referral_link" },
+              { text: "❓ Help", callback_data: "show_help" }
+            ]
           ]
         }
       });
@@ -231,18 +223,13 @@ Start mining STON tokens, complete tasks, and earn rewards!
 Ready to start your mining journey? 🚀
   `;
 
+  // Get admin configuration for dynamic buttons
+  const adminConfig = await getAdminConfig();
+  const keyboard = await buildInlineKeyboard(adminConfig);
+
   await sendMessage(chatId, message, {
     parse_mode: 'Markdown',
-    reply_markup: {
-      inline_keyboard: [
-        [{ text: "🚀 Open SkyTON", web_app: { url: WEB_APP_URL } }],
-        [
-          { text: "📊 Stats", callback_data: "show_stats" },
-          { text: "🎯 Invite Friends", callback_data: "get_referral_link" }
-        ],
-        [{ text: "❓ Help", callback_data: "show_help" }]
-      ]
-    }
+    reply_markup: { inline_keyboard: keyboard }
   });
 }
 
@@ -258,37 +245,14 @@ async function handleCallbackQuery(callbackQuery) {
       await handleGetReferralLink(chatId, userId);
       break;
     
-    case 'show_stats':
-      await answerCallbackQuery(callbackQuery.id, "📊 Loading your stats...");
-      await handleShowStats(chatId, userId);
+    case 'join_channel':
+      await answerCallbackQuery(callbackQuery.id, "📢 Opening channel...");
+      await handleJoinChannel(chatId, userId);
       break;
     
     case 'show_help':
       await answerCallbackQuery(callbackQuery.id, "❓ Showing help information...");
-      await sendMessage(chatId, `
-🤖 *SkyTON Help*
-
-*How to earn STON tokens:*
-• ⛏️ Auto-mining (passive income)
-• ✅ Complete social tasks
-• 🎯 Refer friends (earn free spins)
-• 🎰 Spin the reward wheel
-• 💎 Purchase mining cards
-
-*Commands:*
-/start - Start the bot
-/help - Show this help
-/stats - View your stats
-
-*Need support?* Contact @YourSupportUsername
-      `, {
-        parse_mode: 'Markdown',
-        reply_markup: {
-          inline_keyboard: [[
-            { text: "🚀 Open App", web_app: { url: WEB_APP_URL } }
-          ]]
-        }
-      });
+      await handleShowHelp(chatId, userId);
       break;
     
     default:
@@ -326,26 +290,112 @@ The more friends you invite, the more you earn! 🚀
   });
 }
 
-// Handle show stats (basic version - you can enhance this)
-async function handleShowStats(chatId, userId) {
+// Handle join channel
+async function handleJoinChannel(chatId, userId) {
+  const adminConfig = await getAdminConfig();
+  const channelUsername = adminConfig?.channelUsername || 'xSkyTON';
+  
   await sendMessage(chatId, `
-📊 *Your SkyTON Stats*
+📢 *Join Our Official Channel*
 
-To view your detailed stats including:
-• 🪙 STON balance
-• ⛏️ Mining power
-• 🎯 Referrals count
-• 🏆 Leaderboard position
+Stay updated with the latest news, announcements, and exclusive rewards!
 
-Please open the SkyTON app below! 👇
+🎁 *Channel Benefits:*
+• Latest project updates
+• Exclusive airdrops and bonuses
+• Community events
+• Important announcements
+
+Join now to never miss out! 🚀
+  `, {
+    parse_mode: 'Markdown',
+    reply_markup: {
+      inline_keyboard: [
+        [{ text: "📢 Join Channel", url: `https://t.me/${channelUsername}` }],
+        [{ text: "🚀 Open App", web_app: { url: WEB_APP_URL } }]
+      ]
+    }
+  });
+}
+
+// Handle help with admin username
+async function handleShowHelp(chatId, userId) {
+  const adminConfig = await getAdminConfig();
+  const adminUsername = adminConfig?.adminTgUsername || 'ExecutorHere';
+  
+  await sendMessage(chatId, `
+🤖 *SkyTON Help*
+
+*How to earn STON tokens:*
+• ⛏️ Auto-mining (passive income)
+• ✅ Complete social tasks
+• 🎯 Refer friends (earn free spins)
+• 🎰 Spin the reward wheel
+• 💎 Purchase mining cards
+
+*Commands:*
+/start - Start the bot
+/help - Show this help
+
+*Need support?* Contact @${adminUsername}
+
+Ready to start mining? Use the button below! 🚀
   `, {
     parse_mode: 'Markdown',
     reply_markup: {
       inline_keyboard: [[
-        { text: "📊 View Detailed Stats", web_app: { url: WEB_APP_URL } }
+        { text: "🚀 Open App", web_app: { url: WEB_APP_URL } }
       ]]
     }
   });
+}
+
+// =============================================================================
+// HELPER FUNCTIONS
+// =============================================================================
+
+// Get admin configuration from Firebase
+async function getAdminConfig() {
+  try {
+    const adminConfigRef = doc(db, 'admin', 'config');
+    const adminConfigSnap = await getDoc(adminConfigRef);
+    
+    if (adminConfigSnap.exists()) {
+      return adminConfigSnap.data();
+    } else {
+      // Return default values if no config exists
+      return {
+        channelUsername: 'xSkyTON',
+        adminTgUsername: 'ExecutorHere'
+      };
+    }
+  } catch (error) {
+    console.error('[BOT] Error getting admin config:', error);
+    return {
+      channelUsername: 'xSkyTON',
+      adminTgUsername: 'ExecutorHere'
+    };
+  }
+}
+
+// Build inline keyboard based on admin configuration
+async function buildInlineKeyboard(adminConfig) {
+  const channelUsername = adminConfig?.channelUsername || 'xSkyTON';
+  
+  // Build keyboard layout: Open webapp, Join channel, Invite, Help
+  const keyboard = [
+    // First row: Open webapp
+    [{ text: "🚀 Open SkyTON", web_app: { url: WEB_APP_URL } }],
+    // Second row: Join channel
+    [{ text: "📢 Join Channel", url: `https://t.me/${channelUsername}` }],
+    // Third row: Invite and Help
+    [
+      { text: "🎯 Invite Friends", callback_data: "get_referral_link" },
+      { text: "❓ Help", callback_data: "show_help" }
+    ]
+  ];
+  
+  return keyboard;
 }
 
 // =============================================================================
