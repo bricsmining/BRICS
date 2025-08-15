@@ -16,6 +16,7 @@ import ReferralWelcome from '@/components/ReferralWelcome';
 import { initializeAppData } from '@/data';
 import { Loader2 } from 'lucide-react';
 import { initializeAdNetworks, showRewardedAd } from '@/ads/adsController';
+import { setupGlobalErrorHandlers } from '@/utils/errorNotification';
 
 export const UserContext = React.createContext(null);
 
@@ -203,6 +204,7 @@ function App() {
     };
     
     initializeAdNetworks();
+    setupGlobalErrorHandlers();
     loadUser();
   }, [isAdminRoute]);
 

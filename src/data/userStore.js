@@ -21,7 +21,37 @@ export const updateCurrentUser = async (userId, updates) => {
 
 // Connects a wallet address for the user
 export const connectWallet = async (userId, walletAddress) => {
-  return await updateUser(userId, { wallet: walletAddress });
+  const success = await updateUser(userId, { wallet: walletAddress });
+  
+  // Send wallet connection notification to admin
+  if (success) {
+    try {
+      const { getCurrentUser } = await import('./firestore/userActions');
+      const user = await getCurrentUser(userId);
+      const userName = user?.firstName || user?.username || `User ${userId}`;
+      
+      const apiBaseUrl = window.location.hostname === 'localhost' ? 'https://skyton.vercel.app' : '';
+      
+      await fetch(`${apiBaseUrl}/api/notifications`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'admin',
+          notificationType: 'wallet_connect',
+          data: {
+            userId: userId,
+            userName: userName,
+            walletAddress: walletAddress,
+            walletType: 'TON Wallet'
+          }
+        })
+      });
+    } catch (error) {
+      console.error('Failed to send wallet connection notification:', error);
+    }
+  }
+  
+  return success;
 };
 
 // Disconnects the wallet

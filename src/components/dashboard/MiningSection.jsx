@@ -879,6 +879,33 @@ useEffect(() => {
         }
 
       const isFirstPurchase = !existingCardKey;
+
+        // Send card purchase notification to admin
+        try {
+          const apiBaseUrl = window.location.hostname === 'localhost' ? 'https://skyton.vercel.app' : '';
+          const userName = currentUser.firstName || currentUser.username || `User ${currentUser.id}`;
+          
+          await fetch(`${apiBaseUrl}/api/notifications`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              type: 'admin',
+              notificationType: 'card_purchase',
+              data: {
+                userId: currentUser.id,
+                userName: userName,
+                cardName: cardConfig.name,
+                paymentMethod: 'STON Balance',
+                amount: cardPrice,
+                currency: 'STON',
+                miningRate: cardConfig.ratePerHour,
+                action: isFirstPurchase ? 'new_purchase' : 'renewal'
+              }
+            })
+          });
+        } catch (notifError) {
+          console.error('Failed to send card purchase notification:', notifError);
+        }
         
         toast({
         title: `${cardConfig.name} ${isFirstPurchase ? 'Purchased' : 'Extended'}! 🎉`,

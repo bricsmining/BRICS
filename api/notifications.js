@@ -224,6 +224,58 @@ ${data.referrerId ? `• Referred by: \`${data.referrerId}\`` : ''}
 
 🕐 *Time:* ${timestamp}`;
 
+    case 'user_level_achieve':
+      return `🎯 *Level Achievement!*
+
+👤 *User:* \`${data.userId}\` (${data.userName || 'Unknown'})
+📈 *New Level:* ${data.level || 0}
+⭐ *Previous Level:* ${data.previousLevel || 0}
+💰 *Total Balance:* ${data.totalBalance || 0} STON
+
+🕐 *Time:* ${timestamp}`;
+
+    case 'wallet_connect':
+      return `🔗 *Wallet Connected!*
+
+👤 *User:* \`${data.userId}\` (${data.userName || 'Unknown'})
+💳 *Wallet Address:* \`${data.walletAddress || 'Unknown'}\`
+🔗 *Wallet Type:* ${data.walletType || 'TON Wallet'}
+
+🕐 *Time:* ${timestamp}`;
+
+    case 'card_purchase':
+      return `💳 *Card Purchase!*
+
+👤 *User:* \`${data.userId}\` (${data.userName || 'Unknown'})
+🃏 *Card:* ${data.cardName || 'Unknown Card'}
+💰 *Payment Method:* ${data.paymentMethod || 'Unknown'}
+💵 *Amount:* ${data.amount || 0} ${data.currency || 'TON'}
+⚡ *Mining Rate:* ${data.miningRate || 0} STON/hour
+
+🕐 *Time:* ${timestamp}`;
+
+    case 'webapp_error':
+      return `🚨 *WebApp Error!*
+
+👤 *User:* \`${data.userId}\` (${data.userName || 'Unknown'})
+❌ *Error Type:* ${data.errorType || 'Unknown'}
+📝 *Error Message:* ${data.errorMessage || 'No details'}
+📍 *Location:* ${data.location || 'Unknown'}
+🌐 *User Agent:* ${data.userAgent || 'Unknown'}
+
+🕐 *Time:* ${timestamp}`;
+
+    case 'payment_status':
+      return `💳 *Payment Status Update!*
+
+👤 *User:* \`${data.userId}\` (${data.userName || 'Unknown'})
+💰 *Amount:* ${data.amount || 0} ${data.currency || 'TON'}
+📊 *Status:* ${data.status || 'Unknown'}
+🔗 *Transaction ID:* \`${data.transactionId || 'N/A'}\`
+💳 *Payment Method:* ${data.paymentMethod || 'Unknown'}
+
+🕐 *Time:* ${timestamp}`;
+
     default:
       return null;
   }
@@ -287,6 +339,9 @@ Your friend joined SkyTON through your referral link!
 Keep sharing to earn more rewards! 🚀
 
 *Share your link:* https://t.me/${process.env.BOT_USERNAME || 'xSkyTON_Bot'}?start=refID${data.referrerId}`;
+
+    case 'broadcast':
+      return data.message || 'Broadcast message from admin';
 
     default:
       return null;

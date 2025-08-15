@@ -187,6 +187,7 @@ export const updateUserBalanceByType = async (userId, balanceAmount, balanceType
     }
 
     const userData = userDoc.data();
+    const previousBalance = userData.balance || 0;
     
     // Initialize balanceBreakdown if it doesn't exist (for existing users)
     if (!userData.balanceBreakdown) {
@@ -206,6 +207,15 @@ export const updateUserBalanceByType = async (userId, balanceAmount, balanceType
       balance: increment(balanceAmount), // Keep legacy balance in sync
       lastBalanceUpdate: new Date()
     });
+
+    // Check for level up and notify admin
+    try {
+      const { checkAndNotifyLevelUp } = await import('@/utils/levelNotification');
+      const userName = userData.firstName || userData.username || `User ${userId}`;
+      await checkAndNotifyLevelUp(userId, userName, previousBalance, previousBalance + balanceAmount);
+    } catch (levelError) {
+      console.error('Failed to check level up:', levelError);
+    }
 
     console.log(`Successfully added ${balanceAmount} STON to user ${userId} (${balanceType} balance)`);
     return true;
