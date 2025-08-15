@@ -3,7 +3,7 @@
  * Send notifications through Telegram bot from webapp/API
  */
 
-const BOT_TOKEN = process.env.TG_BOT_TOKEN || process.env.VITE_TG_BOT_TOKEN;
+const BOT_TOKEN = import.meta.env.VITE_TG_BOT_TOKEN;
 
 // Send message through Telegram bot
 async function sendTelegramMessage(chatId, text, options = {}) {

@@ -40,7 +40,7 @@ export default async function handler(req, res) {
 
     // Set defaults for optional parameters
     const webhookSecret = TELEGRAM_WEBHOOK_SECRET || 'skyton-webhook-secret';
-    const webAppUrl = VITE_WEB_APP_URL || getBaseUrl(req);
+    const webAppUrl = VITE_WEB_APP_URL || 'https://skyton.vercel.app';
     const webhookUrl = `${webAppUrl}/api/telegram-bot`;
 
     console.log(`🤖 Setting up webhook via API for bot token: ${TG_BOT_TOKEN.substring(0, 10)}...`);

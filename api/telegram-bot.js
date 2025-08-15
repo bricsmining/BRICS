@@ -17,21 +17,22 @@ import {
 } from 'firebase/firestore';
 
 const BOT_TOKEN = process.env.TG_BOT_TOKEN || process.env.VITE_TG_BOT_TOKEN;
-const WEB_APP_URL = process.env.VITE_WEB_APP_URL || 'https://your-app.vercel.app';
-const WEBHOOK_SECRET = process.env.TELEGRAM_WEBHOOK_SECRET || 'your-webhook-secret';
+const WEB_APP_URL = process.env.VITE_WEB_APP_URL || 'https://skyton.vercel.app';
+const WEBHOOK_SECRET = process.env.TELEGRAM_WEBHOOK_SECRET || 'skyton-webhook-secret';
 
 export default async function handler(req, res) {
+  console.log(`[WEBHOOK] ${req.method} request received`);
+  
   // Only accept POST requests
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  // Verify webhook secret for security (optional but recommended)
+  // Verify webhook secret for security
   const providedSecret = req.headers['x-telegram-bot-api-secret-token'];
   if (WEBHOOK_SECRET && providedSecret !== WEBHOOK_SECRET) {
     console.error('Invalid webhook secret. Expected:', WEBHOOK_SECRET, 'Got:', providedSecret);
-    // Temporarily disabled for debugging - re-enable after testing
-    // return res.status(401).json({ error: 'Unauthorized' });
+    return res.status(401).json({ error: 'Unauthorized' });
   }
 
   if (!BOT_TOKEN) {
@@ -41,18 +42,23 @@ export default async function handler(req, res) {
 
   try {
     const update = req.body;
+    console.log('[WEBHOOK] Received update:', JSON.stringify(update, null, 2));
     
     // Handle different types of updates
     if (update.message) {
+      console.log('[WEBHOOK] Processing message update');
       await handleMessage(update.message);
     } else if (update.callback_query) {
+      console.log('[WEBHOOK] Processing callback query update');
       await handleCallbackQuery(update.callback_query);
+    } else {
+      console.log('[WEBHOOK] Unknown update type, ignoring');
     }
 
     return res.status(200).json({ ok: true });
   } catch (error) {
-    console.error('Webhook handler error:', error);
-    return res.status(500).json({ error: 'Internal server error' });
+    console.error('[WEBHOOK] Handler error:', error);
+    return res.status(500).json({ error: 'Internal server error', details: error.message });
   }
 }
 

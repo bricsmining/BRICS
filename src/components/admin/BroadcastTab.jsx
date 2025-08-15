@@ -196,11 +196,21 @@ You can use:
             <div className="flex justify-between items-center text-sm text-gray-500">
               <span>{broadcastData.message.length} characters</span>
               <Select
-                value={broadcastData.parseMode}
-                onValueChange={(value) => setBroadcastData(prev => ({ ...prev, parseMode: value }))}
+                value={broadcastData.parseMode || ""}
+                onValueChange={(value) =>
+                  setBroadcastData(prev => ({ ...prev, parseMode: value }))
+                }
               >
                 <SelectTrigger className="w-32">
-                  <SelectValue />
+                  <SelectValue>
+                    {(() => {
+                      switch (broadcastData.parseMode) {
+                        case "Markdown": return "Markdown";
+                        case "HTML": return "HTML";
+                        default: return "Plain Text";
+                      }
+                    })()}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Markdown">Markdown</SelectItem>
@@ -208,6 +218,7 @@ You can use:
                   <SelectItem value="">Plain Text</SelectItem>
                 </SelectContent>
               </Select>
+
             </div>
           </div>
 
@@ -222,26 +233,39 @@ You can use:
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="mediaType">Media Type</Label>
-                <Select
-                  value={broadcastData.mediaType || 'none'}
-                  onValueChange={(value) => setBroadcastData(prev => ({ 
-                    ...prev, 
+              <Label htmlFor="mediaType">Media Type</Label>
+              <Select
+                value={broadcastData.mediaType || 'none'}
+                onValueChange={(value) =>
+                  setBroadcastData(prev => ({
+                    ...prev,
                     mediaType: value === 'none' ? null : value,
                     mediaUrl: value === 'none' ? '' : prev.mediaUrl
-                  }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">No Media</SelectItem>
-                    <SelectItem value="photo">📷 Photo</SelectItem>
-                    <SelectItem value="video">🎥 Video</SelectItem>
-                    <SelectItem value="audio">🎵 Audio</SelectItem>
-                    <SelectItem value="document">📄 Document</SelectItem>
-                  </SelectContent>
-                </Select>
+                  }))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue>
+                    {(() => {
+                      switch (broadcastData.mediaType) {
+                        case 'photo': return '📷 Photo';
+                        case 'video': return '🎥 Video';
+                        case 'audio': return '🎵 Audio';
+                        case 'document': return '📄 Document';
+                        default: return 'No Media';
+                      }
+                    })()}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No Media</SelectItem>
+                  <SelectItem value="photo">📷 Photo</SelectItem>
+                  <SelectItem value="video">🎥 Video</SelectItem>
+                  <SelectItem value="audio">🎵 Audio</SelectItem>
+                  <SelectItem value="document">📄 Document</SelectItem>
+                </SelectContent>
+              </Select>
+
               </div>
 
               {broadcastData.mediaType && (
@@ -259,7 +283,7 @@ You can use:
             </div>
 
             {broadcastData.mediaType && (
-              <div className="text-sm text-gray-600 bg-blue-50 p-3 rounded-md">
+              <div className="text-sm text-gray-600 bg-blue-600 p-3 rounded-md">
                 <strong>Media Guidelines:</strong>
                 <ul className="mt-1 ml-4 list-disc">
                   <li>Use direct URLs to media files</li>
@@ -312,7 +336,7 @@ You can use:
 
                   <div className="space-y-3">
                     {row.map((button, buttonIndex) => (
-                      <div key={buttonIndex} className="grid grid-cols-1 md:grid-cols-4 gap-2 p-3 bg-white rounded border">
+                      <div key={buttonIndex} className="grid grid-cols-1 md:grid-cols-4 gap-2 p-3 bg-0 rounded border">
                         <Input
                           placeholder="Button Text"
                           value={button.text}
@@ -324,7 +348,16 @@ You can use:
                           onValueChange={(value) => updateButton(rowIndex, buttonIndex, 'type', value)}
                         >
                           <SelectTrigger>
-                            <SelectValue />
+                            <SelectValue>
+                              {(() => {
+                                switch (button.type) {
+                                  case "url": return "🔗 URL Link";
+                                  case "webapp": return "📱 Web App";
+                                  case "callback": return "⚙️ Callback";
+                                  default: return "Select Type";
+                                }
+                              })()}
+                            </SelectValue>
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="url">🔗 URL Link</SelectItem>
@@ -332,6 +365,7 @@ You can use:
                             <SelectItem value="callback">⚙️ Callback</SelectItem>
                           </SelectContent>
                         </Select>
+
                         
                         <Input
                           placeholder={
@@ -372,7 +406,7 @@ You can use:
 
           {/* Preview & Send */}
           <div className="space-y-4">
-            <div className="bg-gray-50 p-4 rounded-lg">
+            <div className="bg-blue-500 p-4 rounded-lg">
               <h4 className="font-medium mb-2">Broadcast Preview:</h4>
               <div className="text-sm text-gray-700">
                 <p><strong>Recipients:</strong> All users</p>

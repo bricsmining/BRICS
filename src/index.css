@@ -263,13 +263,13 @@
 .glass-card textarea,
 .glass-card select {
   color: white;
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(4, 160, 149, 0.223);
+  border-color: hsla(51, 81%, 28%, 0.664);
 }
 
 .glass-card input::placeholder,
 .glass-card textarea::placeholder {
-  color: rgba(203, 213, 225, 0.7); /* Light gray placeholder for dark glass */
+  color: white; /* Light gray placeholder for dark glass */
 }
 
 /* Glass card text should be white */

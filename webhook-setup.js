@@ -4,10 +4,10 @@
 eewj */
 
 // Your bot configuration from environment variables
-const BOT_TOKEN = process.env.TG_BOT_TOKEN || process.env.VITE_TG_BOT_TOKEN;
+const BOT_TOKEN = process.env.TG_BOT_TOKEN || process.env.VITE_TG_BOT_TOKEN || '7689055729:AAE7bP3Sad7bN26PdOdLzpMNnbr1DaqQenU';
 const WEBHOOK_URL = process.env.WEBHOOK_URL || `${process.env.VITE_WEB_APP_URL || 'https://skyton.vercel.app'}/api/telegram-bot`;
 const WEBHOOK_SECRET = process.env.TELEGRAM_WEBHOOK_SECRET || 'skyton-webhook-secret';
-const ADMIN_API_KEY = process.env.ADMIN_API_KEY;
+const ADMIN_API_KEY = process.env.ADMIN_API_KEY || 'adminsumon7891';
 
 async function setupWebhook() {
   console.log("🤖 Setting up Telegram bot webhook...\n");
