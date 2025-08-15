@@ -325,7 +325,7 @@ async function handleGetConfig(req, res) {
 
     const config = configSnap.data();
     return res.status(200).json({
-      telegramChatId: config.telegramChatId || null,
+      telegramChatId: config.adminChatId || null,
       hasConfig: true
     });
 

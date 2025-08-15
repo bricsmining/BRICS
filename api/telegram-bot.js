@@ -564,33 +564,45 @@ async function processReferralDirect(newUserId, referrerId, userInfo) {
 // Send notification to admin
 async function notifyAdminDirect(type, data) {
   try {
+    console.log(`[BOT] Attempting to send admin notification - Type: ${type}, Data:`, data);
+    
     const adminConfigRef = doc(db, 'admin', 'config');
     const adminConfigSnap = await getDoc(adminConfigRef);
     
     if (!adminConfigSnap.exists()) {
-      console.log('[BOT] Admin config not found');
+      console.error('[BOT] Admin config document not found in Firebase');
       return false;
     }
 
     const adminConfig = adminConfigSnap.data();
-    const adminChatId = adminConfig.telegramChatId;
+    console.log('[BOT] Admin config loaded:', {
+      hasAdminChatId: !!adminConfig.adminChatId,
+      adminChatId: adminConfig.adminChatId ? `${adminConfig.adminChatId.substring(0, 3)}***` : 'Not set'
+    });
+    
+    const adminChatId = adminConfig.adminChatId;
 
     if (!adminChatId) {
-      console.log('[BOT] Admin chat ID not configured');
+      console.error('[BOT] Admin chat ID not configured in Firebase admin config');
       return false;
     }
 
     const message = generateAdminMessage(type, data);
     if (!message) {
-      console.log('[BOT] Invalid notification type:', type);
+      console.error('[BOT] Invalid notification type:', type);
       return false;
     }
 
+    console.log(`[BOT] Sending notification to admin chat ID: ${adminChatId.substring(0, 3)}***`);
+    console.log(`[BOT] Message preview: ${message.substring(0, 100)}...`);
+    
     await sendMessage(adminChatId, message, { parse_mode: 'Markdown' });
+    console.log('[BOT] Admin notification sent successfully');
     return true;
 
   } catch (error) {
     console.error('[BOT] Error sending admin notification:', error);
+    console.error('[BOT] Stack trace:', error.stack);
     return false;
   }
 }
@@ -746,6 +758,13 @@ async function sendMessage(chatId, text, options = {}) {
   };
 
   try {
+    console.log(`[BOT] Sending message to chat ${chatId}...`);
+    
+    if (!BOT_TOKEN) {
+      console.error('[BOT] Bot token is not configured');
+      return false;
+    }
+    
     const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -754,10 +773,23 @@ async function sendMessage(chatId, text, options = {}) {
 
     if (!response.ok) {
       const error = await response.json();
-      console.error('[BOT] Failed to send message:', error);
+      console.error('[BOT] Failed to send message:', {
+        status: response.status,
+        statusText: response.statusText,
+        error: error,
+        chatId: chatId,
+        messageLength: text.length
+      });
+      return false;
+    } else {
+      console.log(`[BOT] Message sent successfully to chat ${chatId}`);
+      return true;
     }
   } catch (error) {
     console.error('[BOT] Error sending message:', error);
+    console.error('[BOT] Chat ID:', chatId);
+    console.error('[BOT] Message length:', text.length);
+    return false;
   }
 }
 

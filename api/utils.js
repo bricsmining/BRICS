@@ -250,7 +250,7 @@ async function sendNotifications(referrerId, referrerName, newUserId, newUserNam
     }
 
     const adminConfig = adminConfigSnap.data();
-    const adminChatId = adminConfig.telegramChatId;
+    const adminChatId = adminConfig.adminChatId;
 
     if (!adminChatId) {
       console.warn('Admin chat ID not configured');

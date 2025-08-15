@@ -65,9 +65,15 @@ async function handleAdminNotification(req, res) {
     }
 
     const adminConfig = adminConfigSnap.data();
-    const adminChatId = adminConfig.telegramChatId;
+    const adminChatId = adminConfig.adminChatId;
+
+    console.log('[NOTIFICATIONS] Admin config:', {
+      hasAdminChatId: !!adminChatId,
+      adminChatId: adminChatId ? `${adminChatId.substring(0, 3)}***` : 'Not set'
+    });
 
     if (!adminChatId) {
+      console.error('[NOTIFICATIONS] Admin chat ID not configured in Firebase');
       return res.status(400).json({ success: false, message: 'Admin chat ID not configured.' });
     }
 
@@ -75,8 +81,12 @@ async function handleAdminNotification(req, res) {
     const message = generateAdminMessage(type, data);
     
     if (!message) {
+      console.error('[NOTIFICATIONS] Invalid notification type:', type);
       return res.status(400).json({ success: false, message: 'Invalid notification type.' });
     }
+
+    console.log(`[NOTIFICATIONS] Sending notification - Type: ${type}`);
+    console.log(`[NOTIFICATIONS] Message preview: ${message.substring(0, 100)}...`);
 
     // Send notification to admin
     const success = await sendTelegramMessage(adminChatId, message);
