@@ -257,8 +257,23 @@ async function handleCallbackQuery(callbackQuery) {
       break;
     
     default:
-      // For unknown callback queries, just acknowledge without text
-      await answerCallbackQuery(callbackQuery.id);
+      // Handle admin approval/rejection actions
+      if (data.startsWith('approve_withdrawal_')) {
+        await handleWithdrawalApproval(callbackQuery, data, true);
+      } else if (data.startsWith('reject_withdrawal_')) {
+        await handleWithdrawalApproval(callbackQuery, data, false);
+      } else if (data.startsWith('approve_task_')) {
+        await handleTaskApproval(callbackQuery, data, true);
+      } else if (data.startsWith('reject_task_')) {
+        await handleTaskApproval(callbackQuery, data, false);
+      } else if (data.startsWith('view_withdrawal_')) {
+        await handleViewWithdrawal(callbackQuery, data);
+      } else if (data.startsWith('view_task_')) {
+        await handleViewTask(callbackQuery, data);
+      } else {
+        // For unknown callback queries, just acknowledge without text
+        await answerCallbackQuery(callbackQuery.id);
+      }
       break;
   }
 }
@@ -587,16 +602,31 @@ async function notifyAdminDirect(type, data) {
       return false;
     }
 
-    const message = generateAdminMessage(type, data);
-    if (!message) {
+    const messageData = generateAdminMessage(type, data);
+    if (!messageData) {
       console.error('[BOT] Invalid notification type:', type);
       return false;
     }
 
     console.log(`[BOT] Sending notification to admin chat ID: ${adminChatId.substring(0, 3)}***`);
-    console.log(`[BOT] Message preview: ${message.substring(0, 100)}...`);
     
-    await sendMessage(adminChatId, message, { parse_mode: 'Markdown' });
+    // Handle both old string format and new object format with keyboards
+    let messageText, options;
+    if (typeof messageData === 'string') {
+      messageText = messageData;
+      options = { parse_mode: 'Markdown' };
+      console.log(`[BOT] Message preview: ${messageText.substring(0, 100)}...`);
+    } else {
+      messageText = messageData.text;
+      options = { 
+        parse_mode: 'Markdown',
+        reply_markup: messageData.keyboard ? { inline_keyboard: messageData.keyboard } : undefined
+      };
+      console.log(`[BOT] Message preview: ${messageText.substring(0, 100)}...`);
+      console.log(`[BOT] Keyboard buttons: ${messageData.keyboard ? messageData.keyboard.length : 0} rows`);
+    }
+    
+    await sendMessage(adminChatId, messageText, options);
     console.log('[BOT] Admin notification sent successfully');
     return true;
 
@@ -651,29 +681,81 @@ function generateAdminMessage(type, data) {
 🕐 *Time:* ${timestamp}`;
 
     case 'task_submission':
-      return `📋 *Task Submission!*
+      return {
+        text: `📋 *Task Submission!*
 
-👤 *User:* \`${data.userId}\` (${data.userName || 'Unknown'})
-📝 *Task:* ${data.taskTitle || 'Unknown Task'}
-💰 *Reward:* ${data.reward || 0} STON
-🔗 *Target:* ${data.target || 'N/A'}
+👤 *User Details:*
+• ID: \`${data.userId}\`
+• Name: ${data.userName || 'Unknown'}
+• Username: @${data.username || 'None'}
 
-*Action Required: Review and approve/reject*
+📝 *Task Details:*
+• Title: ${data.taskTitle || 'Unknown Task'}
+• Type: ${data.taskType || 'Manual Task'}
+• Reward: ${data.reward || 0} STON
+• Target: ${data.target || 'N/A'}
+• Submission: ${data.submission || 'No submission provided'}
 
-🕐 *Time:* ${timestamp}`;
+🔍 *Action Required: Review and Process*
+
+🕐 *Time:* ${timestamp}`,
+        keyboard: [
+          [
+            {
+              text: '✅ Approve',
+              callback_data: `approve_task_${data.taskId || data.userId}_${Date.now()}`
+            },
+            {
+              text: '❌ Reject',
+              callback_data: `reject_task_${data.taskId || data.userId}_${Date.now()}`
+            }
+          ],
+          [
+            {
+              text: '📋 View Submission',
+              callback_data: `view_task_${data.taskId || data.userId}`
+            }
+          ]
+        ]
+      };
 
     case 'withdrawal_request':
-      return `💸 *Withdrawal Request!*
+      return {
+        text: `💸 *Withdrawal Request!*
 
-👤 *User:* \`${data.userId}\` (${data.userName || 'Unknown'})
-💰 *Amount:* ${data.amount || 0} STON
-💳 *Method:* ${data.method || 'Unknown'}
-📍 *Address:* \`${data.address || 'Not provided'}\`
-💵 *Current Balance:* ${data.currentBalance || 0} STON
+👤 *User Details:*
+• ID: \`${data.userId}\`
+• Name: ${data.userName || 'Unknown'}
+• Username: @${data.username || 'None'}
 
-*Action Required: Process withdrawal*
+💰 *Withdrawal Details:*
+• Amount: ${data.amount || 0} STON
+• Method: ${data.method || 'Unknown'}
+• Address: \`${data.address || 'Not provided'}\`
+• Current Balance: ${data.currentBalance || 0} STON
 
-🕐 *Time:* ${timestamp}`;
+🔍 *Action Required: Review and Process*
+
+🕐 *Time:* ${timestamp}`,
+        keyboard: [
+          [
+            {
+              text: '✅ Approve',
+              callback_data: `approve_withdrawal_${data.withdrawalId || data.userId}_${Date.now()}`
+            },
+            {
+              text: '❌ Reject',
+              callback_data: `reject_withdrawal_${data.withdrawalId || data.userId}_${Date.now()}`
+            }
+          ],
+          [
+            {
+              text: '📋 View Details',
+              callback_data: `view_withdrawal_${data.withdrawalId || data.userId}`
+            }
+          ]
+        ]
+      };
 
     case 'payment_created':
       return `🧾 *Payment Invoice Created*
@@ -759,6 +841,95 @@ function generateAdminMessage(type, data) {
 • Status: ${data.status}
 
 🔍 Purchase record not found in database.
+
+🕐 *Time:* ${timestamp}`;
+
+    case 'user_level_achieve':
+      return `🆙 *User Level Achievement!*
+
+👤 *User Details:*
+• ID: \`${data.userId}\`
+• Name: ${data.userName || 'Unknown'}
+• Username: @${data.username || 'None'}
+
+🎉 *Achievement Details:*
+• New Level: ${data.newLevel || 1}
+• Previous Level: ${data.previousLevel || 0}
+• Total STON Earned: ${data.totalEarned || 0}
+• Level Bonus: ${data.levelBonus || 0} STON
+
+🎊 User has leveled up and earned bonus rewards!
+
+🕐 *Time:* ${timestamp}`;
+
+    case 'wallet_connect':
+      return `🔗 *Wallet Connected!*
+
+👤 *User Details:*
+• ID: \`${data.userId}\`
+• Name: ${data.userName || 'Unknown'}
+• Username: @${data.username || 'None'}
+
+💳 *Wallet Details:*
+• Wallet Address: \`${data.walletAddress || 'Not provided'}\`
+• Wallet Type: ${data.walletType || 'TON Wallet'}
+• Connection Method: ${data.connectionMethod || 'Manual'}
+
+🔐 User has successfully connected their wallet for withdrawals!
+
+🕐 *Time:* ${timestamp}`;
+
+    case 'energy_earning':
+      return `⚡ *Energy Earned from Ad!*
+
+👤 *User Details:*
+• ID: \`${data.userId}\`
+• Name: ${data.userName || 'Unknown'}
+• Username: @${data.username || 'None'}
+
+⚡ *Energy Details:*
+• Energy Earned: ${data.energyEarned || 0}
+• STON Equivalent: ${data.stonEquivalent || 0}
+• Ad Network: ${data.adNetwork || 'Unknown'}
+• Campaign: ${data.campaign || 'N/A'}
+
+📺 User successfully watched an ad and earned energy!
+
+🕐 *Time:* ${timestamp}`;
+
+    case 'box_earning':
+      return `📦 *Box Earned from Ad!*
+
+👤 *User Details:*
+• ID: \`${data.userId}\`
+• Name: ${data.userName || 'Unknown'}
+• Username: @${data.username || 'None'}
+
+📦 *Box Details:*
+• Box Type: ${data.boxType || 'Unknown Box'}
+• Box Number: ${data.boxNumber || 1}
+• Reward: ${data.reward || 0} STON
+• Ad Network: ${data.adNetwork || 'Unknown'}
+
+🎁 User successfully watched an ad and earned a box!
+
+🕐 *Time:* ${timestamp}`;
+
+    case 'task_completion':
+      return `✅ *Task Completed!*
+
+👤 *User Details:*
+• ID: \`${data.userId}\`
+• Name: ${data.userName || 'Unknown'}
+• Username: @${data.username || 'None'}
+
+📝 *Task Details:*
+• Title: ${data.taskTitle || 'Unknown Task'}
+• Type: ${data.taskType || 'Auto Task'}
+• Reward: ${data.reward || 0} STON
+• Completion Method: ${data.completionMethod || 'Auto'}
+
+🎉 User has successfully completed a task and earned rewards!
 
 🕐 *Time:* ${timestamp}`;
 
@@ -867,6 +1038,19 @@ Keep sharing to earn more rewards! 🚀
     case 'broadcast':
       return data.message || 'Broadcast message';
 
+    case 'new_referral':
+      return `🎉 *New Referral!*
+
+Congratulations! Someone joined SkyTON using your referral link!
+
+👥 *New Member:* ${data.newUserName || 'Friend'}
+💰 *Your Reward:* ${data.reward || 0} STON
+🎰 *Bonus:* 1 Free Spin added
+
+Keep sharing to earn more rewards! 🚀
+
+*Share your link:* https://t.me/${getBotUsername()}?start=refID${data.referrerId}`;
+
     default:
       return null;
   }
@@ -947,6 +1131,197 @@ async function answerCallbackQuery(callbackQueryId, text = null) {
 function getBotUsername() {
   // Extract bot username from token or use environment variable
   return process.env.BOT_USERNAME || 'xSkyTON_Bot';
+}
+
+// =============================================================================
+// ADMIN APPROVAL HANDLERS
+// =============================================================================
+
+// Handle withdrawal approval/rejection
+async function handleWithdrawalApproval(callbackQuery, data, isApproval) {
+  try {
+    const parts = data.split('_');
+    const withdrawalId = parts[2]; // Extract withdrawal ID
+    const userId = parts[3] || withdrawalId; // Fallback to userId if no separate ID
+    
+    await answerCallbackQuery(
+      callbackQuery.id, 
+      `${isApproval ? '✅ Approving' : '❌ Rejecting'} withdrawal...`
+    );
+
+    // Make API call to admin endpoint to process withdrawal
+    const response = await fetch(`${process.env.NEXTAUTH_URL || 'https://skyton.vercel.app'}/api/admin`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        action: isApproval ? 'approve-withdrawal' : 'reject-withdrawal',
+        withdrawalId: withdrawalId,
+        userId: userId,
+        api: process.env.ADMIN_API_KEY
+      })
+    });
+
+    const result = await response.json();
+
+    if (result.success) {
+      // Edit the original message to show the action taken
+      const newText = callbackQuery.message.text + `\n\n${isApproval ? '✅ APPROVED' : '❌ REJECTED'} by admin`;
+      
+      await editMessage(
+        callbackQuery.message.chat.id, 
+        callbackQuery.message.message_id, 
+        newText,
+        { parse_mode: 'Markdown' }
+      );
+      
+      // Send confirmation message
+      await sendMessage(
+        callbackQuery.message.chat.id,
+        `${isApproval ? '✅' : '❌'} Withdrawal ${isApproval ? 'approved' : 'rejected'} successfully!\n\nUser ID: \`${userId}\`\nWithdrawal ID: \`${withdrawalId}\``,
+        { parse_mode: 'Markdown' }
+      );
+    } else {
+      await sendMessage(
+        callbackQuery.message.chat.id,
+        `❌ Error processing withdrawal: ${result.message || 'Unknown error'}`,
+        { parse_mode: 'Markdown' }
+      );
+    }
+
+  } catch (error) {
+    console.error('Error handling withdrawal approval:', error);
+    await sendMessage(
+      callbackQuery.message.chat.id,
+      `❌ Error processing withdrawal: ${error.message}`,
+      { parse_mode: 'Markdown' }
+    );
+  }
+}
+
+// Handle task approval/rejection
+async function handleTaskApproval(callbackQuery, data, isApproval) {
+  try {
+    const parts = data.split('_');
+    const taskId = parts[2]; // Extract task ID
+    const userId = parts[3] || taskId; // Fallback to userId if no separate ID
+    
+    await answerCallbackQuery(
+      callbackQuery.id, 
+      `${isApproval ? '✅ Approving' : '❌ Rejecting'} task...`
+    );
+
+    // Make API call to admin endpoint to process task
+    const response = await fetch(`${process.env.NEXTAUTH_URL || 'https://skyton.vercel.app'}/api/admin`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        action: isApproval ? 'approve-task' : 'reject-task',
+        taskId: taskId,
+        userId: userId,
+        api: process.env.ADMIN_API_KEY
+      })
+    });
+
+    const result = await response.json();
+
+    if (result.success) {
+      // Edit the original message to show the action taken
+      const newText = callbackQuery.message.text + `\n\n${isApproval ? '✅ APPROVED' : '❌ REJECTED'} by admin`;
+      
+      await editMessage(
+        callbackQuery.message.chat.id, 
+        callbackQuery.message.message_id, 
+        newText,
+        { parse_mode: 'Markdown' }
+      );
+      
+      // Send confirmation message
+      await sendMessage(
+        callbackQuery.message.chat.id,
+        `${isApproval ? '✅' : '❌'} Task ${isApproval ? 'approved' : 'rejected'} successfully!\n\nUser ID: \`${userId}\`\nTask ID: \`${taskId}\``,
+        { parse_mode: 'Markdown' }
+      );
+    } else {
+      await sendMessage(
+        callbackQuery.message.chat.id,
+        `❌ Error processing task: ${result.message || 'Unknown error'}`,
+        { parse_mode: 'Markdown' }
+      );
+    }
+
+  } catch (error) {
+    console.error('Error handling task approval:', error);
+    await sendMessage(
+      callbackQuery.message.chat.id,
+      `❌ Error processing task: ${error.message}`,
+      { parse_mode: 'Markdown' }
+    );
+  }
+}
+
+// Handle view withdrawal details
+async function handleViewWithdrawal(callbackQuery, data) {
+  try {
+    const parts = data.split('_');
+    const withdrawalId = parts[2];
+    
+    await answerCallbackQuery(callbackQuery.id, "📋 Fetching withdrawal details...");
+    
+    await sendMessage(
+      callbackQuery.message.chat.id,
+      `📋 *Withdrawal Details*\n\nWithdrawal ID: \`${withdrawalId}\`\n\n💡 Use the admin panel for detailed information.`,
+      { parse_mode: 'Markdown' }
+    );
+  } catch (error) {
+    console.error('Error viewing withdrawal:', error);
+  }
+}
+
+// Handle view task details
+async function handleViewTask(callbackQuery, data) {
+  try {
+    const parts = data.split('_');
+    const taskId = parts[2];
+    
+    await answerCallbackQuery(callbackQuery.id, "📋 Fetching task details...");
+    
+    await sendMessage(
+      callbackQuery.message.chat.id,
+      `📋 *Task Details*\n\nTask ID: \`${taskId}\`\n\n💡 Use the admin panel for detailed information.`,
+      { parse_mode: 'Markdown' }
+    );
+  } catch (error) {
+    console.error('Error viewing task:', error);
+  }
+}
+
+// Edit message function
+async function editMessage(chatId, messageId, text, options = {}) {
+  const url = `https://api.telegram.org/bot${BOT_TOKEN}/editMessageText`;
+  
+  const payload = {
+    chat_id: chatId,
+    message_id: messageId,
+    text: text,
+    ...options
+  };
+
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error editing message:', error);
+    return { ok: false, error: error.message };
+  }
 }
 
 // =============================================================================

@@ -224,6 +224,41 @@ ${data.referrerId ? `• Referred by: \`${data.referrerId}\`` : ''}
 
 🕐 *Time:* ${timestamp}`;
 
+    case 'user_level_achieve':
+      return `🆙 *User Level Achievement!*
+
+👤 *User Details:*
+• ID: \`${data.userId}\`
+• Name: ${data.userName || 'Unknown'}
+• Username: @${data.username || 'None'}
+
+🎉 *Achievement Details:*
+• New Level: ${data.newLevel || 1}
+• Previous Level: ${data.previousLevel || 0}
+• Total STON Earned: ${data.totalEarned || 0}
+• Level Bonus: ${data.levelBonus || 0} STON
+
+🎊 User has leveled up and earned bonus rewards!
+
+🕐 *Time:* ${timestamp}`;
+
+    case 'wallet_connect':
+      return `🔗 *Wallet Connected!*
+
+👤 *User Details:*
+• ID: \`${data.userId}\`
+• Name: ${data.userName || 'Unknown'}
+• Username: @${data.username || 'None'}
+
+💳 *Wallet Details:*
+• Wallet Address: \`${data.walletAddress || 'Not provided'}\`
+• Wallet Type: ${data.walletType || 'TON Wallet'}
+• Connection Method: ${data.connectionMethod || 'Manual'}
+
+🔐 User has successfully connected their wallet for withdrawals!
+
+🕐 *Time:* ${timestamp}`;
+
     default:
       return null;
   }
