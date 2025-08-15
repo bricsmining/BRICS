@@ -3,7 +3,7 @@
  * Automatically sends error notifications to admin via Telegram bot
  */
 
-import { getCurrentUser } from '@/data/firestore/userActions';
+import { getUser } from '@/data/firestore/userActions';
 
 // Global error notification function
 export async function notifyError(error, location, userId = null) {
@@ -13,7 +13,7 @@ export async function notifyError(error, location, userId = null) {
     // Try to get user info if userId is provided
     if (userId) {
       try {
-        const user = await getCurrentUser(userId);
+        const user = await getUser(userId);
         userName = user?.firstName || user?.username || `User ${userId}`;
       } catch (userError) {
         console.warn('Failed to get user info for error notification:', userError);

@@ -26,8 +26,8 @@ export const connectWallet = async (userId, walletAddress) => {
   // Send wallet connection notification to admin
   if (success) {
     try {
-      const { getCurrentUser } = await import('./firestore/userActions');
-      const user = await getCurrentUser(userId);
+      const { getUser } = await import('./firestore/userActions');
+      const user = await getUser(userId);
       const userName = user?.firstName || user?.username || `User ${userId}`;
       
       const apiBaseUrl = window.location.hostname === 'localhost' ? 'https://skyton.vercel.app' : '';
