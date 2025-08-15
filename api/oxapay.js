@@ -323,9 +323,19 @@ async function handleCreatePayment(req, res) {
       });
     }
 
+    // Debug: Log the actual payment result structure
+    console.log('Payment result structure:', JSON.stringify(paymentResult, null, 2));
+    console.log('Payment result data:', JSON.stringify(paymentResult.data, null, 2));
+
+    // Extract payment data with fallback checks
+    const paymentData = paymentResult.data || {};
+    const paymentId = paymentData.payment_id || paymentData.track_id || paymentData.id;
+    const paymentUrl = paymentData.payment_url || paymentData.link || paymentData.url;
+    const expiresAt = paymentData.expires_at || paymentData.expire_at;
+
     // Store purchase record in Firebase
     const purchaseRef = doc(db, 'purchases', orderId);
-    await setDoc(purchaseRef, {
+    const purchaseData = {
       orderId: orderId,
       userId: userId,
       username: username || '',
@@ -334,35 +344,62 @@ async function handleCreatePayment(req, res) {
       amount: cryptoAmount,
       currency: currency,
       status: 'pending',
-      paymentId: paymentResult.data.payment_id,
-      paymentUrl: paymentResult.data.payment_url,
-      createdAt: serverTimestamp(),
-      expiresAt: paymentResult.data.expires_at ? new Date(paymentResult.data.expires_at) : null
-    });
+      createdAt: serverTimestamp()
+    };
+
+    // Only add optional fields if they exist
+    if (paymentId) {
+      purchaseData.paymentId = paymentId;
+    }
+    if (paymentUrl) {
+      purchaseData.paymentUrl = paymentUrl;
+    }
+    if (expiresAt) {
+      purchaseData.expiresAt = new Date(expiresAt);
+    }
+
+    await setDoc(purchaseRef, purchaseData);
 
     // Notify admin of new payment request
-    await notifyAdminDirect('payment_created', {
+    const notificationData = {
       userId: userId,
       username: username || 'Unknown',
       cardNumber: cardNumber,
       cardType: `Card ${cardNumber}`,
       amount: cryptoAmount,
       currency: currency,
-      orderId: orderId,
-      paymentId: paymentResult.data.payment_id,
-      paymentUrl: paymentResult.data.payment_url
-    });
+      orderId: orderId
+    };
+
+    if (paymentId) {
+      notificationData.paymentId = paymentId;
+    }
+    if (paymentUrl) {
+      notificationData.paymentUrl = paymentUrl;
+    }
+
+    await notifyAdminDirect('payment_created', notificationData);
+
+    // Prepare response data
+    const responseData = {
+      order_id: orderId,
+      amount: cryptoAmount,
+      currency: currency
+    };
+
+    if (paymentUrl) {
+      responseData.payment_url = paymentUrl;
+    }
+    if (paymentId) {
+      responseData.payment_id = paymentId;
+    }
+    if (expiresAt) {
+      responseData.expires_at = expiresAt;
+    }
 
     return res.status(200).json({
       success: true,
-      data: {
-        payment_url: paymentResult.data.payment_url,
-        payment_id: paymentResult.data.payment_id,
-        order_id: orderId,
-        amount: cryptoAmount,
-        currency: currency,
-        expires_at: paymentResult.data.expires_at
-      }
+      data: responseData
     });
 
   } catch (error) {
