@@ -10,45 +10,47 @@ import {
   convertStonToCrypto
 } from '@/services/oxapayService';
 import { getPurchasableBalance } from '@/data';
+import { getAdminConfig } from '@/data/firestore/adminConfig';
 
-// Exchange rate from ProfileSection (TON to STON) - should match ProfileSection
-const TON_TO_STON_RATE = 10000000; // 1 TON = 10,000,000 STON
-
-// Individual card configurations - should match MiningSection
-const INDIVIDUAL_CARDS = {
-  1: {
-    id: 1,
-    name: 'Card 1',
-    ratePerHour: 150,     // Individual card mining rate
-    cryptoPrice: 0.1,     // Price in TON
-    validityDays: 7,      // 7 days validity
-    description: '7 days validity',
-    get price() {
-      return this.cryptoPrice * TON_TO_STON_RATE; // Dynamic STON price based on exchange rate
+// Individual card configurations - will be loaded from admin config
+const getCardConfigurations = (adminConfig) => {
+  const tonToStonRate = 1 / (adminConfig?.stonToTonRate || 0.0000001); // Convert TON to STON
+  
+  return {
+    1: {
+      id: 1,
+      name: 'Card 1',
+      ratePerHour: adminConfig?.card1RatePerHour || 150,
+      cryptoPrice: adminConfig?.card1CryptoPrice || 0.1,
+      validityDays: adminConfig?.card1ValidityDays || 7,
+      description: `${adminConfig?.card1ValidityDays || 7} days validity`,
+      get price() {
+        return this.cryptoPrice * tonToStonRate;
+      }
+    },
+    2: {
+      id: 2,
+      name: 'Card 2', 
+      ratePerHour: adminConfig?.card2RatePerHour || 250,
+      cryptoPrice: adminConfig?.card2CryptoPrice || 0.25,
+      validityDays: adminConfig?.card2ValidityDays || 15,
+      description: `${adminConfig?.card2ValidityDays || 15} days validity`,
+      get price() {
+        return this.cryptoPrice * tonToStonRate;
+      }
+    },
+    3: {
+      id: 3,
+      name: 'Card 3',
+      ratePerHour: adminConfig?.card3RatePerHour || 600,
+      cryptoPrice: adminConfig?.card3CryptoPrice || 0.5,
+      validityDays: adminConfig?.card3ValidityDays || 30,
+      description: `${adminConfig?.card3ValidityDays || 30} days validity`,
+      get price() {
+        return this.cryptoPrice * tonToStonRate;
+      }
     }
-  },
-  2: {
-    id: 2,
-    name: 'Card 2', 
-    ratePerHour: 250,     // Individual card mining rate
-    cryptoPrice: 0.25,    // Price in TON
-    validityDays: 15,     // 15 days validity
-    description: '15 days validity',
-    get price() {
-      return this.cryptoPrice * TON_TO_STON_RATE; // Dynamic STON price based on exchange rate
-    }
-  },
-  3: {
-    id: 3,
-    name: 'Card 3',
-    ratePerHour: 600,     // Individual card mining rate  
-    cryptoPrice: 0.5,     // Price in TON
-    validityDays: 30,     // 30 days validity
-    description: '30 days validity',
-    get price() {
-      return this.cryptoPrice * TON_TO_STON_RATE; // Dynamic STON price based on exchange rate
-    }
-  }
+  };
 };
 import {
   Loader2,
@@ -65,23 +67,41 @@ const PurchaseDialog = ({ isOpen, onClose, cardPrice, cardNumber, currentBalance
   const [purchaseMethod, setPurchaseMethod] = useState('balance');
   const [isProcessing, setIsProcessing] = useState(false);
   const [cryptoAmount, setCryptoAmount] = useState(null);
+  const [adminConfig, setAdminConfig] = useState(null);
+  const [cardConfigs, setCardConfigs] = useState({});
   const { toast } = useToast();
+
+  // Load admin config on mount
+  useEffect(() => {
+    const loadAdminConfig = async () => {
+      try {
+        const config = await getAdminConfig();
+        setAdminConfig(config);
+        setCardConfigs(getCardConfigurations(config));
+      } catch (error) {
+        console.error('Error loading admin config:', error);
+      }
+    };
+    
+    loadAdminConfig();
+  }, []);
 
   // Get purchasable balance (only task + mining)
   const purchasableBalance = getPurchasableBalance(user);
 
-  // Helper function to convert STON to TON using the same rate as ProfileSection
+  // Helper function to convert STON to TON using admin config
   const stonToTon = (stonAmount) => {
     const amount = parseFloat(stonAmount) || 0;
-    return (amount / TON_TO_STON_RATE).toFixed(6);
+    const rate = adminConfig?.stonToTonRate || 0.0000001;
+    return (amount * rate).toFixed(6);
   };
 
   useEffect(() => {
-    // Get the correct TON price from INDIVIDUAL_CARDS
-    if (cardNumber && INDIVIDUAL_CARDS[cardNumber]) {
-      setCryptoAmount(INDIVIDUAL_CARDS[cardNumber].cryptoPrice);
+    // Get the correct TON price from card configs
+    if (cardNumber && cardConfigs[cardNumber]) {
+      setCryptoAmount(cardConfigs[cardNumber].cryptoPrice);
     }
-  }, [cardNumber]);
+  }, [cardNumber, cardConfigs]);
 
   const handlePurchaseWithBalance = async () => {
     if (!user || !cardPrice) return;
