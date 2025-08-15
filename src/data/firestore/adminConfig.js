@@ -130,13 +130,16 @@ export const broadcastMessage = async (message, adminEmail) => {
       const telegramId = userData.telegramId || userData.id;
       
       if (telegramId) {
-        const promise = fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+        // Use server-side API for sending messages to avoid CORS and token issues
+        const apiBaseUrl = window.location.hostname === 'localhost' ? 'https://skyton.vercel.app' : '';
+        const promise = fetch(`${apiBaseUrl}/api/notifications`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            chat_id: telegramId,
-            text: message,
-            parse_mode: 'HTML'
+            type: 'user',
+            userId: telegramId,
+            notificationType: 'broadcast',
+            data: { message: message }
           })
         }).then(response => {
           if (response.ok) {

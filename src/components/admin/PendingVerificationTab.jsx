@@ -32,13 +32,16 @@ const PendingVerificationTab = ({ pendingItems = [], tasks = [], onApprove, onRe
       return false;
     }
     try {
-      await fetch(`https://api.telegram.org/bot${import.meta.env.VITE_TG_BOT_TOKEN}/sendMessage`, {
+      // Use server-side API for sending messages
+      const apiBaseUrl = window.location.hostname === 'localhost' ? 'https://skyton.vercel.app' : '';
+      await fetch(`${apiBaseUrl}/api/notifications`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          chat_id: chatId,
-          text: message,
-          parse_mode: 'HTML'
+          type: 'user',
+          userId: chatId,
+          notificationType: 'task_status',
+          data: { message: message }
         })
       });
       return true;
@@ -50,13 +53,15 @@ const PendingVerificationTab = ({ pendingItems = [], tasks = [], onApprove, onRe
 
   const sendAdminLog = async (message) => {
     try {
-      await fetch(`https://api.telegram.org/bot${import.meta.env.VITE_TG_BOT_TOKEN}/sendMessage`, {
+      // Use server-side API for admin notifications
+      const apiBaseUrl = window.location.hostname === 'localhost' ? 'https://skyton.vercel.app' : '';
+      await fetch(`${apiBaseUrl}/api/notifications`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          chat_id: adminChatId,
-          text: `🔍 <b>Debug Log</b>:\n${message}`,
-          parse_mode: 'HTML'
+          type: 'admin',
+          notificationType: 'task_verification_log',
+          data: { message: message }
         })
       });
     } catch (error) {

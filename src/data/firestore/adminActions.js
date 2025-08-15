@@ -279,12 +279,21 @@ export const approveWithdrawal = async (withdrawalId, userId, amount) => {
         balance: increment(-parseFloat(amount))
       });
 
-      // Send user notification about approval
+      // Send user notification about approval via server API
       try {
-        await notifyUser(userId, 'withdrawal_approved', {
-          amount: parseFloat(amount),
-          method: 'TON Wallet',
-          address: walletAddress
+        await fetch(`${apiBaseUrl}/api/notifications`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'user',
+            userId: userId,
+            notificationType: 'withdrawal_approved',
+            data: {
+              amount: parseFloat(amount),
+              method: 'TON Wallet',
+              address: walletAddress
+            }
+          })
         });
       } catch (notificationError) {
         console.error('Failed to send approval notification to user:', notificationError);
@@ -305,15 +314,22 @@ export const approveWithdrawal = async (withdrawalId, userId, amount) => {
         payoutFailedAt: serverTimestamp()
       });
 
-      // Send failure notification to admin
+      // Send failure notification to admin via server API
       try {
-        await fetch(`https://api.telegram.org/bot${import.meta.env.VITE_TG_BOT_TOKEN}/sendMessage`, {
+        await fetch(`${apiBaseUrl}/api/notifications`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            chat_id: '5063003944', // Admin chat ID
-            text: `❌ <b>Withdrawal Approval Failed</b>\n\nUser: ${username || userId}\nAmount: ${amount} STON (${tonAmount} TON)\nWallet: <code>${walletAddress}</code>\nError: ${payoutError.message}\n\n⚠️ User balance was NOT deducted.`,
-            parse_mode: 'HTML'
+            type: 'admin',
+            notificationType: 'withdrawal_approval_failed',
+            data: {
+              userId: userId,
+              username: username || userId,
+              amount: parseFloat(amount),
+              tonAmount: parseFloat(tonAmount),
+              address: walletAddress,
+              error: payoutError.message
+            }
           })
         });
       } catch (notificationError) {

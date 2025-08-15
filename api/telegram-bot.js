@@ -777,6 +777,26 @@ function generateAdminMessage(type, data) {
 
 🕐 *Time:* ${timestamp}`;
 
+    case 'withdrawal_approval_failed':
+      return `❌ *Withdrawal Approval Failed*
+
+🏦 *Details:*
+• User: \`${data.userId}\` (@${data.username})
+• Amount: ${data.amount} STON (${data.tonAmount} TON)
+• Wallet: \`${data.address}\`
+• Error: ${data.error}
+
+⚠️ User balance was NOT deducted.
+
+🕐 *Time:* ${timestamp}`;
+
+    case 'task_verification_log':
+      return `🔍 *Task Verification Log*
+
+${data.message}
+
+🕐 *Time:* ${timestamp}`;
+
     default:
       return null;
   }
@@ -840,6 +860,12 @@ Your friend joined SkyTON through your referral link!
 Keep sharing to earn more rewards! 🚀
 
 *Share your link:* https://t.me/${getBotUsername()}?start=refID${data.referrerId}`;
+
+    case 'task_status':
+      return data.message || 'Task status update';
+
+    case 'broadcast':
+      return data.message || 'Broadcast message';
 
     default:
       return null;
