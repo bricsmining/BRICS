@@ -675,6 +675,93 @@ function generateAdminMessage(type, data) {
 
 🕐 *Time:* ${timestamp}`;
 
+    case 'payment_created':
+      return `💳 *New Payment Request*
+
+👤 *User Details:*
+• User: \`${data.userId}\` (@${data.username})
+• Card: ${data.cardType}
+• Amount: ${data.amount} ${data.currency}
+
+🔗 *Payment Details:*
+• Order ID: \`${data.orderId}\`
+• Payment ID: \`${data.paymentId}\`
+• Payment URL: [Click to pay](${data.paymentUrl})
+
+⏳ Payment is awaiting completion...
+
+🕐 *Time:* ${timestamp}`;
+
+    case 'payment_completed':
+      return `✅ *Payment Completed!*
+
+💳 *Purchase Details:*
+• User: \`${data.userId}\` (@${data.username})
+• Card: ${data.cardType}
+• Amount: ${data.amount} ${data.currency}
+• Order ID: \`${data.orderId}\`
+• Payment ID: \`${data.paymentId}\`
+
+🎉 Mining card has been activated for the user!
+
+🕐 *Time:* ${timestamp}`;
+
+    case 'payment_failed':
+      return `❌ *Payment Failed!*
+
+💳 *Purchase Details:*
+• User: \`${data.userId}\` (@${data.username})
+• Card: ${data.cardType}
+• Amount: ${data.amount} ${data.currency}
+• Order ID: \`${data.orderId}\`
+• Payment ID: \`${data.paymentId}\`
+• Reason: ${data.reason}
+
+⚠️ No mining card was activated.
+
+🕐 *Time:* ${timestamp}`;
+
+    case 'payment_pending':
+      return `⏳ *Payment In Progress*
+
+💳 *Purchase Details:*
+• User: \`${data.userId}\` (@${data.username})
+• Card: ${data.cardType}
+• Amount: ${data.amount} ${data.currency}
+• Order ID: \`${data.orderId}\`
+• Payment ID: \`${data.paymentId}\`
+• Status: ${data.status}
+
+⏱️ Waiting for payment confirmation...
+
+🕐 *Time:* ${timestamp}`;
+
+    case 'payment_status_update':
+      return `🔄 *Payment Status Update*
+
+💳 *Purchase Details:*
+• User: \`${data.userId}\` (@${data.username})
+• Card: ${data.cardType}
+• Amount: ${data.amount} ${data.currency}
+• Order ID: \`${data.orderId}\`
+• Payment ID: \`${data.paymentId}\`
+• New Status: ${data.status}
+
+🕐 *Time:* ${timestamp}`;
+
+    case 'payment_webhook_unknown':
+      return `⚠️ *Unknown Payment Webhook*
+
+💳 *Payment Details:*
+• Order ID: \`${data.orderId}\`
+• Payment ID: \`${data.paymentId}\`
+• Amount: ${data.amount} ${data.currency}
+• Status: ${data.status}
+
+🔍 Purchase record not found in database.
+
+🕐 *Time:* ${timestamp}`;
+
     default:
       return null;
   }

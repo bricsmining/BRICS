@@ -6,6 +6,7 @@
 import { createPayment, getPaymentStatus, generateOrderId } from '../src/services/oxapayService.js';
 import { db } from '../src/lib/serverFirebase.js';
 import { doc, updateDoc, getDoc, setDoc, increment, serverTimestamp } from 'firebase/firestore';
+import { notifyAdminDirect } from './telegram-bot.js';
 
 export default async function handler(req, res) {
   // Extract the action from query parameter or body
@@ -118,6 +119,19 @@ async function handleCreatePayment(req, res) {
       expiresAt: paymentResult.data.expires_at ? new Date(paymentResult.data.expires_at) : null
     });
 
+    // Notify admin of new payment request
+    await notifyAdminDirect('payment_created', {
+      userId: userId,
+      username: username || 'Unknown',
+      cardNumber: cardNumber,
+      cardType: `Card ${cardNumber}`,
+      amount: cryptoAmount,
+      currency: currency,
+      orderId: orderId,
+      paymentId: paymentResult.data.payment_id,
+      paymentUrl: paymentResult.data.payment_url
+    });
+
     return res.status(200).json({
       success: true,
       data: {
@@ -225,12 +239,15 @@ async function handleWebhook(req, res) {
       status, payment_id, order_id, amount, currency
     });
 
-    // Update purchase status
+    // Update purchase status and notify admin
     if (order_id) {
       const purchaseRef = doc(db, 'purchases', order_id);
       const purchaseDoc = await getDoc(purchaseRef);
 
       if (purchaseDoc.exists()) {
+        const purchase = purchaseDoc.data();
+        
+        // Update purchase status
         await updateDoc(purchaseRef, {
           status: status,
           finalAmount: amount,
@@ -239,17 +256,86 @@ async function handleWebhook(req, res) {
           updatedAt: serverTimestamp()
         });
 
-        // If payment completed, activate the mining card
-        if (status === 'completed' || status === 'confirmed') {
-          const purchase = purchaseDoc.data();
-          const userRef = doc(db, 'users', purchase.userId);
-          
-          // Add mining card to user
-          await updateDoc(userRef, {
-            [`cards.card${purchase.cardNumber}`]: increment(1),
-            lastPurchase: serverTimestamp()
-          });
+        // Notify admin based on payment status
+        switch (status) {
+          case 'completed':
+          case 'confirmed':
+            // Add mining card to user
+            const userRef = doc(db, 'users', purchase.userId);
+            await updateDoc(userRef, {
+              [`cards.card${purchase.cardNumber}`]: increment(1),
+              lastPurchase: serverTimestamp()
+            });
+
+            // Notify admin of successful payment
+            await notifyAdminDirect('payment_completed', {
+              userId: purchase.userId,
+              username: purchase.username || 'Unknown',
+              cardNumber: purchase.cardNumber,
+              cardType: `Card ${purchase.cardNumber}`,
+              amount: amount,
+              currency: currency,
+              orderId: order_id,
+              paymentId: payment_id
+            });
+            break;
+
+          case 'failed':
+          case 'cancelled':
+          case 'expired':
+            // Notify admin of failed payment
+            await notifyAdminDirect('payment_failed', {
+              userId: purchase.userId,
+              username: purchase.username || 'Unknown',
+              cardNumber: purchase.cardNumber,
+              cardType: `Card ${purchase.cardNumber}`,
+              amount: amount,
+              currency: currency,
+              orderId: order_id,
+              paymentId: payment_id,
+              reason: status
+            });
+            break;
+
+          case 'pending':
+          case 'waiting':
+            // Notify admin of payment in progress
+            await notifyAdminDirect('payment_pending', {
+              userId: purchase.userId,
+              username: purchase.username || 'Unknown',
+              cardNumber: purchase.cardNumber,
+              cardType: `Card ${purchase.cardNumber}`,
+              amount: amount,
+              currency: currency,
+              orderId: order_id,
+              paymentId: payment_id,
+              status: status
+            });
+            break;
+
+          default:
+            // Notify admin of other status updates
+            await notifyAdminDirect('payment_status_update', {
+              userId: purchase.userId,
+              username: purchase.username || 'Unknown',
+              cardNumber: purchase.cardNumber,
+              cardType: `Card ${purchase.cardNumber}`,
+              amount: amount,
+              currency: currency,
+              orderId: order_id,
+              paymentId: payment_id,
+              status: status
+            });
         }
+      } else {
+        // Notify admin of webhook for unknown purchase
+        await notifyAdminDirect('payment_webhook_unknown', {
+          orderId: order_id,
+          paymentId: payment_id,
+          amount: amount,
+          currency: currency,
+          status: status
+        });
       }
     }
 
