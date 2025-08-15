@@ -6,6 +6,7 @@ import { collection, getDocs, query, orderBy, limit, doc, updateDoc, increment, 
 // Re-export initialization
 export { initializeAppData } from '@/data/storeInitialization';
 
+
 // Re-export all named exports from individual stores
 export * from '@/data/userStore';
 export * from '@/data/taskStore';
