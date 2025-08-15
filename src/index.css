@@ -1,4 +1,3 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -200,7 +199,7 @@
 
 /* ===================== GLASS MORPHISM CARDS ===================== */
 .glass-card {
-  background: rgba(30, 41, 59, 0.4);
+  background: rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(16px) saturate(180%);
   -webkit-backdrop-filter: blur(16px) saturate(180%);
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -211,6 +210,8 @@
     inset 0 -1px 0 rgba(255, 255, 255, 0.05);
   position: relative;
   overflow: hidden;
+  /* Preserve text colors */
+  color: inherit;
 }
 
 .glass-card::before {
@@ -224,7 +225,7 @@
 }
 
 .glass-card:hover {
-  background: rgba(30, 41, 59, 0.5);
+  background: rgba(255, 255, 255, 0.08);
   border-color: rgba(255, 255, 255, 0.15);
   transform: translateY(-2px);
   transition: all 0.3s ease;
@@ -232,24 +233,57 @@
     0 12px 40px rgba(0, 0, 0, 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.15),
     inset 0 -1px 0 rgba(255, 255, 255, 0.1);
+  /* Preserve text colors on hover */
+  color: inherit;
 }
 
 /* Enhanced glass card variants for admin panel consistency */
 .glass-card-admin {
   @apply bg-white/5 backdrop-blur-md border border-white/10 shadow-xl rounded-xl;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  color: inherit;
 }
 
 .glass-card-content {
   @apply bg-muted/60 border border-border/70 rounded-lg shadow-lg;
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
+  color: inherit;
 }
 
 .glass-info-panel {
   @apply bg-blue-900/40 border border-blue-500/60 rounded-lg shadow-lg;
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
+  color: inherit;
+}
+
+/* Ensure form elements maintain proper styling within glass cards */
+.glass-card input,
+.glass-card textarea,
+.glass-card select,
+.glass-card button {
+  color: inherit;
+}
+
+.glass-card input::placeholder,
+.glass-card textarea::placeholder {
+  color: rgba(156, 163, 175, 0.8); /* gray-400 with opacity */
+}
+
+/* Preserve navigation and button text colors */
+.glass-card .nav-button,
+.glass-card .btn,
+.glass-card button {
+  color: inherit;
+}
+
+/* Ensure labels and text maintain visibility */
+.glass-card label,
+.glass-card p,
+.glass-card span,
+.glass-card div {
+  color: inherit;
 }
 
 /* ===================== PROFILE SECTION FIXES ===================== */
