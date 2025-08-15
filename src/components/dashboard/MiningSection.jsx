@@ -27,53 +27,55 @@ import { useToast } from '@/components/ui/use-toast';
 import { updateCurrentUser, getCurrentUser } from '@/data/userStore';
 import { getPurchasableBalance, deductPurchasableBalance, updateUserBalanceByType } from '@/data';
 import { Timestamp } from 'firebase/firestore';
+import { getAdminConfig } from '@/data/firestore/adminConfig';
 import PurchaseDialog from './PurchaseDialog';
 import PaymentModal from './PaymentModal';
 
-// Exchange rate from ProfileSection (TON to STON)
-const TON_TO_STON_RATE = 10000000; // 1 TON = 10,000,000 STON
-
-// Individual card configurations - each card has its own mining rate and validity
-const INDIVIDUAL_CARDS = {
-  1: {
-    id: 1,
-    name: 'Basic Miner Card',
-    ratePerHour: 150,     // Individual card mining rate
-    cryptoPrice: 0.1,     // Price in TON
-    validityDays: 7,      // 7 days validity
-    description: '7 days validity',
-    color: 'from-blue-600 to-blue-700',
-    icon: Axe,
-    get price() {
-      return this.cryptoPrice * TON_TO_STON_RATE; // Dynamic STON price based on exchange rate
+// Get individual card configurations from admin config
+const getIndividualCards = (adminConfig) => {
+  const tonToStonRate = 1 / (adminConfig?.stonToTonRate || 0.0000001); // Convert TON to STON
+  
+  return {
+    1: {
+      id: 1,
+      name: 'Basic Miner Card',
+      ratePerHour: adminConfig?.card1RatePerHour || 150,
+      cryptoPrice: adminConfig?.card1CryptoPrice || 0.1,
+      validityDays: adminConfig?.card1ValidityDays || 7,
+      description: `${adminConfig?.card1ValidityDays || 7} days validity`,
+      color: 'from-blue-600 to-blue-700',
+      icon: Axe,
+      get price() {
+        return this.cryptoPrice * tonToStonRate;
+      }
+    },
+    2: {
+      id: 2,
+      name: 'Advanced Miner Card', 
+      ratePerHour: adminConfig?.card2RatePerHour || 250,
+      cryptoPrice: adminConfig?.card2CryptoPrice || 0.25,
+      validityDays: adminConfig?.card2ValidityDays || 15,
+      description: `${adminConfig?.card2ValidityDays || 15} days validity`,
+      color: 'from-purple-600 to-purple-700',
+      icon: Database,
+      get price() {
+        return this.cryptoPrice * tonToStonRate;
+      }
+    },
+    3: {
+      id: 3,
+      name: 'Pro Miner Card',
+      ratePerHour: adminConfig?.card3RatePerHour || 600,
+      cryptoPrice: adminConfig?.card3CryptoPrice || 0.5,
+      validityDays: adminConfig?.card3ValidityDays || 30,
+      description: `${adminConfig?.card3ValidityDays || 30} days validity`,
+      color: 'from-yellow-600 to-orange-600',
+      icon: Star,
+      get price() {
+        return this.cryptoPrice * tonToStonRate;
+      }
     }
-  },
-  2: {
-    id: 2,
-    name: 'Advanced Miner Card', 
-    ratePerHour: 250,     // Individual card mining rate
-    cryptoPrice: 0.25,    // Price in TON
-    validityDays: 15,     // 15 days validity
-    description: '15 days validity',
-    color: 'from-purple-600 to-purple-700',
-    icon: Database,
-    get price() {
-      return this.cryptoPrice * TON_TO_STON_RATE; // Dynamic STON price based on exchange rate
-    }
-  },
-  3: {
-    id: 3,
-    name: 'Pro Miner Card',
-    ratePerHour: 600,     // Individual card mining rate  
-    cryptoPrice: 0.5,     // Price in TON
-    validityDays: 30,     // 30 days validity
-    description: '30 days validity',
-    color: 'from-yellow-600 to-orange-600',
-    icon: Star,
-    get price() {
-      return this.cryptoPrice * TON_TO_STON_RATE; // Dynamic STON price based on exchange rate
-    }
-  }
+  };
 };
 
 // Mining level names based on cards owned
@@ -144,6 +146,27 @@ const MiningSection = ({ user, refreshUserData }) => {
   const [confirmPurchaseData, setConfirmPurchaseData] = useState(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentData, setPaymentData] = useState(null);
+  const [adminConfig, setAdminConfig] = useState(null);
+
+  // Get dynamic card configurations based on admin config
+  const INDIVIDUAL_CARDS = useMemo(() => {
+    return adminConfig ? getIndividualCards(adminConfig) : getIndividualCards({});
+  }, [adminConfig]);
+
+  // Load admin config on component mount
+  useEffect(() => {
+    const loadAdminConfig = async () => {
+      try {
+        const config = await getAdminConfig();
+        setAdminConfig(config);
+      } catch (error) {
+        console.error('Error loading admin config:', error);
+        setAdminConfig({}); // Use default values
+      }
+    };
+
+    loadAdminConfig();
+  }, []);
 
   // Timer for updating countdown every second
   useEffect(() => {

@@ -148,7 +148,7 @@ const PurchaseDialog = ({ isOpen, onClose, cardPrice, cardNumber, currentBalance
           amount: cryptoAmount,
           currency: 'TON',
           orderId,
-          description: `${INDIVIDUAL_CARDS[cardNumber]?.name || `Card ${cardNumber}`} Purchase`,
+          description: `${cardConfigs[cardNumber]?.name || `Card ${cardNumber}`} Purchase`,
           callbackUrl: `${window.location.origin}/api/oxapay?action=webhook`,
           returnUrl: `${window.location.origin}/mining?payment=return`,
           userId: user.id,
@@ -261,15 +261,15 @@ const PurchaseDialog = ({ isOpen, onClose, cardPrice, cardNumber, currentBalance
         </button>
 
         <h2 className="text-xl font-bold mb-4 text-center">
-          Purchase {INDIVIDUAL_CARDS[cardNumber]?.name || `Card ${cardNumber || 1}`}
+          Purchase {cardConfigs[cardNumber]?.name || `Card ${cardNumber || 1}`}
         </h2>
-        {cardNumber && INDIVIDUAL_CARDS[cardNumber] && (
+        {cardNumber && cardConfigs[cardNumber] && (
           <div className="text-center mb-4">
             <p className="text-sm text-gray-300">
-              {INDIVIDUAL_CARDS[cardNumber].name} - {INDIVIDUAL_CARDS[cardNumber].description}
+              {cardConfigs[cardNumber].name} - {cardConfigs[cardNumber].description}
             </p>
             <p className="text-xs text-gray-400">
-              {INDIVIDUAL_CARDS[cardNumber].ratePerHour.toLocaleString()} STON/hour mining rate
+              {cardConfigs[cardNumber].ratePerHour.toLocaleString()} STON/hour mining rate
             </p>
           </div>
         )}
@@ -289,9 +289,9 @@ const PurchaseDialog = ({ isOpen, onClose, cardPrice, cardNumber, currentBalance
               <p className="text-sm font-bold mt-1">
                 {cardPrice?.toLocaleString()} STON
               </p>
-              {cardNumber && INDIVIDUAL_CARDS[cardNumber] && (
+              {cardNumber && cardConfigs[cardNumber] && (
                 <p className="text-xs text-gray-400 mt-1">
-                  {INDIVIDUAL_CARDS[cardNumber].description}
+                  {cardConfigs[cardNumber].description}
                 </p>
               )}
             </button>
@@ -309,9 +309,9 @@ const PurchaseDialog = ({ isOpen, onClose, cardPrice, cardNumber, currentBalance
               <p className="text-sm font-bold mt-1">
                 {cryptoAmount ? `${cryptoAmount} TON` : '...'} 
               </p>
-              {cardNumber && INDIVIDUAL_CARDS[cardNumber] && (
+              {cardNumber && cardConfigs[cardNumber] && (
                 <p className="text-xs text-gray-400 mt-1">
-                  {INDIVIDUAL_CARDS[cardNumber].description}
+                  {cardConfigs[cardNumber].description}
                 </p>
               )}
             </button>
