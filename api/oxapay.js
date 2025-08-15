@@ -3,19 +3,9 @@
  * Handles all OxaPay-related operations in one endpoint
  */
 
-// Import all the individual handlers
-import createPaymentHandler from './oxapay/create-payment.js';
-import checkPaymentHandler from './oxapay/check-payment.js';
-import webhookHandler from './oxapay/webhook.js';
-import payoutHandler from './oxapay/payout.js';
-import payoutWebhookHandler from './oxapay/payout-webhook.js';
-import statusHandler from './oxapay/status.js';
-
-// Additional imports for callback handler
-import { verifyWebhookSignature } from '../src/services/oxapayService.js';
-import { db } from '../src/lib/firebase.js';
-import { doc, updateDoc, getDoc, increment } from 'firebase/firestore';
-import { sendAdminNotification } from '../src/lib/telegramUtils.js';
+import { createPayment, getPaymentStatus, generateOrderId } from '../src/services/oxapayService.js';
+import { db } from '../src/lib/serverFirebase.js';
+import { doc, updateDoc, getDoc, setDoc, increment, serverTimestamp } from 'firebase/firestore';
 
 export default async function handler(req, res) {
   // Extract the action from query parameter or body
@@ -24,27 +14,16 @@ export default async function handler(req, res) {
   try {
     switch (action) {
       case 'create-payment':
-        return await createPaymentHandler(req, res);
+        return await handleCreatePayment(req, res);
       
       case 'check-payment':
-        return await checkPaymentHandler(req, res);
+        return await handleCheckPayment(req, res);
       
       case 'webhook':
-        return await webhookHandler(req, res);
-      
-      case 'payout':
-        return await payoutHandler(req, res);
-      
-      case 'payout-webhook':
-        return await payoutWebhookHandler(req, res);
+        return await handleWebhook(req, res);
       
       case 'status':
-        return await statusHandler(req, res);
-      
-      case 'create-withdrawal':
-        // Import dynamically to avoid loading all handlers
-        const createWithdrawalHandler = await import('./oxapay/create-withdrawal.js');
-        return await createWithdrawalHandler.default(req, res);
+        return await handleStatus(req, res);
       
       case 'callback':
         return await handleCallback(req, res);
@@ -56,10 +35,7 @@ export default async function handler(req, res) {
             'create-payment', 
             'check-payment', 
             'webhook', 
-            'payout', 
-            'payout-webhook', 
-            'status', 
-            'create-withdrawal',
+            'status',
             'callback'
           ]
         });
@@ -73,192 +49,227 @@ export default async function handler(req, res) {
   }
 }
 
-// Callback handler (from oxapay-callback.js)
-async function handleCallback(req, res) {
+// Create payment handler
+async function handleCreatePayment(req, res) {
   if (req.method !== 'POST') {
-    return res.status(405).json({ message: 'Method not allowed' });
+    return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const OXAPAY_SECRET = process.env.VITE_OXAPAY_SECRET_KEY;
-
   try {
-    const signature = req.headers['oxapay-signature'];
-    const payload = JSON.stringify(req.body);
-    
-    // Verify webhook signature
-    if (!verifyWebhookSignature(payload, signature, OXAPAY_SECRET)) {
-      console.error('Invalid webhook signature');
-      return res.status(401).json({ message: 'Invalid signature' });
+    const { userId, username, cardNumber, currency = 'TON' } = req.body;
+
+    if (!userId || !cardNumber) {
+      return res.status(400).json({ 
+        error: 'Missing required fields: userId, cardNumber' 
+      });
     }
 
-    const {
-      status,
-      payment_id,
-      order_id,
-      amount,
-      currency,
-      address,
-      customer_id,
-      metadata
-    } = req.body;
+    // Get admin config to get card prices
+    const adminConfigRef = doc(db, 'admin', 'config');
+    const adminConfigSnap = await getDoc(adminConfigRef);
+    
+    if (!adminConfigSnap.exists()) {
+      return res.status(500).json({ error: 'Admin config not found' });
+    }
 
-    console.log('Received Oxapay webhook:', {
-      status,
-      payment_id,
-      order_id,
-      amount,
-      currency
+    const adminConfig = adminConfigSnap.data();
+    
+    // Get card price from admin config
+    const cardPriceField = `card${cardNumber}CryptoPrice`;
+    const cryptoAmount = adminConfig[cardPriceField] || (cardNumber === 1 ? 0.1 : cardNumber === 2 ? 0.25 : 0.5);
+
+    // Generate order ID
+    const orderId = generateOrderId('card');
+    
+    // Create payment request
+    const paymentResult = await createPayment({
+      amount: cryptoAmount,
+      currency: currency,
+      orderId: orderId,
+      description: `Card ${cardNumber} Purchase`,
+      callbackUrl: `${req.headers.origin || 'https://skyton.vercel.app'}/api/oxapay?action=webhook`,
+      returnUrl: `${req.headers.origin || 'https://skyton.vercel.app'}/mining?payment=return`,
+      userId: userId,
+      userEmail: `user${userId}@skyton.app`
     });
 
-    // Handle different order types
-    if (order_id.startsWith('withdrawal_')) {
-      await handleWithdrawalCallback({
-        status,
-        payment_id,
-        order_id,
-        amount,
-        currency,
-        address,
-        customer_id,
-        metadata
+    if (!paymentResult.success) {
+      console.error('Failed to create payment:', paymentResult.error);
+      return res.status(500).json({ 
+        error: 'Failed to create payment',
+        details: paymentResult.error 
       });
-    } else if (order_id.startsWith('purchase_')) {
-      await handlePurchaseCallback({
-        status,
-        payment_id,
-        order_id,
-        amount,
-        currency,
-        customer_id,
-        metadata
+    }
+
+    // Store purchase record in Firebase
+    const purchaseRef = doc(db, 'purchases', orderId);
+    await setDoc(purchaseRef, {
+      orderId: orderId,
+      userId: userId,
+      username: username || '',
+      cardNumber: cardNumber,
+      cardType: `card${cardNumber}`,
+      amount: cryptoAmount,
+      currency: currency,
+      status: 'pending',
+      paymentId: paymentResult.data.payment_id,
+      paymentUrl: paymentResult.data.payment_url,
+      createdAt: serverTimestamp(),
+      expiresAt: paymentResult.data.expires_at ? new Date(paymentResult.data.expires_at) : null
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        payment_url: paymentResult.data.payment_url,
+        payment_id: paymentResult.data.payment_id,
+        order_id: orderId,
+        amount: cryptoAmount,
+        currency: currency,
+        expires_at: paymentResult.data.expires_at
+      }
+    });
+
+  } catch (error) {
+    console.error('Error in handleCreatePayment:', error);
+    return res.status(500).json({ 
+      error: 'Internal server error',
+      details: error.message 
+    });
+  }
+}
+
+// Check payment status handler
+async function handleCheckPayment(req, res) {
+  if (req.method !== 'GET' && req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  try {
+    const { paymentId, orderId } = req.method === 'GET' ? req.query : req.body;
+
+    if (!paymentId && !orderId) {
+      return res.status(400).json({ 
+        error: 'Missing required field: paymentId or orderId' 
       });
+    }
+
+    let purchaseDoc;
+    
+    if (orderId) {
+      // Find by order ID
+      const purchaseRef = doc(db, 'purchases', orderId);
+      purchaseDoc = await getDoc(purchaseRef);
     } else {
-      console.warn('Unknown order type:', order_id);
+      // Find by payment ID (would need a query - simplified for now)
+      return res.status(400).json({ 
+        error: 'Please provide orderId for status check' 
+      });
+    }
+
+    if (!purchaseDoc.exists()) {
+      return res.status(404).json({ error: 'Purchase not found' });
+    }
+
+    const purchase = purchaseDoc.data();
+    
+    // Check status with OxaPay if still pending
+    if (purchase.status === 'pending' && purchase.paymentId) {
+      const statusResult = await getPaymentStatus(purchase.paymentId);
+      
+      if (statusResult.success) {
+        // Update local status if changed
+        const newStatus = statusResult.data.status;
+        if (newStatus !== purchase.status) {
+          await updateDoc(purchaseDoc.ref, {
+            status: newStatus,
+            updatedAt: serverTimestamp()
+          });
+          purchase.status = newStatus;
+        }
+      }
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        order_id: purchase.orderId,
+        payment_id: purchase.paymentId,
+        status: purchase.status,
+        amount: purchase.amount,
+        currency: purchase.currency,
+        created_at: purchase.createdAt,
+        updated_at: purchase.updatedAt
+      }
+    });
+
+  } catch (error) {
+    console.error('Error in handleCheckPayment:', error);
+    return res.status(500).json({ 
+      error: 'Internal server error',
+      details: error.message 
+    });
+  }
+}
+
+// Simple webhook handler
+async function handleWebhook(req, res) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  try {
+    const { status, payment_id, order_id, amount, currency } = req.body;
+
+    console.log('Received OxaPay webhook:', {
+      status, payment_id, order_id, amount, currency
+    });
+
+    // Update purchase status
+    if (order_id) {
+      const purchaseRef = doc(db, 'purchases', order_id);
+      const purchaseDoc = await getDoc(purchaseRef);
+
+      if (purchaseDoc.exists()) {
+        await updateDoc(purchaseRef, {
+          status: status,
+          finalAmount: amount,
+          finalCurrency: currency,
+          completedAt: status === 'completed' ? serverTimestamp() : null,
+          updatedAt: serverTimestamp()
+        });
+
+        // If payment completed, activate the mining card
+        if (status === 'completed' || status === 'confirmed') {
+          const purchase = purchaseDoc.data();
+          const userRef = doc(db, 'users', purchase.userId);
+          
+          // Add mining card to user
+          await updateDoc(userRef, {
+            [`cards.card${purchase.cardNumber}`]: increment(1),
+            lastPurchase: serverTimestamp()
+          });
+        }
+      }
     }
 
     return res.status(200).json({ success: true });
   } catch (error) {
-    console.error('Webhook handler error:', error);
-    await sendAdminNotification(`🚨 Oxapay Webhook Error: ${error.message}`);
-    return res.status(500).json({ message: 'Internal server error' });
+    console.error('Error in handleWebhook:', error);
+    return res.status(500).json({ error: 'Internal server error' });
   }
 }
 
-async function handleWithdrawalCallback({
-  status,
-  payment_id,
-  order_id,
-  amount,
-  currency,
-  address,
-  customer_id,
-  metadata
-}) {
-  const withdrawalId = metadata?.withdrawal_id || order_id.split('_')[1];
-  const withdrawalRef = doc(db, 'withdrawals', withdrawalId);
-  const withdrawalDoc = await getDoc(withdrawalRef);
-
-  if (!withdrawalDoc.exists()) {
-    throw new Error(`Withdrawal ${withdrawalId} not found`);
-  }
-
-  const withdrawal = withdrawalDoc.data();
-  const userRef = doc(db, 'users', withdrawal.userId);
-
-  // Update withdrawal status
-  await updateDoc(withdrawalRef, {
-    status: status,
-    oxapayPaymentId: payment_id,
-    completedAt: status === 'completed' ? new Date() : null,
-    updatedAt: new Date(),
-    finalAmount: amount,
-    finalCurrency: currency
+// Status handler
+async function handleStatus(req, res) {
+  return res.status(200).json({ 
+    status: 'OK',
+    service: 'OxaPay API Handler',
+    timestamp: new Date().toISOString()
   });
-
-  // Handle different statuses
-  switch (status) {
-    case 'completed':
-    case 'confirmed':
-      await sendAdminNotification(
-        `✅ Withdrawal Completed\nUser: ${customer_id}\nAmount: ${amount} ${currency}`
-      );
-      break;
-
-    case 'failed':
-    case 'cancelled':
-      // Refund user's balance
-      await updateDoc(userRef, {
-        balance: increment(withdrawal.stonAmount)
-      });
-      
-      await sendAdminNotification(
-        `❌ Withdrawal Failed\nUser: ${customer_id}\nAmount: ${amount} ${currency}\nReason: ${status}`
-      );
-      break;
-
-    default:
-      await sendAdminNotification(
-        `ℹ️ Withdrawal Status Update\nUser: ${customer_id}\nStatus: ${status}\nAmount: ${amount} ${currency}`
-      );
-  }
 }
 
-async function handlePurchaseCallback({
-  status,
-  payment_id,
-  order_id,
-  amount,
-  currency,
-  customer_id,
-  metadata
-}) {
-  const purchaseId = metadata?.purchase_id || order_id.split('_')[1];
-  const purchaseRef = doc(db, 'purchases', purchaseId);
-  const purchaseDoc = await getDoc(purchaseRef);
-
-  if (!purchaseDoc.exists()) {
-    throw new Error(`Purchase ${purchaseId} not found`);
-  }
-
-  const purchase = purchaseDoc.data();
-  const userRef = doc(db, 'users', purchase.userId);
-
-  // Update purchase status
-  await updateDoc(purchaseRef, {
-    status: status,
-    oxapayPaymentId: payment_id,
-    completedAt: status === 'completed' ? new Date() : null,
-    updatedAt: new Date(),
-    finalAmount: amount,
-    finalCurrency: currency
-  });
-
-  // Handle different statuses
-  switch (status) {
-    case 'completed':
-    case 'confirmed':
-      // Update user's mining power and card inventory
-      await updateDoc(userRef, {
-        miningPower: increment(purchase.miningPower),
-        [`cards.${purchase.cardType}`]: increment(1),
-        lastPurchase: new Date()
-      });
-
-      await sendAdminNotification(
-        `✅ Mining Card Purchase Completed\nUser: ${customer_id}\nCard: ${purchase.cardType}\nAmount: ${amount} ${currency}`
-      );
-      break;
-
-    case 'failed':
-    case 'cancelled':
-      await sendAdminNotification(
-        `❌ Mining Card Purchase Failed\nUser: ${customer_id}\nCard: ${purchase.cardType}\nAmount: ${amount} ${currency}\nReason: ${status}`
-      );
-      break;
-
-    default:
-      await sendAdminNotification(
-        `ℹ️ Purchase Status Update\nUser: ${customer_id}\nStatus: ${status}\nAmount: ${amount} ${currency}`
-      );
-  }
+// Callback handler - redirects to webhook handler for simplicity
+async function handleCallback(req, res) {
+  return await handleWebhook(req, res);
 }
