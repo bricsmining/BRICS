@@ -30,7 +30,7 @@ import {
 import { useToast } from '@/components/ui/use-toast';
 import { 
   getAdminConfig, 
-  updateAdminConfig,
+  updateAdminConfig, 
   getEnvConfig
 } from '@/data/firestore/adminConfig';
 
@@ -728,16 +728,16 @@ const AdminSettings = ({ adminData }) => {
         </Card>
 
         {/* Card 3 */}
-        <Card className="shadow-xl">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-white">
+      <Card className="shadow-xl">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-white">
               <Zap className="w-5 h-5 text-purple-400" />
               Mining Card 3
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <label className="text-sm font-medium text-gray-300 mb-2 block">
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <label className="text-sm font-medium text-gray-300 mb-2 block">
                 Rate per Hour (STON)
               </label>
               <Input
@@ -752,7 +752,7 @@ const AdminSettings = ({ adminData }) => {
             <div>
               <label className="text-sm font-medium text-gray-300 mb-2 block">
                 Price (TON)
-              </label>
+            </label>
               <Input
                 type="number"
                 step="0.01"
@@ -760,9 +760,9 @@ const AdminSettings = ({ adminData }) => {
                 onChange={(e) => updateConfigField('card3CryptoPrice', parseFloat(e.target.value))}
                 className="bg-input border-border focus:border-blue-500 focus:bg-input/80 text-white"
                 placeholder="0.5"
-              />
-            </div>
-            
+            />
+          </div>
+          
             <div>
               <label className="text-sm font-medium text-gray-300 mb-2 block">
                 Validity (Days)
@@ -774,9 +774,9 @@ const AdminSettings = ({ adminData }) => {
                 className="bg-input border-border focus:border-blue-500 focus:bg-input/80 text-white"
                 placeholder="30"
               />
-            </div>
-          </CardContent>
-        </Card>
+          </div>
+        </CardContent>
+      </Card>
       </div>
     </div>
   );
