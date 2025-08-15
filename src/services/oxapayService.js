@@ -3,7 +3,7 @@
  * Handles all interactions with Oxapay API for payments and withdrawals
  */
 
-// Get API keys from environment variables
+// Get API keys from environment variables (client-side only - server uses api/oxapay.js)
 const OXAPAY_MERCHANT_API_KEY = import.meta.env.VITE_OXAPAY_MERCHANT_API_KEY;
 const OXAPAY_PAYOUT_API_KEY = import.meta.env.VITE_OXAPAY_PAYOUT_API_KEY;
 const OXAPAY_BASE_URL = 'https://api.oxapay.com';

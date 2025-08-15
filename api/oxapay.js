@@ -3,10 +3,223 @@
  * Handles all OxaPay-related operations in one endpoint
  */
 
-import { createPayment, getPaymentStatus, createPayout, getPayoutStatus, generateOrderId } from '../src/services/oxapayService.js';
+// Note: Import replaced with inline functions to avoid server/client compatibility issues
 import { db } from '../src/lib/serverFirebase.js';
 import { doc, updateDoc, getDoc, setDoc, increment, serverTimestamp } from 'firebase/firestore';
 import { notifyAdminDirect } from './telegram-bot.js';
+
+// OxaPay API configuration
+const OXAPAY_MERCHANT_API_KEY = process.env.VITE_OXAPAY_MERCHANT_API_KEY;
+const OXAPAY_PAYOUT_API_KEY = process.env.VITE_OXAPAY_PAYOUT_API_KEY;
+const OXAPAY_BASE_URL = 'https://api.oxapay.com';
+
+// Supported cryptocurrencies
+const SUPPORTED_CRYPTOS = {
+  TON: {
+    symbol: 'TON',
+    name: 'Toncoin',
+    network: 'TON',
+    decimals: 9,
+    minAmount: 0.1,
+    maxAmount: 10
+  },
+  USDT: {
+    symbol: 'USDT',
+    name: 'Tether USD',
+    network: 'TON',
+    decimals: 6,
+    minAmount: 1,
+    maxAmount: 50000
+  }
+};
+
+// Base OxaPay API request function
+const makeOxapayRequest = async (endpoint, method = 'GET', data = null, usePayoutKey = false) => {
+  const url = `${OXAPAY_BASE_URL}${endpoint}`;
+  
+  const apiKey = usePayoutKey ? OXAPAY_PAYOUT_API_KEY : OXAPAY_MERCHANT_API_KEY;
+  const apiKeyHeader = usePayoutKey ? 'payout_api_key' : 'merchant_api_key';
+  
+  const config = {
+    method,
+    headers: {
+      'Content-Type': 'application/json',
+      [apiKeyHeader]: apiKey,
+    },
+  };
+
+  if (data && (method === 'POST' || method === 'PUT')) {
+    config.body = JSON.stringify(data);
+  }
+
+  try {
+    console.log(`Making OxaPay ${method} request to:`, url);
+    console.log('Request data:', JSON.stringify(data, null, 2));
+
+    const response = await fetch(url, config);
+    const responseData = await response.json();
+
+    console.log('OxaPay response status:', response.status);
+    console.log('OxaPay response data:', JSON.stringify(responseData, null, 2));
+
+    if (!response.ok || responseData.status !== 200) {
+      const errorMessage = responseData.message || 'Unknown error';
+      const statusCode = responseData.status || response.status;
+      
+      console.error('OxaPay API Error Details:', {
+        httpStatus: response.status,
+        apiStatus: responseData.status,
+        message: responseData.message,
+        error: responseData.error,
+        fullResponse: responseData
+      });
+      
+      throw new Error(`OxaPay API error: ${statusCode} - ${errorMessage}`);
+    }
+
+    return {
+      success: true,
+      data: responseData.data,
+      status: response.status
+    };
+  } catch (error) {
+    console.error('OxaPay API request failed:', error);
+    return {
+      success: false,
+      error: error.message,
+      status: error.status || 500
+    };
+  }
+};
+
+// Generate unique order ID
+const generateOrderId = (prefix = 'ORD') => {
+  const timestamp = Date.now();
+  const random = Math.random().toString(36).substring(2, 8).toUpperCase();
+  return `${prefix}_${timestamp}_${random}`;
+};
+
+// Create payment invoice
+const createPayment = async (paymentData) => {
+  const {
+    amount,
+    currency = 'TON',
+    orderId,
+    description,
+    callbackUrl,
+    returnUrl,
+    userEmail,
+    userId
+  } = paymentData;
+
+  const cryptoConfig = SUPPORTED_CRYPTOS[currency];
+  if (!cryptoConfig) {
+    return {
+      success: false,
+      error: `Unsupported currency: ${currency}`
+    };
+  }
+
+  if (amount < cryptoConfig.minAmount || amount > cryptoConfig.maxAmount) {
+    return {
+      success: false,
+      error: `Amount must be between ${cryptoConfig.minAmount} and ${cryptoConfig.maxAmount} ${currency}`
+    };
+  }
+
+  const requestData = {
+    amount: parseFloat(amount),
+    currency: currency.toUpperCase(),
+    lifetime: 60,
+    fee_paid_by_payer: 1,
+    under_paid_coverage: 2.5,
+    auto_withdrawal: false,
+    mixed_payment: false,
+    callback_url: callbackUrl,
+    return_url: returnUrl,
+    email: userEmail || `user${userId}@skyton.app`,
+    order_id: orderId,
+    thanks_message: `Thank you for your ${currency} payment! Your mining card will be activated shortly.`,
+    description: description || `Mining Card Purchase - Order ${orderId}`,
+    sandbox: false
+  };
+
+  // Remove undefined values
+  Object.keys(requestData).forEach(key => {
+    if (requestData[key] === undefined || requestData[key] === null || requestData[key] === '') {
+      delete requestData[key];
+    }
+  });
+
+  return await makeOxapayRequest('/v1/payment/invoice', 'POST', requestData, false);
+};
+
+// Create payout
+const createPayout = async (payoutData) => {
+  const {
+    address,
+    amount,
+    currency = 'TON',
+    network,
+    description,
+    callbackUrl,
+    memo
+  } = payoutData;
+
+  const cryptoConfig = SUPPORTED_CRYPTOS[currency];
+  if (!cryptoConfig) {
+    return {
+      success: false,
+      error: `Unsupported currency: ${currency}`
+    };
+  }
+
+  const requestData = {
+    address: address,
+    currency: currency.toUpperCase(),
+    amount: parseFloat(amount),
+    network: network || cryptoConfig.network,
+    callback_url: callbackUrl,
+    description: description || `STON Withdrawal Payout`,
+  };
+
+  if (memo) {
+    requestData.memo = memo;
+  }
+
+  // Remove undefined values
+  Object.keys(requestData).forEach(key => {
+    if (requestData[key] === undefined || requestData[key] === null || requestData[key] === '') {
+      delete requestData[key];
+    }
+  });
+
+  return await makeOxapayRequest('/v1/payout', 'POST', requestData, true);
+};
+
+// Get payment status
+const getPaymentStatus = async (trackId) => {
+  if (!trackId) {
+    return {
+      success: false,
+      error: 'Track ID is required'
+    };
+  }
+
+  return await makeOxapayRequest(`/v1/payment/${trackId}`, 'GET', null, false);
+};
+
+// Get payout status
+const getPayoutStatus = async (trackId) => {
+  if (!trackId) {
+    return {
+      success: false,
+      error: 'Track ID is required'
+    };
+  }
+
+  return await makeOxapayRequest(`/v1/payout/${trackId}`, 'GET', null, true);
+};
 
 export default async function handler(req, res) {
   // Extract the action from query parameter or body
