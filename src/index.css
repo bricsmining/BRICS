@@ -25,14 +25,6 @@
     --input: 51 65 85;
     --ring: 262.1 83.3% 57.8%;
     --radius: 0.75rem;
-    
-    /* Enhanced color palette */
-    --warning: 45 93% 58%;
-    --warning-foreground: 26 83% 14%;
-    --success: 142 76% 36%;
-    --success-foreground: 355 7% 97%;
-    --info: 217 91% 60%;
-    --info-foreground: 210 40% 98%;
   }
 
   .dark {
@@ -55,14 +47,6 @@
     --border: 51 65 85;
     --input: 51 65 85;
     --ring: 262.1 83.3% 57.8%;
-    
-    /* Enhanced dark mode colors */
-    --warning: 48 96% 65%;
-    --warning-foreground: 20 14.3% 4.1%;
-    --success: 142 76% 45%;
-    --success-foreground: 355 7% 97%;
-    --info: 217 91% 70%;
-    --info-foreground: 222.2 84% 4.9%;
   }
 
   * {
@@ -70,9 +54,9 @@
   }
 
   html, body, #root {
-    height: auto;
-    min-height: 100vh;
-    overflow-x: hidden;
+  height: auto;
+  min-height: 100vh;
+  overflow-x: hidden;
   }
   
   body {
@@ -138,19 +122,17 @@
 .stondrop-ston {
   box-shadow: 
     0 0 15px rgba(34, 197, 94, 0.6), 
-    0 0 25px rgba(34, 197, 94, 0.4),
-    0 0 35px rgba(34, 197, 94, 0.2);
+    0 0 25px rgba(34, 197, 94, 0.4);
   border-radius: 50%;
-  background: radial-gradient(circle at 30% 30%, #4ade80, #22c55e, #16a34a);
+  background: radial-gradient(circle at 30% 30%, #4ade80, #22c55e);
 }
 
 .stondrop-bomb {
   box-shadow: 
     0 0 15px rgba(239, 68, 68, 0.6), 
-    0 0 25px rgba(239, 68, 68, 0.4),
-    0 0 35px rgba(239, 68, 68, 0.2);
+    0 0 25px rgba(239, 68, 68, 0.4);
   border-radius: 50%;
-  background: radial-gradient(circle at 30% 30%, #f87171, #ef4444, #dc2626);
+  background: radial-gradient(circle at 30% 30%, #f87171, #ef4444);
 }
 
 .stondrop-explosion-screen {
@@ -159,17 +141,17 @@
   background: radial-gradient(circle at center, rgba(239, 68, 68, 0.9) 0%, rgba(239, 68, 68, 0.6) 50%, rgba(239, 68, 68, 0.3) 100%);
   z-index: 20;
   pointer-events: none;
-  animation: explosionFlash 0.5s ease-out;
+  animation: flash 0.4s ease-out;
 }
 
-@keyframes explosionFlash {
+@keyframes flash {
   0% { 
     opacity: 0; 
-    transform: scale(0.8);
+    transform: scale(0.9);
   }
-  20% { 
+  30% { 
     opacity: 1; 
-    transform: scale(1.05);
+    transform: scale(1.02);
   }
   100% { 
     opacity: 0; 
@@ -208,15 +190,11 @@
   box-shadow: 0 4px 12px rgba(34, 197, 94, 0.4);
 }
 
-.stondrop-button:active {
-  transform: translateY(0);
-}
-
 .stondrop-lives {
-  color: #fbbf24;
+  color: #f97316;
   font-weight: 700;
-  text-shadow: 0 0 8px rgba(251, 191, 36, 0.5);
-  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+  text-shadow: 0 0 8px rgba(249, 115, 22, 0.5);
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -224,10 +202,10 @@
 }
 
 .stondrop-energy {
-  color: #38bdf8;
+  color: #8b5cf6;
   font-weight: 700;
-  text-shadow: 0 0 8px rgba(56, 189, 248, 0.5);
-  background: linear-gradient(135deg, #38bdf8 0%, #0ea5e9 100%);
+  text-shadow: 0 0 8px rgba(139, 92, 246, 0.5);
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -301,6 +279,12 @@
   background: linear-gradient(to bottom, #020617 0%, #1e293b 100%);
 }
 
+/*.no-scroll {
+  overflow: hidden;
+  touch-action: none;
+  overscroll-behavior: none;
+}*/
+
 .toast-solid {
   @apply bg-slate-800 text-white border border-slate-700 shadow-md;
 }
@@ -316,48 +300,3 @@
     0 8px 32px rgba(0, 0, 0, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
-
-/* ===================== ENHANCED STATUS INDICATORS ===================== */
-.status-warning {
-  color: hsl(var(--warning));
-  background: linear-gradient(135deg, hsl(var(--warning)) 0%, hsl(var(--warning) / 0.8) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  font-weight: 600;
-  text-shadow: 0 0 10px hsl(var(--warning) / 0.3);
-}
-
-.status-success {
-  color: hsl(var(--success));
-  background: linear-gradient(135deg, hsl(var(--success)) 0%, hsl(var(--success) / 0.8) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  font-weight: 600;
-  text-shadow: 0 0 10px hsl(var(--success) / 0.3);
-}
-
-.status-info {
-  color: hsl(var(--info));
-  background: linear-gradient(135deg, hsl(var(--info)) 0%, hsl(var(--info) / 0.8) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  font-weight: 600;
-  text-shadow: 0 0 10px hsl(var(--info) / 0.3);
-}
-
-/* ===================== UTILITY CLASSES ===================== */
-.glow-yellow {
-  box-shadow: 0 0 20px rgba(251, 191, 36, 0.4);
-  border: 1px solid rgba(251, 191, 36, 0.3);
-}
-
-.glow-blue {
-  box-shadow: 0 0 20px rgba(56, 189, 248, 0.4);
-  border: 1px solid rgba(56, 189, 248, 0.3);
-}
-
-.glow-green {
-  box
