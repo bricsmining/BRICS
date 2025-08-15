@@ -199,7 +199,28 @@
 
 /* ===================== EXTRAS ===================== */
 .glass-card {
-  @apply bg-card/80 backdrop-blur-lg border border-border/20 shadow-2xl rounded-xl;
+  @apply bg-white/5 backdrop-blur-lg border border-white/10 shadow-xl rounded-xl;
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* Enhanced glass card variants for admin panel consistency */
+.glass-card-admin {
+  @apply bg-white/5 backdrop-blur-md border border-white/10 shadow-xl rounded-xl;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.glass-card-content {
+  @apply bg-muted/60 border border-border/70 rounded-lg shadow-lg;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.glass-info-panel {
+  @apply bg-blue-900/40 border border-blue-500/60 rounded-lg shadow-lg;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
 }
 
 /* ===================== PROFILE SECTION FIXES ===================== */
