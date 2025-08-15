@@ -676,7 +676,7 @@ function generateAdminMessage(type, data) {
 🕐 *Time:* ${timestamp}`;
 
     case 'payment_created':
-      return `💳 *New Payment Request*
+      return `🧾 *Payment Invoice Created*
 
 👤 *User Details:*
 • User: \`${data.userId}\` (@${data.username})
@@ -688,7 +688,7 @@ function generateAdminMessage(type, data) {
 • Payment ID: \`${data.paymentId}\`
 • Payment URL: [Click to pay](${data.paymentUrl})
 
-⏳ Payment is awaiting completion...
+💰 Payment gateway invoice has been generated successfully!
 
 🕐 *Time:* ${timestamp}`;
 

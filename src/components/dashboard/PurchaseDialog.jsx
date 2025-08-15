@@ -211,18 +211,23 @@ const PurchaseDialog = ({ isOpen, onClose, cardPrice, cardNumber, currentBalance
         const result = await response.json();
 
         if (result.success) {
-          // OxaPay returns invoice URL in different format
-          const paymentUrl = result.data.paymentUrl || result.data.payLink || result.data.url;
+          // Server returns payment_url (with underscore), also check other possible field names
+          const paymentUrl = result.data.payment_url || result.data.paymentUrl || result.data.payLink || result.data.url;
+          
+          console.log('Server response data:', result.data);
+          console.log('Extracted payment URL:', paymentUrl);
+          
           if (paymentUrl) {
             // Return payment URL to parent instead of redirecting
             onSuccess('crypto', paymentUrl, {
-              trackId: result.data.trackId,
-              orderId: result.data.orderId,
-              paymentId: result.data.paymentId
+              trackId: result.data.track_id || result.data.trackId,
+              orderId: result.data.order_id || result.data.orderId,
+              paymentId: result.data.payment_id || result.data.paymentId
             });
             return;
           } else {
             console.error('No payment URL found in server response:', result.data);
+            console.error('Available fields:', Object.keys(result.data));
             throw new Error('Payment URL not found in server response');
           }
         } else {
