@@ -762,6 +762,21 @@ function generateAdminMessage(type, data) {
 
 🕐 *Time:* ${timestamp}`;
 
+    case 'payout_created':
+      return `💸 *Payout Created*
+
+🏦 *Withdrawal Details:*
+• User: \`${data.userId}\`
+• Withdrawal ID: \`${data.withdrawalId}\`
+• Track ID: \`${data.trackId}\`
+• Address: \`${data.address}\`
+• Amount: ${data.amount} ${data.currency}
+• Status: ${data.status}
+
+💰 Payout has been submitted to OxaPay for processing.
+
+🕐 *Time:* ${timestamp}`;
+
     default:
       return null;
   }

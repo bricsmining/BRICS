@@ -4,8 +4,8 @@
  */
 
 // Get API keys from environment variables
-const OXAPAY_API_KEY = import.meta.env.VITE_OXAPAY_API_KEY;
-const OXAPAY_MERCHANT_ID = import.meta.env.VITE_OXAPAY_API_KEY; // Same as API key // Usually same as API key or provided separately
+const OXAPAY_MERCHANT_API_KEY = import.meta.env.VITE_OXAPAY_MERCHANT_API_KEY;
+const OXAPAY_PAYOUT_API_KEY = import.meta.env.VITE_OXAPAY_PAYOUT_API_KEY;
 const OXAPAY_BASE_URL = 'https://api.oxapay.com';
 
 // Supported cryptocurrencies for payments
@@ -47,14 +47,18 @@ export const SUPPORTED_CRYPTOS = {
 /**
  * Base API request function with error handling
  */
-const makeOxapayRequest = async (endpoint, method = 'GET', data = null) => {
+const makeOxapayRequest = async (endpoint, method = 'GET', data = null, usePayoutKey = false) => {
   const url = `${OXAPAY_BASE_URL}${endpoint}`;
+  
+  // Use appropriate API key based on endpoint
+  const apiKey = usePayoutKey ? OXAPAY_PAYOUT_API_KEY : OXAPAY_MERCHANT_API_KEY;
+  const apiKeyHeader = usePayoutKey ? 'payout_api_key' : 'merchant_api_key';
   
   const config = {
     method,
     headers: {
       'Content-Type': 'application/json',
-      'merchant_api_key': OXAPAY_API_KEY,
+      [apiKeyHeader]: apiKey,
     },
   };
 
@@ -118,7 +122,8 @@ const makeOxapayRequest = async (endpoint, method = 'GET', data = null) => {
 };
 
 /**
- * Create a payment request for mining card purchases
+ * Create a payment invoice for mining card purchases
+ * Following OxaPay v1 API specification
  */
 export const createPayment = async (paymentData) => {
   const {
@@ -148,49 +153,48 @@ export const createPayment = async (paymentData) => {
     };
   }
 
+  // Prepare request data according to OxaPay v1 API specification
   const requestData = {
-    amount: parseFloat(amount), // Use the actual crypto amount (0.1 TON, 0.25 TON, etc.)
-    currency: currency.toUpperCase(), // Payment currency (TON, USDT, etc.)
-    lifetime: 60, // Payment lifetime in minutes (increased for testing)
-    fee_paid_by_payer: 1, // Payer pays the fee
-    under_paid_coverage: 2.5, // Under payment coverage percentage
-    auto_withdrawal: false,
-    mixed_payment: false, // Don't use mixed payment
-    callback_url: callbackUrl,
-    return_url: returnUrl,
-    email: userEmail || `user${userId}@example.com`,
-    order_id: orderId,
+    amount: parseFloat(amount), // Required: The amount for the payment
+    currency: currency.toUpperCase(), // Currency symbol (TON, USDT, etc.)
+    lifetime: 60, // Payment lifetime in minutes (15-2880)
+    fee_paid_by_payer: 1, // Payer pays the fee (1 = yes, 0 = no)
+    under_paid_coverage: 2.5, // Acceptable inaccuracy in payment (0-60%)
+    auto_withdrawal: false, // Don't auto-withdraw to address
+    mixed_payment: false, // Don't allow mixed payment
+    callback_url: callbackUrl, // URL for payment status notifications
+    return_url: returnUrl, // URL for redirect after successful payment
+    email: userEmail || `user${userId}@skyton.app`, // Payer's email
+    order_id: orderId, // Unique order ID for reference
     thanks_message: `Thank you for your ${currency} payment! Your mining card will be activated shortly.`,
     description: description || `Mining Card Purchase - Order ${orderId}`,
-    sandbox: false // Production mode
+    sandbox: false // Production mode (true for testing)
   };
 
-
-
-  // Remove any undefined values that might cause validation issues
+  // Remove any undefined values to avoid validation issues
   Object.keys(requestData).forEach(key => {
     if (requestData[key] === undefined || requestData[key] === null || requestData[key] === '') {
       delete requestData[key];
     }
   });
 
-  return await makeOxapayRequest('/v1/payment/invoice', 'POST', requestData);
+  return await makeOxapayRequest('/v1/payment/invoice', 'POST', requestData, false);
 };
 
 /**
- * Create a withdrawal request
+ * Create a payout request for withdrawals
+ * Following OxaPay v1 Payout API specification
  */
-export const createWithdrawal = async (withdrawalData) => {
+export const createPayout = async (payoutData) => {
   const {
     amount,
     currency = 'USDT',
     address,
-    orderId,
+    network,
     description,
     callbackUrl,
-    userId,
-    userEmail
-  } = withdrawalData;
+    memo
+  } = payoutData;
 
   // Validate amount against currency limits
   const cryptoConfig = SUPPORTED_CRYPTOS[currency];
@@ -208,20 +212,35 @@ export const createWithdrawal = async (withdrawalData) => {
     };
   }
 
+  // Prepare request data according to OxaPay v1 Payout API specification
   const requestData = {
-    merchant_id: OXAPAY_MERCHANT_ID,
-    amount: parseFloat(amount),
-    currency: currency.toUpperCase(),
-    address: address,
-    order_id: orderId,
-    description: description || `STON Withdrawal - Order ${orderId}`,
-    callback_url: callbackUrl,
-    customer_email: userEmail,
-    customer_id: userId?.toString()
+    address: address, // Required: Recipient's cryptocurrency address
+    currency: currency.toUpperCase(), // Required: Cryptocurrency symbol
+    amount: parseFloat(amount), // Required: Amount to be sent
+    network: network || cryptoConfig.network, // Blockchain network
+    callback_url: callbackUrl, // URL for status updates
+    description: description || `STON Withdrawal Payout`,
   };
 
-  return await makeOxapayRequest('/withdrawals', 'POST', requestData);
+  // Add memo if provided (for networks that support it like TON)
+  if (memo) {
+    requestData.memo = memo;
+  }
+
+  // Remove any undefined values to avoid validation issues
+  Object.keys(requestData).forEach(key => {
+    if (requestData[key] === undefined || requestData[key] === null || requestData[key] === '') {
+      delete requestData[key];
+    }
+  });
+
+  return await makeOxapayRequest('/v1/payout', 'POST', requestData, true);
 };
+
+/**
+ * Legacy function name for backward compatibility
+ */
+export const createWithdrawal = createPayout;
 
 /**
  * Get payment status using OxaPay v1 API
@@ -234,15 +253,27 @@ export const getPaymentStatus = async (trackId) => {
     };
   }
 
-  return await makeOxapayRequest(`/v1/payment/${trackId}`, 'GET');
+  return await makeOxapayRequest(`/v1/payment/${trackId}`, 'GET', null, false);
 };
 
 /**
- * Get withdrawal status
+ * Get payout status using OxaPay v1 API
  */
-export const getWithdrawalStatus = async (withdrawalId) => {
-  return await makeOxapayRequest(`/withdrawals/${withdrawalId}`, 'GET');
+export const getPayoutStatus = async (trackId) => {
+  if (!trackId) {
+    return {
+      success: false,
+      error: 'Track ID is required'
+    };
+  }
+
+  return await makeOxapayRequest(`/v1/payout/${trackId}`, 'GET', null, true);
 };
+
+/**
+ * Legacy function name for backward compatibility
+ */
+export const getWithdrawalStatus = getPayoutStatus;
 
 /**
  * Get supported currencies and their current rates
@@ -387,9 +418,11 @@ export const validateCryptoAddress = (address, currency) => {
 
 export default {
   createPayment,
-  createWithdrawal,
+  createPayout,
+  createWithdrawal, // Legacy alias
   getPaymentStatus,
-  getWithdrawalStatus,
+  getPayoutStatus,
+  getWithdrawalStatus, // Legacy alias
   getSupportedCurrencies,
   verifyWebhookSignature,
   convertStonToCrypto,

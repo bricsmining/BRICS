@@ -3,7 +3,7 @@
  * Handles all OxaPay-related operations in one endpoint
  */
 
-import { createPayment, getPaymentStatus, generateOrderId } from '../src/services/oxapayService.js';
+import { createPayment, getPaymentStatus, createPayout, getPayoutStatus, generateOrderId } from '../src/services/oxapayService.js';
 import { db } from '../src/lib/serverFirebase.js';
 import { doc, updateDoc, getDoc, setDoc, increment, serverTimestamp } from 'firebase/firestore';
 import { notifyAdminDirect } from './telegram-bot.js';
@@ -23,6 +23,12 @@ export default async function handler(req, res) {
       case 'webhook':
         return await handleWebhook(req, res);
       
+      case 'payout':
+        return await handleCreatePayout(req, res);
+      
+      case 'check-payout':
+        return await handleCheckPayout(req, res);
+      
       case 'status':
         return await handleStatus(req, res);
       
@@ -35,7 +41,9 @@ export default async function handler(req, res) {
           availableActions: [
             'create-payment', 
             'check-payment', 
-            'webhook', 
+            'webhook',
+            'payout',
+            'check-payout',
             'status',
             'callback'
           ]
@@ -343,6 +351,126 @@ async function handleWebhook(req, res) {
   } catch (error) {
     console.error('Error in handleWebhook:', error);
     return res.status(500).json({ error: 'Internal server error' });
+  }
+}
+
+// Create payout handler for withdrawals
+async function handleCreatePayout(req, res) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  try {
+    const { address, amount, currency = 'TON', network, description, withdrawalId, userId } = req.body;
+
+    if (!address || !amount) {
+      return res.status(400).json({ 
+        error: 'Missing required fields: address, amount' 
+      });
+    }
+
+    // Create payout request using OxaPay v1 API
+    const payoutResult = await createPayout({
+      address: address,
+      amount: parseFloat(amount),
+      currency: currency,
+      network: network,
+      description: description || `SkyTON withdrawal payout`,
+      callbackUrl: `${req.headers.origin || 'https://skyton.vercel.app'}/api/oxapay?action=webhook`,
+    });
+
+    if (!payoutResult.success) {
+      console.error('Failed to create payout:', payoutResult.error);
+      return res.status(500).json({ 
+        error: 'Failed to create payout',
+        details: payoutResult.error 
+      });
+    }
+
+    // Store payout record in Firebase if withdrawalId is provided
+    if (withdrawalId) {
+      const payoutRef = doc(db, 'payouts', payoutResult.data.track_id);
+      await setDoc(payoutRef, {
+        trackId: payoutResult.data.track_id,
+        withdrawalId: withdrawalId,
+        userId: userId,
+        address: address,
+        amount: amount,
+        currency: currency,
+        network: network,
+        status: payoutResult.data.status || 'pending',
+        description: description,
+        createdAt: serverTimestamp()
+      });
+
+      // Notify admin of payout creation
+      await notifyAdminDirect('payout_created', {
+        userId: userId,
+        withdrawalId: withdrawalId,
+        trackId: payoutResult.data.track_id,
+        address: address,
+        amount: amount,
+        currency: currency,
+        status: payoutResult.data.status || 'pending'
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        track_id: payoutResult.data.track_id,
+        status: payoutResult.data.status,
+        address: address,
+        amount: amount,
+        currency: currency
+      }
+    });
+
+  } catch (error) {
+    console.error('Error in handleCreatePayout:', error);
+    return res.status(500).json({ 
+      error: 'Internal server error',
+      details: error.message 
+    });
+  }
+}
+
+// Check payout status handler
+async function handleCheckPayout(req, res) {
+  if (req.method !== 'GET' && req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  try {
+    const { trackId } = req.method === 'GET' ? req.query : req.body;
+
+    if (!trackId) {
+      return res.status(400).json({ 
+        error: 'Missing required field: trackId' 
+      });
+    }
+
+    // Check status with OxaPay
+    const statusResult = await getPayoutStatus(trackId);
+
+    if (!statusResult.success) {
+      return res.status(500).json({ 
+        error: 'Failed to check payout status',
+        details: statusResult.error 
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: statusResult.data
+    });
+
+  } catch (error) {
+    console.error('Error in handleCheckPayout:', error);
+    return res.status(500).json({ 
+      error: 'Internal server error',
+      details: error.message 
+    });
   }
 }
 

@@ -235,7 +235,7 @@ export const approveWithdrawal = async (withdrawalId, userId, amount) => {
     
     console.log(`Initiating OxaPay payout: ${tonAmount} TON to ${walletAddress}`);
 
-    // Call OxaPay payout API
+    // Call OxaPay payout API with v1 specification
     try {
       const payoutResponse = await fetch('/api/oxapay?action=payout', {
         method: 'POST',
@@ -245,6 +245,8 @@ export const approveWithdrawal = async (withdrawalId, userId, amount) => {
         body: JSON.stringify({
           address: walletAddress,
           amount: parseFloat(tonAmount),
+          currency: 'TON',
+          network: 'TON',
           description: `SkyTON withdrawal for ${username || userId}`,
           withdrawalId: withdrawalId,
           userId: userId
@@ -265,7 +267,7 @@ export const approveWithdrawal = async (withdrawalId, userId, amount) => {
         status: 'approved',
         approvedAt: serverTimestamp(),
         processedBy: 'admin',
-        payoutTrackId: payoutResult.data.trackId,
+        payoutTrackId: payoutResult.data.track_id,
         payoutStatus: payoutResult.data.status,
         tonAmount: parseFloat(tonAmount),
         payoutCreatedAt: serverTimestamp()
