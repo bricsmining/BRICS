@@ -252,19 +252,19 @@ async function handleCallbackQuery(callbackQuery) {
   const userId = callbackQuery.from.id;
   const data = callbackQuery.data;
 
-  // Answer the callback query to remove loading state
-  await answerCallbackQuery(callbackQuery.id);
-
   switch (data) {
     case 'get_referral_link':
+      await answerCallbackQuery(callbackQuery.id, "🎯 Getting your referral link...");
       await handleGetReferralLink(chatId, userId);
       break;
     
     case 'show_stats':
+      await answerCallbackQuery(callbackQuery.id, "📊 Loading your stats...");
       await handleShowStats(chatId, userId);
       break;
     
     case 'show_help':
+      await answerCallbackQuery(callbackQuery.id, "❓ Showing help information...");
       await sendMessage(chatId, `
 🤖 *SkyTON Help*
 
@@ -289,6 +289,11 @@ async function handleCallbackQuery(callbackQuery) {
           ]]
         }
       });
+      break;
+    
+    default:
+      // For unknown callback queries, just acknowledge without text
+      await answerCallbackQuery(callbackQuery.id);
       break;
   }
 }
@@ -706,9 +711,13 @@ async function answerCallbackQuery(callbackQueryId, text = null) {
   const url = `https://api.telegram.org/bot${BOT_TOKEN}/answerCallbackQuery`;
   
   const payload = {
-    callback_query_id: callbackQueryId,
-    text: text
+    callback_query_id: callbackQueryId
   };
+
+  // Only include text if it's provided and not null
+  if (text !== null && text !== undefined) {
+    payload.text = text;
+  }
 
   try {
     await fetch(url, {
