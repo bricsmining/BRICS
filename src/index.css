@@ -199,7 +199,7 @@
 
 /* ===================== GLASS MORPHISM CARDS ===================== */
 .glass-card {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(30, 41, 59, 0.6);
   backdrop-filter: blur(16px) saturate(180%);
   -webkit-backdrop-filter: blur(16px) saturate(180%);
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -210,8 +210,8 @@
     inset 0 -1px 0 rgba(255, 255, 255, 0.05);
   position: relative;
   overflow: hidden;
-  /* Preserve text colors */
-  color: inherit;
+  /* Ensure white text on glass cards */
+  color: white;
 }
 
 .glass-card::before {
@@ -225,7 +225,7 @@
 }
 
 .glass-card:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(30, 41, 59, 0.7);
   border-color: rgba(255, 255, 255, 0.15);
   transform: translateY(-2px);
   transition: all 0.3s ease;
@@ -233,8 +233,8 @@
     0 12px 40px rgba(0, 0, 0, 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.15),
     inset 0 -1px 0 rgba(255, 255, 255, 0.1);
-  /* Preserve text colors on hover */
-  color: inherit;
+  /* Maintain white text on hover */
+  color: white;
 }
 
 /* Enhanced glass card variants for admin panel consistency */
@@ -261,29 +261,59 @@
 /* Ensure form elements maintain proper styling within glass cards */
 .glass-card input,
 .glass-card textarea,
-.glass-card select,
-.glass-card button {
-  color: inherit;
+.glass-card select {
+  color: white;
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 .glass-card input::placeholder,
 .glass-card textarea::placeholder {
-  color: rgba(156, 163, 175, 0.8); /* gray-400 with opacity */
+  color: rgba(203, 213, 225, 0.7); /* Light gray placeholder for dark glass */
 }
 
-/* Preserve navigation and button text colors */
-.glass-card .nav-button,
-.glass-card .btn,
-.glass-card button {
-  color: inherit;
-}
-
-/* Ensure labels and text maintain visibility */
+/* Glass card text should be white */
 .glass-card label,
 .glass-card p,
 .glass-card span,
-.glass-card div {
-  color: inherit;
+.glass-card div,
+.glass-card h1,
+.glass-card h2,
+.glass-card h3,
+.glass-card h4,
+.glass-card h5,
+.glass-card h6 {
+  color: white;
+}
+
+/* Status indicators should keep their specific colors */
+.glass-card .text-green-400,
+.glass-card .text-red-400,
+.glass-card .text-blue-400,
+.glass-card .text-yellow-400,
+.glass-card .text-purple-400 {
+  color: inherit !important;
+}
+
+/* Navigation buttons should preserve their original styling */
+nav button,
+.nav-button,
+button[class*="text-primary"],
+button[class*="text-muted-foreground"] {
+  color: inherit !important;
+}
+
+/* Ensure navigation text colors are not overridden by glass cards */
+nav .text-primary {
+  color: hsl(var(--primary)) !important;
+}
+
+nav .text-muted-foreground {
+  color: hsl(var(--muted-foreground)) !important;
+}
+
+nav button:hover {
+  color: white !important;
 }
 
 /* ===================== PROFILE SECTION FIXES ===================== */
