@@ -418,11 +418,11 @@ async function handleCheckPayment(req, res) {
   }
 
   try {
-    const { paymentId, orderId } = req.method === 'GET' ? req.query : req.body;
+    const { paymentId, orderId, trackId } = req.method === 'GET' ? req.query : req.body;
 
-    if (!paymentId && !orderId) {
+    if (!paymentId && !orderId && !trackId) {
       return res.status(400).json({ 
-        error: 'Missing required field: paymentId or orderId' 
+        error: 'Missing required field: paymentId, orderId, or trackId' 
       });
     }
 
@@ -432,10 +432,22 @@ async function handleCheckPayment(req, res) {
       // Find by order ID
       const purchaseRef = doc(db, 'purchases', orderId);
       purchaseDoc = await getDoc(purchaseRef);
+    } else if (trackId) {
+      // trackId is usually same as orderId or we need to find by paymentId
+      const purchaseRef = doc(db, 'purchases', trackId);
+      purchaseDoc = await getDoc(purchaseRef);
+      
+      // If not found by trackId as document ID, we might need to query by paymentId field
+      if (!purchaseDoc.exists()) {
+        // For now, return error - could implement query by paymentId field if needed
+        return res.status(404).json({ 
+          error: 'Purchase not found by trackId. Please provide orderId instead.' 
+        });
+      }
     } else {
       // Find by payment ID (would need a query - simplified for now)
       return res.status(400).json({ 
-        error: 'Please provide orderId for status check' 
+        error: 'Please provide orderId or trackId for status check' 
       });
     }
 
@@ -464,6 +476,7 @@ async function handleCheckPayment(req, res) {
 
     return res.status(200).json({
       success: true,
+      status: purchase.status,
       data: {
         order_id: purchase.orderId,
         payment_id: purchase.paymentId,
@@ -471,7 +484,9 @@ async function handleCheckPayment(req, res) {
         amount: purchase.amount,
         currency: purchase.currency,
         created_at: purchase.createdAt,
-        updated_at: purchase.updatedAt
+        updated_at: purchase.updatedAt,
+        cardNumber: purchase.cardNumber,
+        cardName: `Card ${purchase.cardNumber}`
       }
     });
 
