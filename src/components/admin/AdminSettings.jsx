@@ -8,38 +8,29 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import {
   Settings,
-  Send,
   Users,
   Zap,
   DollarSign,
-  MessageSquare,
   Shield,
-  Bell,
   Globe,
   Activity,
   Save,
   RefreshCw,
-  Plus,
-  X,
   Loader2,
-  CheckCircle2,
   AlertCircle,
   Bot,
   Mail,
   Hash,
-  Clock,
   Wallet
 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { 
   getAdminConfig, 
-  updateAdminConfig, 
-  broadcastMessage,
+  updateAdminConfig,
   getEnvConfig
 } from '@/data/firestore/adminConfig';
 
@@ -47,8 +38,6 @@ const AdminSettings = ({ adminData }) => {
   const [config, setConfig] = useState({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [broadcasting, setBroadcasting] = useState(false);
-  const [broadcastText, setBroadcastText] = useState('');
   const [envConfig, setEnvConfig] = useState({});
   const { toast } = useToast();
 
@@ -110,58 +99,6 @@ const AdminSettings = ({ adminData }) => {
       });
     } finally {
       setSaving(false);
-    }
-  };
-
-  const handleBroadcast = async () => {
-    if (!broadcastText.trim()) {
-      toast({
-        title: '❌ Empty Message',
-        description: 'Please enter a message to broadcast',
-        variant: 'destructive',
-        className: 'bg-[#1a1a1a] text-white'
-      });
-      return;
-    }
-
-    try {
-      setBroadcasting(true);
-      
-      // Use server-side API for broadcasting
-      const response = await fetch('/api/admin?action=broadcast', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': import.meta.env.VITE_ADMIN_API_KEY
-        },
-        body: JSON.stringify({
-          message: broadcastText,
-          adminEmail: adminData.email
-        })
-      });
-      
-      const result = await response.json();
-      
-      if (result.success) {
-        toast({
-          title: '✅ Broadcast Sent',
-          description: `Message sent to ${result.successCount}/${result.totalUsers} users`,
-          className: 'bg-[#1a1a1a] text-white'
-        });
-        setBroadcastText('');
-      } else {
-        throw new Error(result.error || 'Broadcast failed');
-      }
-    } catch (error) {
-      console.error('Error broadcasting message:', error);
-      toast({
-        title: '❌ Broadcast Failed',
-        description: error.message || 'Failed to send broadcast message',
-        variant: 'destructive',
-        className: 'bg-[#1a1a1a] text-white'
-      });
-    } finally {
-      setBroadcasting(false);
     }
   };
 
@@ -574,46 +511,273 @@ const AdminSettings = ({ adminData }) => {
         </Card>
       </div>
 
-      {/* Broadcast Section */}
-      <Card className="shadow-xl">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-white">
-            <MessageSquare className="w-5 h-5 text-purple-400" />
-            Telegram Broadcast
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <label className="text-sm font-medium text-gray-300 mb-2 block">
-              Broadcast Message
-            </label>
-            <Textarea
-              value={broadcastText}
-              onChange={(e) => setBroadcastText(e.target.value)}
-              placeholder="Enter message to broadcast to all users..."
-              className="bg-input border-border focus:border-blue-500 focus:bg-input/80 text-white min-h-[100px]"
-            />
-          </div>
-          
-          <div className="flex justify-between items-center">
-            <p className="text-sm text-gray-400">
-              This will send a message to all registered users
-            </p>
-            <Button
-              onClick={handleBroadcast}
-              disabled={broadcasting || !broadcastText.trim()}
-              className="bg-purple-600 hover:bg-purple-700 shadow-lg hover:shadow-purple-500/25"
-            >
-              {broadcasting ? (
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              ) : (
-                <Send className="w-4 h-4 mr-2" />
-              )}
-              Send Broadcast
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      {/* App Settings */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card className="shadow-xl">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-white">
+              <Globe className="w-5 h-5 text-cyan-400" />
+              App Settings
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <label className="text-sm font-medium text-gray-300 mb-2 block">
+                App Name
+              </label>
+              <Input
+                value={config.appName || 'SkyTON'}
+                onChange={(e) => updateConfigField('appName', e.target.value)}
+                className="bg-input border-border focus:border-blue-500 focus:bg-input/80 text-white"
+                placeholder="SkyTON"
+              />
+            </div>
+            
+            <div>
+              <label className="text-sm font-medium text-gray-300 mb-2 block">
+                App Version
+              </label>
+              <Input
+                value={config.appVersion || '1.0.0'}
+                onChange={(e) => updateConfigField('appVersion', e.target.value)}
+                className="bg-input border-border focus:border-blue-500 focus:bg-input/80 text-white"
+                placeholder="1.0.0"
+              />
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-medium text-gray-300">
+                Maintenance Mode
+              </label>
+              <Switch
+                checked={config.maintenanceMode || false}
+                onCheckedChange={(checked) => updateConfigField('maintenanceMode', checked)}
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* User Level Thresholds */}
+        <Card className="shadow-xl">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-white">
+              <Users className="w-5 h-5 text-orange-400" />
+              User Level Thresholds
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium text-gray-300 mb-2 block">
+                  Level 2 (STON)
+                </label>
+                <Input
+                  type="number"
+                  value={config.level2Threshold || 5000000}
+                  onChange={(e) => updateConfigField('level2Threshold', parseInt(e.target.value))}
+                  className="bg-input border-border focus:border-blue-500 focus:bg-input/80 text-white"
+                  placeholder="5000000"
+                />
+              </div>
+              
+              <div>
+                <label className="text-sm font-medium text-gray-300 mb-2 block">
+                  Level 3 (STON)
+                </label>
+                <Input
+                  type="number"
+                  value={config.level3Threshold || 20000000}
+                  onChange={(e) => updateConfigField('level3Threshold', parseInt(e.target.value))}
+                  className="bg-input border-border focus:border-blue-500 focus:bg-input/80 text-white"
+                  placeholder="20000000"
+                />
+              </div>
+              
+              <div>
+                <label className="text-sm font-medium text-gray-300 mb-2 block">
+                  Level 4 (STON)
+                </label>
+                <Input
+                  type="number"
+                  value={config.level4Threshold || 50000000}
+                  onChange={(e) => updateConfigField('level4Threshold', parseInt(e.target.value))}
+                  className="bg-input border-border focus:border-blue-500 focus:bg-input/80 text-white"
+                  placeholder="50000000"
+                />
+              </div>
+              
+              <div>
+                <label className="text-sm font-medium text-gray-300 mb-2 block">
+                  Level 5 (STON)
+                </label>
+                <Input
+                  type="number"
+                  value={config.level5Threshold || 100000000}
+                  onChange={(e) => updateConfigField('level5Threshold', parseInt(e.target.value))}
+                  className="bg-input border-border focus:border-blue-500 focus:bg-input/80 text-white"
+                  placeholder="100000000"
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Mining Card Configurations */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Card 1 */}
+        <Card className="shadow-xl">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-white">
+              <Zap className="w-5 h-5 text-green-400" />
+              Mining Card 1
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <label className="text-sm font-medium text-gray-300 mb-2 block">
+                Rate per Hour (STON)
+              </label>
+              <Input
+                type="number"
+                value={config.card1RatePerHour || 150}
+                onChange={(e) => updateConfigField('card1RatePerHour', parseInt(e.target.value))}
+                className="bg-input border-border focus:border-blue-500 focus:bg-input/80 text-white"
+                placeholder="150"
+              />
+            </div>
+            
+            <div>
+              <label className="text-sm font-medium text-gray-300 mb-2 block">
+                Price (TON)
+              </label>
+              <Input
+                type="number"
+                step="0.01"
+                value={config.card1CryptoPrice || 0.1}
+                onChange={(e) => updateConfigField('card1CryptoPrice', parseFloat(e.target.value))}
+                className="bg-input border-border focus:border-blue-500 focus:bg-input/80 text-white"
+                placeholder="0.1"
+              />
+            </div>
+            
+            <div>
+              <label className="text-sm font-medium text-gray-300 mb-2 block">
+                Validity (Days)
+              </label>
+              <Input
+                type="number"
+                value={config.card1ValidityDays || 7}
+                onChange={(e) => updateConfigField('card1ValidityDays', parseInt(e.target.value))}
+                className="bg-input border-border focus:border-blue-500 focus:bg-input/80 text-white"
+                placeholder="7"
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Card 2 */}
+        <Card className="shadow-xl">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-white">
+              <Zap className="w-5 h-5 text-blue-400" />
+              Mining Card 2
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <label className="text-sm font-medium text-gray-300 mb-2 block">
+                Rate per Hour (STON)
+              </label>
+              <Input
+                type="number"
+                value={config.card2RatePerHour || 250}
+                onChange={(e) => updateConfigField('card2RatePerHour', parseInt(e.target.value))}
+                className="bg-input border-border focus:border-blue-500 focus:bg-input/80 text-white"
+                placeholder="250"
+              />
+            </div>
+            
+            <div>
+              <label className="text-sm font-medium text-gray-300 mb-2 block">
+                Price (TON)
+              </label>
+              <Input
+                type="number"
+                step="0.01"
+                value={config.card2CryptoPrice || 0.25}
+                onChange={(e) => updateConfigField('card2CryptoPrice', parseFloat(e.target.value))}
+                className="bg-input border-border focus:border-blue-500 focus:bg-input/80 text-white"
+                placeholder="0.25"
+              />
+            </div>
+            
+            <div>
+              <label className="text-sm font-medium text-gray-300 mb-2 block">
+                Validity (Days)
+              </label>
+              <Input
+                type="number"
+                value={config.card2ValidityDays || 15}
+                onChange={(e) => updateConfigField('card2ValidityDays', parseInt(e.target.value))}
+                className="bg-input border-border focus:border-blue-500 focus:bg-input/80 text-white"
+                placeholder="15"
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Card 3 */}
+        <Card className="shadow-xl">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-white">
+              <Zap className="w-5 h-5 text-purple-400" />
+              Mining Card 3
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <label className="text-sm font-medium text-gray-300 mb-2 block">
+                Rate per Hour (STON)
+              </label>
+              <Input
+                type="number"
+                value={config.card3RatePerHour || 600}
+                onChange={(e) => updateConfigField('card3RatePerHour', parseInt(e.target.value))}
+                className="bg-input border-border focus:border-blue-500 focus:bg-input/80 text-white"
+                placeholder="600"
+              />
+            </div>
+            
+            <div>
+              <label className="text-sm font-medium text-gray-300 mb-2 block">
+                Price (TON)
+              </label>
+              <Input
+                type="number"
+                step="0.01"
+                value={config.card3CryptoPrice || 0.5}
+                onChange={(e) => updateConfigField('card3CryptoPrice', parseFloat(e.target.value))}
+                className="bg-input border-border focus:border-blue-500 focus:bg-input/80 text-white"
+                placeholder="0.5"
+              />
+            </div>
+            
+            <div>
+              <label className="text-sm font-medium text-gray-300 mb-2 block">
+                Validity (Days)
+              </label>
+              <Input
+                type="number"
+                value={config.card3ValidityDays || 30}
+                onChange={(e) => updateConfigField('card3ValidityDays', parseInt(e.target.value))}
+                className="bg-input border-border focus:border-blue-500 focus:bg-input/80 text-white"
+                placeholder="30"
+              />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };
