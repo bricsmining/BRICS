@@ -3,111 +3,29 @@
  * This file is used by API routes that run on the server
  */
 
-import { initializeApp, getApps, cert } from 'firebase-admin/app';
-import { getFirestore } from 'firebase-admin/firestore';
+import { initializeApp } from 'firebase/app';
+import { getFirestore } from 'firebase/firestore';
 
-// Initialize Firebase Admin SDK
-let app;
+// Initialize Firebase Client SDK for server-side usage
 let db;
 
 try {
-  // Check if Firebase Admin is already initialized
-  if (getApps().length === 0) {
-    // For Vercel deployment, use environment variables
-    if (process.env.FIREBASE_ADMIN_PRIVATE_KEY) {
-      const serviceAccount = {
-        type: "service_account",
-        project_id: process.env.FIREBASE_PROJECT_ID,
-        private_key_id: process.env.FIREBASE_ADMIN_PRIVATE_KEY_ID,
-        private_key: process.env.FIREBASE_ADMIN_PRIVATE_KEY.replace(/\\n/g, '\n'),
-        client_email: process.env.FIREBASE_ADMIN_CLIENT_EMAIL,
-        client_id: process.env.FIREBASE_ADMIN_CLIENT_ID,
-        auth_uri: "https://accounts.google.com/o/oauth2/auth",
-        token_uri: "https://oauth2.googleapis.com/token",
-        auth_provider_x509_cert_url: "https://www.googleapis.com/oauth2/v1/certs",
-        client_x509_cert_url: `https://www.googleapis.com/robot/v1/metadata/x509/${process.env.FIREBASE_ADMIN_CLIENT_EMAIL}`
-      };
+  const firebaseConfig = {
+    apiKey: process.env.VITE_FIREBASE_API_KEY,
+    authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN,
+    projectId: process.env.VITE_FIREBASE_PROJECT_ID,
+    storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: process.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+    appId: process.env.VITE_FIREBASE_APP_ID
+  };
 
-      app = initializeApp({
-        credential: cert(serviceAccount),
-        projectId: process.env.FIREBASE_PROJECT_ID
-      });
-    } else {
-      // For local development, try to use the regular Firebase config
-      // This is a fallback - in production you should use Firebase Admin SDK
-      console.warn('Firebase Admin credentials not found, falling back to client SDK');
-      
-      // Import client SDK as fallback
-      const { initializeApp: initializeClientApp } = await import('firebase/app');
-      const { getFirestore: getClientFirestore } = await import('firebase/firestore');
-      
-      const firebaseConfig = {
-        apiKey: process.env.VITE_FIREBASE_API_KEY,
-        authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN,
-        projectId: process.env.VITE_FIREBASE_PROJECT_ID,
-        storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET,
-        messagingSenderId: process.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-        appId: process.env.VITE_FIREBASE_APP_ID
-      };
-
-      const clientApp = initializeClientApp(firebaseConfig);
-      db = getClientFirestore(clientApp);
-      
-      // Export client SDK functions for compatibility
-      module.exports = {
-        db,
-        // Re-export Firestore functions from client SDK
-        collection: (await import('firebase/firestore')).collection,
-        doc: (await import('firebase/firestore')).doc,
-        getDocs: (await import('firebase/firestore')).getDocs,
-        getDoc: (await import('firebase/firestore')).getDoc,
-        addDoc: (await import('firebase/firestore')).addDoc,
-        updateDoc: (await import('firebase/firestore')).updateDoc,
-        deleteDoc: (await import('firebase/firestore')).deleteDoc,
-        query: (await import('firebase/firestore')).query,
-        where: (await import('firebase/firestore')).where,
-        orderBy: (await import('firebase/firestore')).orderBy,
-        limit: (await import('firebase/firestore')).limit,
-        serverTimestamp: (await import('firebase/firestore')).serverTimestamp,
-        increment: (await import('firebase/firestore')).increment,
-        Timestamp: (await import('firebase/firestore')).Timestamp
-      };
-      
-      return;
-    }
-  } else {
-    app = getApps()[0];
-  }
-
-  // Initialize Firestore
+  const app = initializeApp(firebaseConfig, 'server-app');
   db = getFirestore(app);
   
-  console.log('Firebase Admin SDK initialized successfully');
+  console.log('Firebase initialized successfully for server');
 } catch (error) {
-  console.error('Error initializing Firebase Admin SDK:', error);
-  
-  // Fallback to client SDK for development
-  try {
-    const { initializeApp: initializeClientApp } = require('firebase/app');
-    const { getFirestore: getClientFirestore } = require('firebase/firestore');
-    
-    const firebaseConfig = {
-      apiKey: process.env.VITE_FIREBASE_API_KEY,
-      authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN,
-      projectId: process.env.VITE_FIREBASE_PROJECT_ID,
-      storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET,
-      messagingSenderId: process.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-      appId: process.env.VITE_FIREBASE_APP_ID
-    };
-
-    const clientApp = initializeClientApp(firebaseConfig);
-    db = getClientFirestore(clientApp);
-    
-    console.log('Fallback to Firebase Client SDK');
-  } catch (fallbackError) {
-    console.error('Failed to initialize Firebase Client SDK as fallback:', fallbackError);
-    throw fallbackError;
-  }
+  console.error('Error initializing Firebase:', error);
+  throw error;
 }
 
 export { db };
@@ -133,6 +51,7 @@ export {
 // Helper function to get admin configuration for server-side usage
 export const getServerAdminConfig = async () => {
   try {
+    const { doc, getDoc } = await import('firebase/firestore');
     const configDoc = await getDoc(doc(db, 'admin', 'config'));
     
     if (configDoc.exists()) {
