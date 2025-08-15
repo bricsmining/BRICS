@@ -57,6 +57,7 @@ import {
   createWithdrawalRequest,
   getUserWithdrawalHistory,
 } from "@/data/firestore/adminActions";
+import { getAdminConfig } from "@/data/firestore/adminConfig";
 
 // Animation variants
 const boxVariants = {
@@ -914,7 +915,7 @@ const WalletDialog = ({ isOpen, onClose, onConnect }) => {
   );
 };
 
-const WithdrawDialog = ({ isOpen, onClose, user, onWithdraw, stonToTon }) => {
+const WithdrawDialog = ({ isOpen, onClose, user, onWithdraw, stonToTon, adminConfig }) => {
   const [withdrawAmount, setWithdrawAmount] = useState("");
   const [verifying, setVerifying] = useState(false);
   const navigate = useNavigate();
@@ -936,7 +937,7 @@ const WithdrawDialog = ({ isOpen, onClose, user, onWithdraw, stonToTon }) => {
   if (!isOpen) return null;
 
   const amount = parseFloat(withdrawAmount) || 0;
-  const minWithdrawal = 10000000;
+  const minWithdrawal = adminConfig?.minWithdrawalAmount || 100;
   const isValidAmount = amount >= minWithdrawal && amount <= (user.balance || 0);
 
   return (
@@ -1082,11 +1083,26 @@ const ProfileSection = ({ user, refreshUserData }) => {
   const [balanceVisible, setBalanceVisible] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [showMysteryBoxModal, setShowMysteryBoxModal] = useState(false);
+  const [adminConfig, setAdminConfig] = useState(null);
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  const adminUsername = import.meta.env.VITE_ADMIN_TG_USERNAME;
+  const adminUsername = adminConfig?.adminTgUsername || import.meta.env.VITE_ADMIN_TG_USERNAME || 'ExecutorHere';
   const isBanned = user.isBanned;
+
+  // Load admin config on mount
+  React.useEffect(() => {
+    const loadAdminConfig = async () => {
+      try {
+        const config = await getAdminConfig();
+        setAdminConfig(config);
+      } catch (error) {
+        console.error('Error loading admin config:', error);
+      }
+    };
+    
+    loadAdminConfig();
+  }, []);
 
   // Memoized calculations
   const tasksDone = useMemo(() => {
@@ -1105,7 +1121,13 @@ const ProfileSection = ({ user, refreshUserData }) => {
 
   const userLevel = useMemo(() => {
     const balance = user.balance || 0;
-    if (balance >= 100000000) return { 
+    // Use admin config for level thresholds if available, otherwise use defaults
+    const level5Threshold = adminConfig?.level5Threshold || 100000000;
+    const level4Threshold = adminConfig?.level4Threshold || 50000000;
+    const level3Threshold = adminConfig?.level3Threshold || 20000000;
+    const level2Threshold = adminConfig?.level2Threshold || 5000000;
+    
+    if (balance >= level5Threshold) return { 
       level: 5, 
       title: "Legendary Miner", 
       icon: Gem, 
@@ -1113,39 +1135,39 @@ const ProfileSection = ({ user, refreshUserData }) => {
       nextLevel: null,
       progressPercent: 100
     };
-    if (balance >= 50000000) return { 
+    if (balance >= level4Threshold) return { 
       level: 4, 
       title: "Master Miner", 
       icon: Award, 
       color: "from-purple-400 to-pink-500",
-      nextLevel: 100000000,
-      progressPercent: ((balance - 50000000) / (100000000 - 50000000)) * 100
+      nextLevel: level5Threshold,
+      progressPercent: ((balance - level4Threshold) / (level5Threshold - level4Threshold)) * 100
     };
-    if (balance >= 20000000) return { 
+    if (balance >= level3Threshold) return { 
       level: 3, 
       title: "Expert Miner", 
       icon: Shield, 
       color: "from-blue-400 to-cyan-500",
-      nextLevel: 50000000,
-      progressPercent: ((balance - 20000000) / (50000000 - 20000000)) * 100
+      nextLevel: level4Threshold,
+      progressPercent: ((balance - level3Threshold) / (level4Threshold - level3Threshold)) * 100
     };
-    if (balance >= 5000000) return { 
+    if (balance >= level2Threshold) return { 
       level: 2, 
       title: "Advanced Miner", 
       icon: Target, 
       color: "from-green-400 to-emerald-500",
-      nextLevel: 20000000,
-      progressPercent: ((balance - 5000000) / (20000000 - 5000000)) * 100
+      nextLevel: level3Threshold,
+      progressPercent: ((balance - level2Threshold) / (level3Threshold - level2Threshold)) * 100
     };
     return { 
       level: 1, 
       title: "Novice Miner", 
       icon: Activity, 
       color: "from-gray-400 to-gray-600",
-      nextLevel: 5000000,
-      progressPercent: (balance / 5000000) * 100
+      nextLevel: level2Threshold,
+      progressPercent: (balance / level2Threshold) * 100
     };
-  }, [user.balance]);
+  }, [user.balance, adminConfig]);
 
   // Achievement system
   const achievements = useMemo(() => {
@@ -1205,8 +1227,9 @@ const ProfileSection = ({ user, refreshUserData }) => {
   // Utility functions
   const stonToTon = useCallback((ston) => {
     const amount = parseFloat(ston) || 0;
-    return (amount / 10000000).toFixed(6);
-  }, []);
+    const rate = adminConfig?.stonToTonRate || 0.0000001;
+    return (amount * rate).toFixed(6);
+  }, [adminConfig]);
 
   const handleRefresh = useCallback(async () => {
     if (!user?.id || refreshing) return;
@@ -1398,7 +1421,7 @@ const ProfileSection = ({ user, refreshUserData }) => {
     if (!user?.id || !withdrawAmount) return;
 
     const amount = parseFloat(withdrawAmount);
-    const minWithdrawal = 10000000; // 1 TON in STON
+    const minWithdrawal = adminConfig?.minWithdrawalAmount || 100;
 
     if (amount < minWithdrawal || amount > (user.balance || 0)) {
       toast({
@@ -2426,6 +2449,7 @@ const ProfileSection = ({ user, refreshUserData }) => {
           user={user}
           onWithdraw={handleWithdraw}
           stonToTon={stonToTon}
+          adminConfig={adminConfig}
         />
 
         {/* Withdrawal History Dialog */}

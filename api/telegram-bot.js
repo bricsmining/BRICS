@@ -152,7 +152,8 @@ async function handleStartWithReferral(chatId, userId, referrerId, userInfo) {
       
       // Get admin configuration for dynamic buttons
       const adminConfig = await getAdminConfig();
-      const channelUsername = adminConfig?.channelUsername || 'xSkyTON';
+      const channelLink = adminConfig?.telegramChannelLink || '@xSkyTON';
+      const channelUsername = channelLink.replace('@', '');
       
       await sendMessage(chatId, `
 🎉 *Welcome to SkyTON!*
@@ -293,7 +294,8 @@ The more friends you invite, the more you earn! 🚀
 // Handle join channel
 async function handleJoinChannel(chatId, userId) {
   const adminConfig = await getAdminConfig();
-  const channelUsername = adminConfig?.channelUsername || 'xSkyTON';
+  const channelLink = adminConfig?.telegramChannelLink || '@xSkyTON';
+  const channelUsername = channelLink.replace('@', '');
   
   await sendMessage(chatId, `
 📢 *Join Our Official Channel*
@@ -365,14 +367,14 @@ async function getAdminConfig() {
     } else {
       // Return default values if no config exists
       return {
-        channelUsername: 'xSkyTON',
+        telegramChannelLink: '@xSkyTON',
         adminTgUsername: 'ExecutorHere'
       };
     }
   } catch (error) {
     console.error('[BOT] Error getting admin config:', error);
     return {
-      channelUsername: 'xSkyTON',
+      telegramChannelLink: '@xSkyTON',
       adminTgUsername: 'ExecutorHere'
     };
   }
@@ -380,7 +382,9 @@ async function getAdminConfig() {
 
 // Build inline keyboard based on admin configuration
 async function buildInlineKeyboard(adminConfig) {
-  const channelUsername = adminConfig?.channelUsername || 'xSkyTON';
+  const channelLink = adminConfig?.telegramChannelLink || '@xSkyTON';
+  // Remove @ if present to get clean username
+  const channelUsername = channelLink.replace('@', '');
   
   // Build keyboard layout: Open webapp, Join channel, Invite, Help
   const keyboard = [
