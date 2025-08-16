@@ -261,17 +261,17 @@ ${data.referrerId ? `• Referred by: \`${data.referrerId}\`` : ''}
           [
             {
               text: '✅ Approve',
-              callback_data: `approve_task_${data.taskId || data.userId}_${data.userId}`
+              callback_data: `approve_task_${data.taskId}_${data.userId}`
             },
             {
               text: '❌ Reject',
-              callback_data: `reject_task_${data.taskId || data.userId}_${data.userId}`
+              callback_data: `reject_task_${data.taskId}_${data.userId}`
             }
           ],
           [
             {
               text: '📋 View Submission',
-              callback_data: `view_task_${data.taskId || data.userId}`
+              callback_data: `view_task_${data.taskId}_${data.userId}`
             }
           ]
         ]

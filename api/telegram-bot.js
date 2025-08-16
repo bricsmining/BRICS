@@ -1230,8 +1230,13 @@ async function handleTaskApproval(callbackQuery, data, isApproval) {
     console.log('[TELEGRAM BOT] Is approval:', isApproval);
     
     const parts = data.split('_');
-    const taskId = parts[2]; // Extract task ID
-    const userId = parts[3] || taskId; // Fallback to userId if no separate ID
+    console.log('[TELEGRAM BOT] Callback data parts:', parts);
+    
+    // For task IDs like "task_bzdbdndb_1755321683741", we need to reconstruct the full ID
+    // Format: approve_task_task_bzdbdndb_1755321683741_5063003944
+    // parts: [0]approve [1]task [2]task [3]bzdbdndb [4]1755321683741 [5]5063003944
+    const taskId = parts.length >= 5 ? `${parts[2]}_${parts[3]}_${parts[4]}` : parts[2];
+    const userId = parts[parts.length - 1]; // Last part is always userId
     
     console.log('[TELEGRAM BOT] Parsed task ID:', taskId);
     console.log('[TELEGRAM BOT] Parsed user ID:', userId);
@@ -1311,13 +1316,20 @@ async function handleTaskApproval(callbackQuery, data, isApproval) {
 async function handleViewWithdrawal(callbackQuery, data) {
   try {
     const parts = data.split('_');
+    console.log('[TELEGRAM BOT] View withdrawal callback data parts:', parts);
+    
+    // Format: view_withdrawal_withdrawalId_userId
     const withdrawalId = parts[2];
+    const userId = parts[3] || 'Unknown';
+    
+    console.log('[TELEGRAM BOT] View withdrawal ID:', withdrawalId);
+    console.log('[TELEGRAM BOT] View user ID:', userId);
     
     await answerCallbackQuery(callbackQuery.id, "📋 Fetching withdrawal details...");
     
     await sendMessage(
       callbackQuery.message.chat.id,
-      `📋 *Withdrawal Details*\n\nWithdrawal ID: \`${withdrawalId}\`\n\n💡 Use the admin panel for detailed information.`,
+      `📋 *Withdrawal Details*\n\nWithdrawal ID: \`${withdrawalId}\`\nUser ID: \`${userId}\`\n\n💡 Use the admin panel for detailed information and approval actions.`,
       { parse_mode: 'Markdown' }
     );
   } catch (error) {
@@ -1329,13 +1341,21 @@ async function handleViewWithdrawal(callbackQuery, data) {
 async function handleViewTask(callbackQuery, data) {
   try {
     const parts = data.split('_');
-    const taskId = parts[2];
+    console.log('[TELEGRAM BOT] View task callback data parts:', parts);
+    
+    // For task IDs like "task_bzdbdndb_1755321683741", we need to reconstruct the full ID
+    // Format: view_task_task_bzdbdndb_1755321683741_5063003944
+    const taskId = parts.length >= 5 ? `${parts[2]}_${parts[3]}_${parts[4]}` : parts[2];
+    const userId = parts[parts.length - 1];
+    
+    console.log('[TELEGRAM BOT] View task ID:', taskId);
+    console.log('[TELEGRAM BOT] View user ID:', userId);
     
     await answerCallbackQuery(callbackQuery.id, "📋 Fetching task details...");
     
     await sendMessage(
       callbackQuery.message.chat.id,
-      `📋 *Task Details*\n\nTask ID: \`${taskId}\`\n\n💡 Use the admin panel for detailed information.`,
+      `📋 *Task Details*\n\nTask ID: \`${taskId}\`\nUser ID: \`${userId}\`\n\n💡 Use the admin panel for detailed information and approval actions.`,
       { parse_mode: 'Markdown' }
     );
   } catch (error) {
