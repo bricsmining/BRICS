@@ -218,45 +218,45 @@ function generateAdminMessage(type, data) {
   
   switch (type) {
     case 'new_user':
-      return `🎉 *New User Joined!*
+      return `🎉 <b>New User Joined!</b>
 
-👤 *User Info:*
-• ID: \`${data.userId}\`
+👤 <b>User Info:</b>
+• ID: <code>${data.userId}</code>
 • Name: ${data.name || 'Unknown'}
 • Username: @${data.username || 'None'}
-${data.referrerId ? `• Referred by: \`${data.referrerId}\`` : ''}
+${data.referrerId ? `• Referred by: <code>${data.referrerId}</code>` : ''}
 
-🕐 *Time:* ${timestamp}`;
+🕐 <b>Time:</b> ${timestamp}`;
 
     case 'referral':
-      return `💰 *New Referral!*
+      return `💰 <b>New Referral!</b>
 
-👥 *Referral Info:*
-• Referrer: \`${data.referrerId}\` (${data.referrerName || 'Unknown'})
-• New User: \`${data.newUserId}\` (${data.newUserName || 'Unknown'})
+👥 <b>Referral Info:</b>
+• Referrer: <code>${data.referrerId}</code> (${data.referrerName || 'Unknown'})
+• New User: <code>${data.newUserId}</code> (${data.newUserName || 'Unknown'})
 • Reward: ${data.reward || 0} STON + 1 Free Spin
 
-🕐 *Time:* ${timestamp}`;
+🕐 <b>Time:</b> ${timestamp}`;
 
     case 'task_submission':
       return {
-        text: `📋 *Task Submission!*
+        text: `📋 <b>Task Submission!</b>
 
-👤 *User Details:*
-• ID: \`${data.userId}\`
+👤 <b>User Details:</b>
+• ID: <code>${data.userId}</code>
 • Name: ${data.userName || 'Unknown'}
 • Username: @${data.username || 'None'}
 
-📝 *Task Details:*
+📝 <b>Task Details:</b>
 • Title: ${data.taskTitle || 'Unknown Task'}
 • Type: ${data.taskType || 'Manual Task'}
 • Reward: ${data.reward || 0} STON
 • Target: ${data.target || 'N/A'}
 • Submission: ${data.submission || 'No submission provided'}
 
-🔍 *Action Required: Review and Process in Admin Panel*
+🔍 <b>Action Required: Review and Process in Admin Panel</b>
 
-🕐 *Time:* ${timestamp}`,
+🕐 <b>Time:</b> ${timestamp}`,
         keyboard: [
           [
             {
@@ -272,35 +272,35 @@ ${data.referrerId ? `• Referred by: \`${data.referrerId}\`` : ''}
       const breakdown = stats.balanceBreakdown || {};
       
       return {
-        text: `💸 *Withdrawal Request!*
+        text: `💸 <b>Withdrawal Request!</b>
 
-👤 *User Details:*
-• ID: \`${data.userId}\`
+👤 <b>User Details:</b>
+• ID: <code>${data.userId}</code>
 • Name: ${data.userName || 'Unknown'}
 • Username: @${data.username || 'None'}
 • Joined: ${stats.joinedAt || 'Unknown'}
 
-💰 *Withdrawal Details:*
+💰 <b>Withdrawal Details:</b>
 • Amount: ${data.amount || 0} STON
 • Method: ${data.method || 'Unknown'}
-• Address: \`${data.address || 'Not provided'}\`
+• Address: <code>${data.address || 'Not provided'}</code>
 • Current Balance: ${data.currentBalance || 0} STON
 
-📊 *Balance Breakdown:*
+📊 <b>Balance Breakdown:</b>
 • Task Rewards: ${breakdown.task || 0} STON
 • Box Rewards: ${breakdown.box || 0} STON  
 • Referral Rewards: ${breakdown.referral || 0} STON
 • Mining Rewards: ${breakdown.mining || 0} STON
 
-📈 *User Statistics:*
+📈 <b>User Statistics:</b>
 • Total Referrals: ${stats.totalReferrals || 0}
 • Boxes Opened: ${stats.totalBoxesOpened || 0}
 • Ads Watched: ${stats.totalAdsWatched || 0}
 • Mining Cards: ${stats.miningCards || 0}
 
-🔍 *Action Required: Review and Process in Admin Panel*
+🔍 <b>Action Required: Review and Process in Admin Panel</b>
 
-🕐 *Time:* ${timestamp}`,
+🕐 <b>Time:</b> ${timestamp}`,
         keyboard: [
           [
             {
@@ -458,7 +458,7 @@ async function sendTelegramMessage(chatId, message, options = {}) {
     const payload = {
       chat_id: chatId,
       text: message,
-      parse_mode: 'Markdown',
+      parse_mode: 'HTML',
       ...options
     };
     
