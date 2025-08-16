@@ -203,11 +203,11 @@ ${data.referrerId ? `• Referred by: \`${data.referrerId}\`` : ''}
           [
             {
               text: '✅ Approve',
-              callback_data: `approve_task_${data.taskId || data.userId}_${Date.now()}`
+              callback_data: `approve_task_${data.taskId || data.userId}_${data.userId}`
             },
             {
               text: '❌ Reject',
-              callback_data: `reject_task_${data.taskId || data.userId}_${Date.now()}`
+              callback_data: `reject_task_${data.taskId || data.userId}_${data.userId}`
             }
           ],
           [
@@ -241,11 +241,11 @@ ${data.referrerId ? `• Referred by: \`${data.referrerId}\`` : ''}
           [
             {
               text: '✅ Approve',
-              callback_data: `approve_withdrawal_${data.withdrawalId || data.userId}_${Date.now()}`
+              callback_data: `approve_withdrawal_${data.withdrawalId}_${data.userId}`
             },
             {
               text: '❌ Reject',
-              callback_data: `reject_withdrawal_${data.withdrawalId || data.userId}_${Date.now()}`
+              callback_data: `reject_withdrawal_${data.withdrawalId}_${data.userId}`
             }
           ],
           [

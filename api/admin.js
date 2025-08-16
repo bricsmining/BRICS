@@ -30,10 +30,22 @@ export default async function handler(req, res) {
       case 'get-config':
         return await handleGetConfig(req, res);
       
+      case 'approve-withdrawal':
+        return await handleApproveWithdrawal(req, res);
+      
+      case 'reject-withdrawal':
+        return await handleRejectWithdrawal(req, res);
+      
+      case 'approve-task':
+        return await handleApproveTask(req, res);
+      
+      case 'reject-task':
+        return await handleRejectTask(req, res);
+      
       default:
         return res.status(400).json({ 
           error: 'Invalid action parameter',
-          availableActions: ['notify', 'broadcast', 'verify', 'get-config']
+          availableActions: ['notify', 'broadcast', 'verify', 'get-config', 'approve-withdrawal', 'reject-withdrawal', 'approve-task', 'reject-task']
         });
     }
   } catch (error) {
@@ -332,6 +344,166 @@ async function handleGetConfig(req, res) {
   } catch (error) {
     console.error('Error in handleGetConfig:', error);
     return res.status(500).json({ error: 'Internal server error' });
+  }
+}
+
+// Handle withdrawal approval
+async function handleApproveWithdrawal(req, res) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  // Authentication
+  const apiKey = req.body.api || req.headers['x-api-key'];
+  const validApiKey = process.env.ADMIN_API_KEY;
+
+  if (!apiKey || apiKey !== validApiKey) {
+    return res.status(401).json({ error: 'Unauthorized - Invalid API key' });
+  }
+
+  const { withdrawalId, userId } = req.body;
+
+  if (!withdrawalId) {
+    return res.status(400).json({ error: 'Missing withdrawalId' });
+  }
+
+  try {
+    // Import the approval function
+    const { approveWithdrawal } = await import('../src/data/firestore/adminActions.js');
+    
+    // Get withdrawal data first to get amount
+    const { getDoc, doc } = await import('firebase/firestore');
+    const { db } = await import('../src/lib/serverFirebase.js');
+    
+    const withdrawalRef = doc(db, 'withdrawals', withdrawalId);
+    const withdrawalDoc = await getDoc(withdrawalRef);
+    
+    if (!withdrawalDoc.exists()) {
+      return res.status(404).json({ error: 'Withdrawal not found' });
+    }
+    
+    const withdrawalData = withdrawalDoc.data();
+    const success = await approveWithdrawal(withdrawalId, withdrawalData.userId, withdrawalData.amount);
+
+    if (success) {
+      return res.status(200).json({ success: true, message: 'Withdrawal approved successfully' });
+    } else {
+      return res.status(500).json({ success: false, error: 'Failed to approve withdrawal' });
+    }
+  } catch (error) {
+    console.error('Error approving withdrawal:', error);
+    return res.status(500).json({ success: false, error: 'Internal server error', details: error.message });
+  }
+}
+
+// Handle withdrawal rejection  
+async function handleRejectWithdrawal(req, res) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  // Authentication
+  const apiKey = req.body.api || req.headers['x-api-key'];
+  const validApiKey = process.env.ADMIN_API_KEY;
+
+  if (!apiKey || apiKey !== validApiKey) {
+    return res.status(401).json({ error: 'Unauthorized - Invalid API key' });
+  }
+
+  const { withdrawalId } = req.body;
+
+  if (!withdrawalId) {
+    return res.status(400).json({ error: 'Missing withdrawalId' });
+  }
+
+  try {
+    // Import the rejection function
+    const { rejectWithdrawal } = await import('../src/data/firestore/adminActions.js');
+    
+    const success = await rejectWithdrawal(withdrawalId);
+
+    if (success) {
+      return res.status(200).json({ success: true, message: 'Withdrawal rejected successfully' });
+    } else {
+      return res.status(500).json({ success: false, error: 'Failed to reject withdrawal' });
+    }
+  } catch (error) {
+    console.error('Error rejecting withdrawal:', error);
+    return res.status(500).json({ success: false, error: 'Internal server error', details: error.message });
+  }
+}
+
+// Handle task approval
+async function handleApproveTask(req, res) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  // Authentication
+  const apiKey = req.body.api || req.headers['x-api-key'];
+  const validApiKey = process.env.ADMIN_API_KEY;
+
+  if (!apiKey || apiKey !== validApiKey) {
+    return res.status(401).json({ error: 'Unauthorized - Invalid API key' });
+  }
+
+  const { taskId, userId } = req.body;
+
+  if (!taskId || !userId) {
+    return res.status(400).json({ error: 'Missing taskId or userId' });
+  }
+
+  try {
+    // Import the approval function
+    const { approveTask } = await import('../src/data/firestore/adminActions.js');
+    
+    const success = await approveTask(userId, taskId);
+
+    if (success) {
+      return res.status(200).json({ success: true, message: 'Task approved successfully' });
+    } else {
+      return res.status(500).json({ success: false, error: 'Failed to approve task' });
+    }
+  } catch (error) {
+    console.error('Error approving task:', error);
+    return res.status(500).json({ success: false, error: 'Internal server error', details: error.message });
+  }
+}
+
+// Handle task rejection
+async function handleRejectTask(req, res) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  // Authentication
+  const apiKey = req.body.api || req.headers['x-api-key'];
+  const validApiKey = process.env.ADMIN_API_KEY;
+
+  if (!apiKey || apiKey !== validApiKey) {
+    return res.status(401).json({ error: 'Unauthorized - Invalid API key' });
+  }
+
+  const { taskId, userId } = req.body;
+
+  if (!taskId || !userId) {
+    return res.status(400).json({ error: 'Missing taskId or userId' });
+  }
+
+  try {
+    // Import the rejection function
+    const { rejectTask } = await import('../src/data/firestore/adminActions.js');
+    
+    const success = await rejectTask(userId, taskId);
+
+    if (success) {
+      return res.status(200).json({ success: true, message: 'Task rejected successfully' });
+    } else {
+      return res.status(500).json({ success: false, error: 'Failed to reject task' });
+    }
+  } catch (error) {
+    console.error('Error rejecting task:', error);
+    return res.status(500).json({ success: false, error: 'Internal server error', details: error.message });
   }
 }
 

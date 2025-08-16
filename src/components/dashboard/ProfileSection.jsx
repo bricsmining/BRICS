@@ -1437,7 +1437,7 @@ const ProfileSection = ({ user, refreshUserData }) => {
       return;
     }
 
-    const success = await createWithdrawalRequest(
+    const result = await createWithdrawalRequest(
       user.id,
       amount,
       user.wallet,
@@ -1445,11 +1445,8 @@ const ProfileSection = ({ user, refreshUserData }) => {
       user.username
     );
 
-    if (success) {
-      const userMention = user.username
-        ? `@${user.username}`
-        : `User ${user.id}`;
-      
+    if (result.success) {
+      // Send notification with the actual withdrawal document ID
       await sendAdminNotification('withdrawal_request', {
         userId: user.id,
         userName: user.username || user.first_name || user.last_name || 'Unknown',
@@ -1458,7 +1455,7 @@ const ProfileSection = ({ user, refreshUserData }) => {
         method: 'TON Wallet',
         address: user.wallet,
         currentBalance: user.totalBalance || 0,
-        withdrawalId: `${user.id}_${Date.now()}`
+        withdrawalId: result.withdrawalId // Use the real document ID
       });
 
       toast({
@@ -1471,7 +1468,7 @@ const ProfileSection = ({ user, refreshUserData }) => {
     } else {
       toast({
         title: "Withdrawal Failed",
-        description: "Could not process your withdrawal request. Please try again later.",
+        description: result.error || "Could not process your withdrawal request. Please try again later.",
         variant: "destructive",
         className: "bg-[#1a1a1a] text-white",
       });

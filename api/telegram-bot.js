@@ -1137,12 +1137,18 @@ function getBotUsername() {
 // ADMIN APPROVAL HANDLERS
 // =============================================================================
 
-// Handle withdrawal approval/rejection
+    // Handle withdrawal approval/rejection
 async function handleWithdrawalApproval(callbackQuery, data, isApproval) {
   try {
     const parts = data.split('_');
     const withdrawalId = parts[2]; // Extract withdrawal ID
     const userId = parts[3] || withdrawalId; // Fallback to userId if no separate ID
+    
+    // Check if message has already been processed
+    if (callbackQuery.message.text.includes('✅ APPROVED') || callbackQuery.message.text.includes('❌ REJECTED')) {
+      await answerCallbackQuery(callbackQuery.id, "⚠️ This request has already been processed!");
+      return;
+    }
     
     await answerCallbackQuery(
       callbackQuery.id, 
@@ -1206,6 +1212,12 @@ async function handleTaskApproval(callbackQuery, data, isApproval) {
     const parts = data.split('_');
     const taskId = parts[2]; // Extract task ID
     const userId = parts[3] || taskId; // Fallback to userId if no separate ID
+    
+    // Check if message has already been processed
+    if (callbackQuery.message.text.includes('✅ APPROVED') || callbackQuery.message.text.includes('❌ REJECTED')) {
+      await answerCallbackQuery(callbackQuery.id, "⚠️ This request has already been processed!");
+      return;
+    }
     
     await answerCallbackQuery(
       callbackQuery.id, 

@@ -396,25 +396,19 @@ export const createWithdrawalRequest = async (userId, amount, walletAddress, use
       createdAt: serverTimestamp()
     });
     
-    // Send admin notification
-    try {
-      await notifyAdmin('withdrawal_request', {
-        userId: userId,
-        userName: username || `User ${userId}`,
-        amount: parseFloat(amount),
-        method: 'TON Wallet',
-        address: walletAddress,
-        currentBalance: userBalance
-      });
-    } catch (error) {
-      console.error('Error sending withdrawal request notification:', error);
-    }
-    
     console.log(`Withdrawal request created with ID: ${docRef.id} for user ${userId}, amount: ${amount} STON`);
-    return true;
+    
+    // Return the document ID so the caller can send notification with correct ID
+    return {
+      success: true,
+      withdrawalId: docRef.id
+    };
   } catch (error) {
     console.error('Error creating withdrawal request:', error);
-    return false;
+    return {
+      success: false,
+      error: error.message
+    };
   }
 };
 
