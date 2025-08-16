@@ -157,7 +157,7 @@ export const createPayment = async (paymentData) => {
   const requestData = {
     amount: parseFloat(amount), // Required: The amount for the payment
     currency: currency.toUpperCase(), // Currency symbol (TON, USDT, etc.)
-    lifetime: 60, // Payment lifetime in minutes (15-2880)
+    lifetime: 15, // Payment lifetime in minutes (15-2880)
     fee_paid_by_payer: 1, // Payer pays the fee (1 = yes, 0 = no)
     under_paid_coverage: 2.5, // Acceptable inaccuracy in payment (0-60%)
     auto_withdrawal: false, // Don't auto-withdraw to address

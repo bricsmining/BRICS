@@ -4,7 +4,6 @@ import { X, ExternalLink, Shield, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import PaymentSuccessAnimation from '@/components/ui/PaymentSuccessAnimation';
 
   const PaymentModal = ({ 
     isOpen, 
@@ -22,7 +21,6 @@ import PaymentSuccessAnimation from '@/components/ui/PaymentSuccessAnimation';
     const [isLoading, setIsLoading] = useState(true);
     const [loadError, setLoadError] = useState(false);
     const [timeElapsed, setTimeElapsed] = useState(0);
-    const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
     const iframeRef = useRef(null);
     const startTimeRef = useRef(Date.now());
 
@@ -99,15 +97,15 @@ import PaymentSuccessAnimation from '@/components/ui/PaymentSuccessAnimation';
           // Extract track ID from the message if available
           const returnTrackId = data.trackId || trackId;
           
-          // Show success animation first, then close modal
-          setShowSuccessAnimation(true);
+          // Close modal immediately
+          onClose?.();
           
-          // Check payment status with the correct track ID after showing animation
+          // Check payment status with the correct track ID
           if (returnTrackId && userId) {
             console.log('🔍 Checking payment status for track ID:', returnTrackId);
             setTimeout(() => {
               checkPaymentStatusFromGatewayWithTrackId(returnTrackId);
-            }, 1000); // Increased delay to show animation
+            }, 500);
           } else {
             // Fallback: assume success if we can't verify
             console.log('⚠️ No track ID available, assuming payment success');
@@ -116,7 +114,7 @@ import PaymentSuccessAnimation from '@/components/ui/PaymentSuccessAnimation';
                 message: 'Payment completed - please wait for confirmation',
                 trackId: returnTrackId
               });
-            }, 1000);
+            }, 500);
           }
           return;
         }
@@ -159,12 +157,12 @@ import PaymentSuccessAnimation from '@/components/ui/PaymentSuccessAnimation';
         const iframeUrl = iframe.contentWindow?.location?.href;
         
         if (iframeUrl && (iframeUrl.includes('/mining?payment=return') || iframeUrl.includes('payment=return'))) {
-          console.log('🔄 Iframe navigated to return URL, showing success animation');
-          setShowSuccessAnimation(true);
-          // Check payment status after showing animation
+          console.log('🔄 Iframe navigated to return URL, closing modal');
+          onClose?.();
+          // Check payment status after a short delay
           setTimeout(() => {
             checkPaymentStatusFromGateway();
-          }, 1000);
+          }, 500);
         }
       } catch (error) {
         // Cross-origin access blocked, which is expected
@@ -212,11 +210,8 @@ import PaymentSuccessAnimation from '@/components/ui/PaymentSuccessAnimation';
       const result = await response.json();
       
       if (result.success && (result.status === 'completed' || result.status === 'paid' || result.status === 'confirmed')) {
-        // Close modal and trigger success callback
-        onClose?.();
         onPaymentSuccess?.(result.data);
       } else if (result.status === 'failed' || result.status === 'expired' || result.status === 'cancelled') {
-        onClose?.();
         onPaymentFailure?.(result);
       } else if (result.status === 'pending') {
         // Payment still processing, wait a bit and check again
@@ -268,11 +263,8 @@ import PaymentSuccessAnimation from '@/components/ui/PaymentSuccessAnimation';
       console.log('💳 Payment status result:', result);
       
       if (result.success && (result.status === 'completed' || result.status === 'paid' || result.status === 'confirmed')) {
-        // Close modal and trigger success callback
-        onClose?.();
         onPaymentSuccess?.(result.data);
       } else if (result.status === 'failed' || result.status === 'expired' || result.status === 'cancelled') {
-        onClose?.();
         onPaymentFailure?.(result);
       } else if (result.status === 'pending') {
         // Payment still processing, wait a bit and check again
@@ -309,7 +301,6 @@ import PaymentSuccessAnimation from '@/components/ui/PaymentSuccessAnimation';
   if (!isOpen) return null;
 
   return (
-    <>
     <AnimatePresence>
       <motion.div
         initial={{ opacity: 0 }}
@@ -471,19 +462,6 @@ import PaymentSuccessAnimation from '@/components/ui/PaymentSuccessAnimation';
         </motion.div>
       </motion.div>
     </AnimatePresence>
-    
-    {/* Payment Success Animation */}
-    <PaymentSuccessAnimation
-      isVisible={showSuccessAnimation}
-      onAnimationComplete={() => {
-        setShowSuccessAnimation(false);
-        onClose?.();
-      }}
-      cardName={cardName}
-      amount={amount}
-      currency={currency}
-    />
-    </>
   );
 };
 
