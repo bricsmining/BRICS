@@ -1145,6 +1145,11 @@ async function handleWithdrawalApproval(callbackQuery, data, isApproval) {
     console.log('[TELEGRAM BOT] Is approval:', isApproval);
     
     const parts = data.split('_');
+    console.log('[TELEGRAM BOT] Withdrawal callback data parts:', parts);
+    
+    // For withdrawal IDs, they are simple Firestore IDs (not complex like task IDs)
+    // Format: approve_withdrawal_abc123def456_5063003944
+    // parts: [0]approve [1]withdrawal [2]abc123def456 [3]5063003944
     const withdrawalId = parts[2]; // Extract withdrawal ID
     const userId = parts[3] || withdrawalId; // Fallback to userId if no separate ID
     

@@ -325,7 +325,7 @@ ${data.referrerId ? `• Referred by: \`${data.referrerId}\`` : ''}
           [
             {
               text: '📋 View Details',
-              callback_data: `view_withdrawal_${data.withdrawalId || data.userId}`
+              callback_data: `view_withdrawal_${data.withdrawalId}_${data.userId}`
             }
           ]
         ]
