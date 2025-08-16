@@ -8,6 +8,7 @@ import {
   collection, 
   getDocs,
   doc,
+  getDoc,
   setDoc,
   serverTimestamp 
 } from 'firebase/firestore';
@@ -360,13 +361,15 @@ async function handleApproveWithdrawal(req, res) {
 
   // Authentication
   const apiKey = req.body.api || req.headers['x-api-key'];
-  const validApiKey = process.env.ADMIN_API_KEY;
+  const validApiKey = process.env.ADMIN_API_KEY || process.env.VITE_ADMIN_API_KEY;
 
   console.log('[ADMIN API] API Key provided:', apiKey ? 'Yes' : 'No');
   console.log('[ADMIN API] Valid API Key configured:', validApiKey ? 'Yes' : 'No');
 
   if (!apiKey || apiKey !== validApiKey) {
     console.log('[ADMIN API] Authentication failed');
+    console.log('[ADMIN API] Provided key:', apiKey);
+    console.log('[ADMIN API] Expected key:', validApiKey);
     return res.status(401).json({ error: 'Unauthorized - Invalid API key' });
   }
   
@@ -428,7 +431,7 @@ async function handleRejectWithdrawal(req, res) {
 
   // Authentication
   const apiKey = req.body.api || req.headers['x-api-key'];
-  const validApiKey = process.env.ADMIN_API_KEY;
+  const validApiKey = process.env.ADMIN_API_KEY || process.env.VITE_ADMIN_API_KEY;
 
   if (!apiKey || apiKey !== validApiKey) {
     return res.status(401).json({ error: 'Unauthorized - Invalid API key' });
@@ -465,7 +468,7 @@ async function handleApproveTask(req, res) {
 
   // Authentication
   const apiKey = req.body.api || req.headers['x-api-key'];
-  const validApiKey = process.env.ADMIN_API_KEY;
+  const validApiKey = process.env.ADMIN_API_KEY || process.env.VITE_ADMIN_API_KEY;
 
   if (!apiKey || apiKey !== validApiKey) {
     return res.status(401).json({ error: 'Unauthorized - Invalid API key' });
@@ -502,7 +505,7 @@ async function handleRejectTask(req, res) {
 
   // Authentication
   const apiKey = req.body.api || req.headers['x-api-key'];
-  const validApiKey = process.env.ADMIN_API_KEY;
+  const validApiKey = process.env.ADMIN_API_KEY || process.env.VITE_ADMIN_API_KEY;
 
   if (!apiKey || apiKey !== validApiKey) {
     return res.status(401).json({ error: 'Unauthorized - Invalid API key' });

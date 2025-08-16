@@ -52,12 +52,15 @@ async function handleAdminNotification(req, res) {
   console.log('[NOTIFICATIONS] Extracted type:', type);
   console.log('[NOTIFICATIONS] Extracted data:', JSON.stringify(data, null, 2));
 
-  // Verify API key
+  // Verify API key (check both possible environment variables)
+  const validApiKey = process.env.ADMIN_API_KEY || process.env.VITE_ADMIN_API_KEY;
   console.log('[NOTIFICATIONS] API key provided:', api ? 'Yes' : 'No');
-  console.log('[NOTIFICATIONS] Expected API key:', process.env.ADMIN_API_KEY ? 'Configured' : 'Not configured');
+  console.log('[NOTIFICATIONS] Expected API key:', validApiKey ? 'Configured' : 'Not configured');
   
-  if (!api || api !== process.env.ADMIN_API_KEY) {
+  if (!api || api !== validApiKey) {
     console.error('[NOTIFICATIONS] API key validation failed');
+    console.error('[NOTIFICATIONS] Provided:', api);
+    console.error('[NOTIFICATIONS] Expected:', validApiKey);
     return res.status(403).json({ success: false, message: 'Invalid API key.' });
   }
   
@@ -423,6 +426,10 @@ Keep sharing to earn more rewards! 🚀
 // Send Telegram message
 async function sendTelegramMessage(chatId, message, options = {}) {
   try {
+    console.log('[TELEGRAM] Sending message to chat:', chatId);
+    console.log('[TELEGRAM] Message length:', message.length);
+    console.log('[TELEGRAM] Options:', JSON.stringify(options, null, 2));
+    
     const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
     
     const payload = {
@@ -432,6 +439,8 @@ async function sendTelegramMessage(chatId, message, options = {}) {
       ...options
     };
     
+    console.log('[TELEGRAM] Payload:', JSON.stringify(payload, null, 2));
+    
     const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -439,9 +448,18 @@ async function sendTelegramMessage(chatId, message, options = {}) {
     });
 
     const result = await response.json();
+    console.log('[TELEGRAM] Response status:', response.status);
+    console.log('[TELEGRAM] Response result:', JSON.stringify(result, null, 2));
+    
+    if (result.ok) {
+      console.log('[TELEGRAM] Message sent successfully');
+    } else {
+      console.error('[TELEGRAM] Failed to send message:', result.description || result.error_code);
+    }
+    
     return result.ok;
   } catch (error) {
-    console.error('Error sending Telegram message:', error);
+    console.error('[TELEGRAM] Error sending Telegram message:', error);
     return false;
   }
 }

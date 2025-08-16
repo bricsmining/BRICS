@@ -1169,7 +1169,7 @@ async function handleWithdrawalApproval(callbackQuery, data, isApproval) {
     const requestBody = {
       withdrawalId: withdrawalId,
       userId: userId,
-      api: process.env.ADMIN_API_KEY
+              api: process.env.ADMIN_API_KEY || process.env.VITE_ADMIN_API_KEY
     };
     
     console.log('[TELEGRAM BOT] Making API call to:', apiUrl);
@@ -1254,7 +1254,7 @@ async function handleTaskApproval(callbackQuery, data, isApproval) {
     const requestBody = {
       taskId: taskId,
       userId: userId,
-      api: process.env.ADMIN_API_KEY
+              api: process.env.ADMIN_API_KEY || process.env.VITE_ADMIN_API_KEY
     };
     
     console.log('[TELEGRAM BOT] Making task API call to:', apiUrl);
