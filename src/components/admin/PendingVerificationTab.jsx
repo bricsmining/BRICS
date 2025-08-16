@@ -34,13 +34,13 @@ const PendingVerificationTab = ({ pendingItems = [], tasks = [], onApprove, onRe
     try {
       // Use server-side API for sending messages
       const apiBaseUrl = window.location.hostname === 'localhost' ? 'https://skyton.vercel.app' : '';
-      await fetch(`${apiBaseUrl}/api/notifications`, {
+      await fetch(`${apiBaseUrl}/api/notifications?action=user`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          type: 'user',
+          api: import.meta.env.VITE_ADMIN_API_KEY,
           userId: chatId,
-          notificationType: 'task_status',
+          type: 'task_status',
           data: { message: message }
         })
       });

@@ -328,23 +328,53 @@ async function handleVerifyAdmin(req, res) {
 
 // Get admin configuration
 async function handleGetConfig(req, res) {
+  console.log('[ADMIN CONFIG] handleGetConfig called');
+  console.log('[ADMIN CONFIG] Request method:', req.method);
+  
   try {
+    console.log('[ADMIN CONFIG] Creating config reference...');
     const configRef = doc(db, 'admin', 'config');
+    
+    console.log('[ADMIN CONFIG] Getting config document...');
     const configSnap = await getDoc(configRef);
 
+    console.log('[ADMIN CONFIG] Config exists:', configSnap.exists());
+    
     if (!configSnap.exists()) {
-      return res.status(404).json({ error: 'Admin config not found' });
+      console.log('[ADMIN CONFIG] Config not found, creating default...');
+      // Create default config if it doesn't exist
+      const defaultConfig = {
+        adminChatId: '',
+        adminTgUsername: '',
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+      
+      await setDoc(configRef, defaultConfig);
+      
+      return res.status(200).json({
+        telegramChatId: null,
+        hasConfig: true,
+        isDefault: true
+      });
     }
 
     const config = configSnap.data();
+    console.log('[ADMIN CONFIG] Config data:', JSON.stringify(config, null, 2));
+    
     return res.status(200).json({
       telegramChatId: config.adminChatId || null,
-      hasConfig: true
+      hasConfig: true,
+      isDefault: false
     });
 
   } catch (error) {
-    console.error('Error in handleGetConfig:', error);
-    return res.status(500).json({ error: 'Internal server error' });
+    console.error('[ADMIN CONFIG] Error in handleGetConfig:', error);
+    console.error('[ADMIN CONFIG] Error stack:', error.stack);
+    return res.status(500).json({ 
+      error: 'Internal server error',
+      details: error.message 
+    });
   }
 }
 

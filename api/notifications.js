@@ -89,7 +89,17 @@ async function handleAdminNotification(req, res) {
 
     if (!adminChatId) {
       console.error('[NOTIFICATIONS] Admin chat ID not configured in Firebase');
-      return res.status(400).json({ success: false, message: 'Admin chat ID not configured.' });
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Admin chat ID not configured. Please set your Telegram chat ID in Admin Settings.',
+        setupRequired: true,
+        instructions: [
+          '1. Open Telegram and start a chat with @userinfobot',
+          '2. Send /start to get your chat ID',
+          '3. Go to Admin Settings and enter your chat ID',
+          '4. Save the configuration'
+        ]
+      });
     }
 
     // Generate notification message based on type
@@ -131,10 +141,18 @@ async function handleAdminNotification(req, res) {
 
 // Send notification to user
 async function handleUserNotification(req, res) {
+  console.log('[USER NOTIFICATIONS] handleUserNotification called');
+  console.log('[USER NOTIFICATIONS] Request body:', JSON.stringify(req.body, null, 2));
+  
   const { api, userId, type, data } = req.body;
 
-  // Verify API key
-  if (!api || api !== process.env.ADMIN_API_KEY) {
+  // Verify API key (check both possible environment variables)
+  const validApiKey = process.env.ADMIN_API_KEY || process.env.VITE_ADMIN_API_KEY;
+  console.log('[USER NOTIFICATIONS] API key provided:', api ? 'Yes' : 'No');
+  console.log('[USER NOTIFICATIONS] Expected API key:', validApiKey ? 'Configured' : 'Not configured');
+  
+  if (!api || api !== validApiKey) {
+    console.error('[USER NOTIFICATIONS] API key validation failed');
     return res.status(403).json({ success: false, message: 'Invalid API key.' });
   }
 
