@@ -16,7 +16,7 @@
     --secondary: 51 65 85;
     --secondary-foreground: 226 232 240;
     --muted: 51 65 85;
-    --muted-foreground: 148 163 184;
+    --muted-foreground: 215.4 16.3% 46.9%;;
     --accent: 59 130 246;
     --accent-foreground: 241 245 249;
     --destructive: 0 84.2% 60.2%;
@@ -39,7 +39,7 @@
     --secondary: 30 41 59;
     --secondary-foreground: 226 232 240;
     --muted: 30 41 59;
-    --muted-foreground: 148 163 184;
+    --muted-foreground: 215 20.2% 65.1%;
     --accent: 300 50% 20%;
     --accent-foreground: 210 40% 98%;
     --destructive: 0 62.8% 30.6%;
@@ -263,7 +263,7 @@
 .glass-card textarea,
 .glass-card select {
   color: white;
-  background: rgba(4, 160, 149, 0.223);
+  background: hsl(215deg 10.18% 8.82% / 60%);
   border-color: hsla(51, 81%, 28%, 0.664);
 }
 
