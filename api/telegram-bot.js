@@ -573,7 +573,7 @@ async function processReferralDirect(newUserId, referrerId, userInfo) {
         timestamp: serverTimestamp(),
         reward: referrerReward
       }),
-      mysteryBoxes: increment(1) // Give 1 free spin
+      freeSpins: increment(1) // Give 1 free spin
     };
 
     if (needsReset) {
