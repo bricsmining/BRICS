@@ -434,6 +434,43 @@ const AdminSettings = ({ adminData }) => {
             </div>
             
             <div className="border-t border-gray-600 pt-4">
+              <h4 className="text-sm font-medium text-gray-300 mb-3">Referral System</h4>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-gray-300 mb-2 block">
+                    Referrer Reward (STON)
+                  </label>
+                  <Input
+                    type="number"
+                    value={config.referralReward || 100}
+                    onChange={(e) => updateConfigField('referralReward', parseInt(e.target.value))}
+                    className="bg-input border-border focus:border-blue-500 focus:bg-input/80 text-white"
+                    placeholder="100"
+                  />
+                  <p className="text-xs text-gray-400 mt-1">
+                    STON tokens awarded to the person who shared the referral link
+                  </p>
+                </div>
+                
+                <div>
+                  <label className="text-sm font-medium text-gray-300 mb-2 block">
+                    Welcome Bonus (STON)
+                  </label>
+                  <Input
+                    type="number"
+                    value={config.welcomeBonus || 50}
+                    onChange={(e) => updateConfigField('welcomeBonus', parseInt(e.target.value))}
+                    className="bg-input border-border focus:border-blue-500 focus:bg-input/80 text-white"
+                    placeholder="50"
+                  />
+                  <p className="text-xs text-gray-400 mt-1">
+                    STON tokens awarded to the new user who joined via referral link
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="border-t border-gray-600 pt-4">
               <h4 className="text-sm font-medium text-gray-300 mb-3">Exchange Rates</h4>
               <div className="grid grid-cols-2 gap-4">
                 <div>

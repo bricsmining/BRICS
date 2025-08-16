@@ -200,8 +200,13 @@ Your SkyTON app is launching automatically... 🚀
 
 // Handle regular /start command
 async function handleStart(chatId, userId, userInfo, customMessage = null) {
-  // Send new user notification to admin
-  if (userInfo) {
+  // Check if user is new or existing
+  const userRef = doc(db, 'users', userId.toString());
+  const userDoc = await getDoc(userRef);
+  const isNewUser = !userDoc.exists();
+
+  // Send new user notification to admin only for new users
+  if (userInfo && isNewUser) {
     await notifyAdminDirect('new_user', {
       userId: userId,
       name: userInfo.first_name || 'Unknown',
@@ -226,7 +231,7 @@ Ready to start your mining journey? 🚀
 
   // Get admin configuration for dynamic buttons
   const adminConfig = await getAdminConfig();
-  const keyboard = await buildInlineKeyboard(adminConfig);
+  const keyboard = await buildInlineKeyboard(adminConfig, isNewUser, userId);
 
   await sendMessage(chatId, message, {
     parse_mode: 'Markdown',
@@ -381,15 +386,21 @@ async function getAdminConfig() {
 }
 
 // Build inline keyboard based on admin configuration
-async function buildInlineKeyboard(adminConfig) {
+async function buildInlineKeyboard(adminConfig, isNewUser = false, userId = null) {
   const channelLink = adminConfig?.telegramChannelLink || '@xSkyTON';
   // Remove @ if present to get clean username
   const channelUsername = channelLink.replace('@', '');
   
+  // Build webapp URL with welcome parameters for new users
+  let webAppUrl = WEB_APP_URL;
+  if (isNewUser && userId) {
+    webAppUrl = `${WEB_APP_URL}?welcome=true&firstTime=true&userId=${encodeURIComponent(userId)}`;
+  }
+  
   // Build keyboard layout: Open webapp, Join channel, Invite, Help
   const keyboard = [
     // First row: Open webapp
-    [{ text: "🚀 Open SkyTON", web_app: { url: WEB_APP_URL } }],
+    [{ text: "🚀 Open SkyTON", web_app: { url: webAppUrl } }],
     // Second row: Join channel
     [{ text: "📢 Join Channel", url: `https://t.me/${channelUsername}` }],
     // Third row: Invite and Help
@@ -426,11 +437,22 @@ async function processReferralDirect(newUserId, referrerId, userInfo) {
       return { success: false, message: 'Referrer not found.' };
     }
 
-    if (!referTaskSnap.exists()) {
-      return { success: false, message: 'Referral task config missing.' };
+    // Get admin config for dynamic referral rewards
+    const adminConfigRef = doc(db, 'admin', 'config');
+    const adminConfigSnap = await getDoc(adminConfigRef);
+    
+    let referrerReward = 100; // Default fallback for referrer
+    let welcomeBonus = 50; // Default fallback for referred user
+    
+    if (adminConfigSnap.exists()) {
+      const adminConfig = adminConfigSnap.data();
+      referrerReward = adminConfig.referralReward || 100;
+      welcomeBonus = adminConfig.welcomeBonus || 50;
+    } else if (referTaskSnap.exists()) {
+      // Fallback to task reward if admin config doesn't exist
+      referrerReward = referTaskSnap.data().reward || 100;
+      welcomeBonus = 50; // Default welcome bonus
     }
-
-    const rewardAmount = referTaskSnap.data().reward || 100;
 
     // Check if user already exists
     if (newUserSnap.exists()) {
@@ -444,25 +466,37 @@ async function processReferralDirect(newUserId, referrerId, userInfo) {
         };
       }
       
-      // If user doesn't have a referrer yet, update with referral info
+      // If user doesn't have a referrer yet, update with referral info and give welcome bonus
       if (!existingUserData.invitedBy) {
+        // Initialize balanceBreakdown if it doesn't exist (for existing users)
+        const currentBalance = existingUserData.balance || 0;
+        const currentBreakdown = existingUserData.balanceBreakdown || {
+          task: currentBalance,
+          box: 0,
+          referral: 0,
+          mining: 0
+        };
+
         await updateDoc(newUserRef, {
-          invitedBy: referrerId
+          invitedBy: referrerId,
+          balance: increment(welcomeBonus),
+          'balanceBreakdown.referral': increment(welcomeBonus)
         });
-        console.log(`[BOT] Updated existing user ${newUserId} with referrer ${referrerId}`);
+        console.log(`[BOT] Updated existing user ${newUserId} with referrer ${referrerId} and welcome bonus ${welcomeBonus}`);
       }
     } else {
-      // Create the new user with referral metadata
+      // Create the new user with referral metadata and welcome bonus
+      const totalStartingBalance = 100 + welcomeBonus; // Starting balance + welcome bonus
       const defaultUser = {
         telegramId: newUserId.toString(),
         username: userInfo.username || `user_${newUserId}`,
         firstName: userInfo.first_name || '',
         lastName: userInfo.last_name || '',
-        balance: 100,
+        balance: totalStartingBalance,
         balanceBreakdown: {
-          task: 100,
+          task: 100, // Default starting balance
           box: 0,
-          referral: 0,
+          referral: welcomeBonus, // Welcome bonus from referral
           mining: 0
         },
         energy: 500,
@@ -504,7 +538,9 @@ async function processReferralDirect(newUserId, referrerId, userInfo) {
       return {
         success: true,
         message: 'Referral already processed (no duplicate rewards)',
-        reward: rewardAmount,
+        reward: referrerReward,
+        welcomeBonus: welcomeBonus,
+        referrerReward: referrerReward,
         existingReferral: true
       };
     }
@@ -526,12 +562,12 @@ async function processReferralDirect(newUserId, referrerId, userInfo) {
     const referrerUpdate = {
       referrals: increment(1),
       weeklyReferrals: needsReset ? 1 : increment(1),
-      'balanceBreakdown.referral': increment(rewardAmount),
+      'balanceBreakdown.referral': increment(referrerReward),
       referredUsers: arrayUnion(newUserId.toString()),
       referralHistory: arrayUnion({
         userId: newUserId.toString(),
         timestamp: serverTimestamp(),
-        reward: rewardAmount
+        reward: referrerReward
       }),
       mysteryBoxes: increment(1) // Give 1 free spin
     };
@@ -545,7 +581,9 @@ async function processReferralDirect(newUserId, referrerId, userInfo) {
     return {
       success: true,
       message: 'Referral processed successfully',
-      reward: rewardAmount
+      reward: referrerReward,
+      welcomeBonus: welcomeBonus,
+      referrerReward: referrerReward
     };
 
   } catch (error) {

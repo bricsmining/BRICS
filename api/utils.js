@@ -64,21 +64,33 @@ async function handleReferral(req, res) {
     const referredByRef = usersRef.doc(referredById);
     const referTaskRef = tasksRef.doc('task_refer_friend');
 
-    const [newUserSnap, referredBySnap, referTaskSnap] = await Promise.all([
+    // Get admin config for dynamic referral reward
+    const adminConfigRef = db.collection('admin').doc('config');
+    
+    const [newUserSnap, referredBySnap, referTaskSnap, adminConfigSnap] = await Promise.all([
       newUserRef.get(),
       referredByRef.get(),
-      referTaskRef.get()
+      referTaskRef.get(),
+      adminConfigRef.get()
     ]);
 
     if (!referredBySnap.exists) {
       return res.status(404).json({ success: false, message: 'Referrer not found.' });
     }
 
-    if (!referTaskSnap.exists) {
-      return res.status(500).json({ success: false, message: 'Referral task config missing.' });
+    // Get reward amounts from admin config first, then fallback to task config
+    let referrerReward = 100; // Default fallback for referrer
+    let welcomeBonus = 50; // Default fallback for referred user
+    
+    if (adminConfigSnap.exists) {
+      const adminConfig = adminConfigSnap.data();
+      referrerReward = adminConfig.referralReward || 100;
+      welcomeBonus = adminConfig.welcomeBonus || 50;
+    } else if (referTaskSnap.exists) {
+      // Fallback to task config if admin config doesn't exist
+      referrerReward = referTaskSnap.data().reward || 100;
+      welcomeBonus = 50; // Default welcome bonus
     }
-
-    const rewardAmount = referTaskSnap.data().reward || 0;
 
     // Check if user already exists
     if (newUserSnap.exists) {
@@ -92,12 +104,14 @@ async function handleReferral(req, res) {
         });
       }
       
-      // If user doesn't have a referrer yet, update with referral info
+      // If user doesn't have a referrer yet, update with referral info and give welcome bonus
       if (!existingUserData.invitedBy) {
         await newUserRef.update({
-          invitedBy: referredById
+          invitedBy: referredById,
+          balance: FieldValue.increment(welcomeBonus),
+          'balanceBreakdown.referral': FieldValue.increment(welcomeBonus)
         });
-        console.log(`Updated existing user ${newUserId} with referrer ${referredById}`);
+        console.log(`Updated existing user ${newUserId} with referrer ${referredById} and welcome bonus ${welcomeBonus}`);
       }
       
       // If user already has the correct referrer, continue to reward process
@@ -105,9 +119,20 @@ async function handleReferral(req, res) {
         console.log(`User ${newUserId} already has correct referrer ${referredById}, processing rewards`);
       }
     } else {
-      // Create the new user with referral metadata
-      await newUserRef.set(defaultFirestoreUser(newUserId, null, null, null, referredById));
-      console.log(`Created new user ${newUserId} with referrer ${referredById}`);
+      // Create the new user with referral metadata and welcome bonus
+      const newUser = defaultFirestoreUser(newUserId, null, null, null, referredById);
+      // Add welcome bonus to new user
+      newUser.balance += welcomeBonus;
+      newUser.balanceBreakdown = newUser.balanceBreakdown || {
+        task: 100,
+        box: 0,
+        referral: welcomeBonus,
+        mining: 0
+      };
+      newUser.balanceBreakdown.referral = welcomeBonus;
+      
+      await newUserRef.set(newUser);
+      console.log(`Created new user ${newUserId} with referrer ${referredById} and welcome bonus ${welcomeBonus}`);
     }
 
     // Update referrer's stats with dynamic reward AND free spin
@@ -143,7 +168,8 @@ async function handleReferral(req, res) {
     
     const updates = {
       referrals: FieldValue.increment(1),
-      balance: FieldValue.increment(rewardAmount),
+      balance: FieldValue.increment(referrerReward),
+      'balanceBreakdown.referral': FieldValue.increment(referrerReward),
       referredUsers: FieldValue.arrayUnion(newUserId),
       freeSpins: FieldValue.increment(1), // Add 1 free spin for successful referral
       totalSpinsEarned: FieldValue.increment(1), // Track total spins earned
@@ -152,7 +178,8 @@ async function handleReferral(req, res) {
       referralHistory: FieldValue.arrayUnion({
         userId: newUserId,
         joinedAt: currentDate,
-        timestamp: currentDate
+        timestamp: currentDate,
+        reward: referrerReward
       })
     };
     
@@ -172,14 +199,16 @@ async function handleReferral(req, res) {
       const referrerName = referrerData?.firstName || referrerData?.username || `User ${referredById}`;
       
       // Send notifications (async, don't wait)
-      sendNotifications(referredById, referrerName, newUserId, newUserName, rewardAmount);
+      sendNotifications(referredById, referrerName, newUserId, newUserName, referrerReward, welcomeBonus);
     } catch (notifError) {
       console.error('Notification error (non-blocking):', notifError);
     }
 
     return res.status(200).json({
       success: true,
-      message: `Referral successful. ${rewardAmount} STON and 1 free spin rewarded to referrer.`
+      message: `Referral successful. ${referrerReward} STON + 1 free spin to referrer, ${welcomeBonus} STON welcome bonus to new user.`,
+      referrerReward: referrerReward,
+      welcomeBonus: welcomeBonus
     });
 
   } catch (error) {
@@ -233,7 +262,7 @@ async function handleTelegramVerification(req, res) {
 }
 
 // Send notifications for referral success
-async function sendNotifications(referrerId, referrerName, newUserId, newUserName, rewardAmount) {
+async function sendNotifications(referrerId, referrerName, newUserId, newUserName, referrerReward, welcomeBonus = 0) {
   if (!BOT_TOKEN) {
     console.warn('Bot token not configured for notifications');
     return;
@@ -265,7 +294,8 @@ async function sendNotifications(referrerId, referrerName, newUserId, newUserNam
 👥 *Referral Info:*
 • Referrer: \`${referrerId}\` (${referrerName})
 • New User: \`${newUserId}\` (${newUserName})
-• Reward: ${rewardAmount} STON + 1 Free Spin
+• Referrer Reward: ${referrerReward} STON + 1 Free Spin
+• Welcome Bonus: ${welcomeBonus} STON to new user
 
 🕐 *Time:* ${timestamp}`;
 
@@ -277,14 +307,31 @@ async function sendNotifications(referrerId, referrerName, newUserId, newUserNam
 Your friend joined SkyTON through your referral link!
 
 👥 *New Member:* ${newUserName}
-💰 *Your Reward:* ${rewardAmount} STON
+💰 *Your Reward:* ${referrerReward} STON
 🎰 *Bonus:* 1 Free Spin added
+🎁 *Their Welcome:* ${welcomeBonus} STON bonus
 
 Keep sharing to earn more rewards! 🚀
 
 *Share your link:* https://t.me/xSkyTON_Bot/app?start=refID${referrerId}`;
 
+    // Also notify the new user about their welcome bonus
+    const newUserMessage = `🎉 *Welcome to SkyTON!*
+
+You joined via a referral link and received a welcome bonus!
+
+🎁 *Welcome Bonus:* ${welcomeBonus} STON added to your balance
+💰 *Starting Balance:* Ready to mine more tokens
+🚀 *Your Referrer:* ${referrerName} invited you
+
+Start mining and earn even more STON tokens! 🚀`;
+
     await sendTelegramMessage(referrerId, userMessage);
+    
+    // Send welcome message to new user if they have a welcomeBonus
+    if (welcomeBonus > 0) {
+      await sendTelegramMessage(newUserId, newUserMessage);
+    }
 
   } catch (error) {
     console.error('Error sending referral notifications:', error);

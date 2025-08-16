@@ -57,7 +57,8 @@ export const parseLaunchParams = () => {
   // Store temporary referral parameters for later processing (after we get user ID)
   if ((isReferred && urlReferrerId) || (startParam && urlReferrerId)) {
     const isMiniAppReferral = startParam && startParam.startsWith('refID');
-    const effectiveFirstTime = isFirstTime || isMiniAppReferral;
+    // For Mini App referrals, treat as first time and bonus unless explicitly set otherwise
+    const effectiveFirstTime = isFirstTime || isMiniAppReferral || (startParam && !isFirstTime);
     const effectiveHasBonus = hasBonus || isMiniAppReferral;
     
     // Store temporary referral data without user-specific key

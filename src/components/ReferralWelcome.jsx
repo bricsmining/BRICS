@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getReferralInfo, getWelcomeInfo, clearReferralInfo, clearWelcomeInfo } from '@/data/telegramUtils';
+import { getAdminConfig } from '@/data/firestore/adminConfig';
 import { useToast } from '@/components/ui/use-toast';
 
 const ReferralWelcome = () => {
@@ -8,56 +9,71 @@ const ReferralWelcome = () => {
   const [referralInfo, setReferralInfo] = useState(null);
   const [showWelcomeMessage, setShowWelcomeMessage] = useState(false);
   const [welcomeInfo, setWelcomeInfo] = useState(null);
+  const [adminConfig, setAdminConfig] = useState(null);
   const { toast } = useToast();
 
   useEffect(() => {
-    // Check for referral info
-    const refInfo = getReferralInfo();
-    if (refInfo && refInfo.isFirstTime) { // Only show for first-time referrals
-      setReferralInfo(refInfo);
-      setShowReferralMessage(true);
-      
-      // Show success toast
-      toast({
-        title: '🎉 Referral Bonus Applied!',
-        description: refInfo.hasBonus 
-          ? 'You earned STON tokens and a free spin!' 
-          : 'Welcome to SkyTON via referral!',
-        variant: 'success',
-        duration: 5000,
-        className: 'bg-gradient-to-r from-green-600 to-emerald-600 text-white border-green-500',
-      });
+    const initWelcomeMessages = async () => {
+      // Load admin config first to get referral reward
+      try {
+        const config = await getAdminConfig();
+        setAdminConfig(config);
+      } catch (error) {
+        console.error('Failed to load admin config:', error);
+      }
 
-      // Auto-hide after 8 seconds
-      setTimeout(() => {
-        setShowReferralMessage(false);
-        clearReferralInfo(refInfo.userId);
-      }, 8000);
-    }
+      // Check for referral info
+      const refInfo = getReferralInfo();
+      if (refInfo && refInfo.isFirstTime) { // Only show for first-time referrals
+        setReferralInfo(refInfo);
+        setShowReferralMessage(true);
+        
+        // Show success toast with dynamic rewards
+        const referrerReward = adminConfig?.referralReward || 100;
+        const welcomeBonus = adminConfig?.welcomeBonus || 50;
+        toast({
+          title: '🎉 Welcome Bonus Received!',
+          description: refInfo.hasBonus 
+            ? `You got ${welcomeBonus} STON! Your referrer earned ${referrerReward} STON + free spin!` 
+            : 'Welcome to SkyTON via referral!',
+          variant: 'success',
+          duration: 6000,
+          className: 'bg-gradient-to-r from-green-600 to-emerald-600 text-white border-green-500',
+        });
 
-    // Check for welcome info
-    const welInfo = getWelcomeInfo();
-    if (welInfo && welInfo.isFirstTime && !refInfo) { // Only show for first-time welcome and no referral
-      setWelcomeInfo(welInfo);
-      setShowWelcomeMessage(true);
-      
-      // Show welcome toast
-      toast({
-        title: '🚀 Welcome to SkyTON!',
-        description: welInfo.hasError 
-          ? 'Ready to start mining STON tokens!' 
-          : 'Your mining journey begins now!',
-        variant: 'default',
-        duration: 4000,
-        className: 'bg-gradient-to-r from-blue-600 to-purple-600 text-white border-blue-500',
-      });
+        // Auto-hide after 10 seconds for referral messages
+        setTimeout(() => {
+          setShowReferralMessage(false);
+          clearReferralInfo(refInfo.userId);
+        }, 10000);
+      }
 
-      // Auto-hide after 6 seconds
-      setTimeout(() => {
-        setShowWelcomeMessage(false);
-        clearWelcomeInfo(welInfo.userId);
-      }, 6000);
-    }
+      // Check for welcome info (non-referred users)
+      const welInfo = getWelcomeInfo();
+      if (welInfo && welInfo.isFirstTime && !refInfo) { // Only show for first-time welcome and no referral
+        setWelcomeInfo(welInfo);
+        setShowWelcomeMessage(true);
+        
+        // Show welcome toast
+        toast({
+          title: '🚀 Welcome to SkyTON!',
+          description: welInfo.hasError 
+            ? 'Ready to start mining STON tokens!' 
+            : 'Your mining journey begins now!',
+          variant: 'default',
+          duration: 4000,
+          className: 'bg-gradient-to-r from-blue-600 to-purple-600 text-white border-blue-500',
+        });
+
+        // Auto-hide after 6 seconds
+        setTimeout(() => {
+          setShowWelcomeMessage(false);
+          clearWelcomeInfo(welInfo.userId);
+        }, 6000);
+      }
+    };
+
+    initWelcomeMessages();
   }, [toast]);
 
   return (
@@ -77,11 +93,11 @@ const ReferralWelcome = () => {
                   <span className="text-2xl">🎉</span>
                 </div>
                 <div>
-                  <h3 className="font-bold text-lg">Referral Bonus!</h3>
+                  <h3 className="font-bold text-lg">Welcome Bonus Received!</h3>
                   <p className="text-sm opacity-90">
                     {referralInfo.hasBonus 
-                      ? 'STON tokens + free spin added!' 
-                      : 'Welcome via referral!'}
+                      ? `You got ${adminConfig?.welcomeBonus || 50} STON welcome bonus!` 
+                      : `Referred by: ${referralInfo.referrerId}`}
                   </p>
                 </div>
               </div>
@@ -98,13 +114,24 @@ const ReferralWelcome = () => {
             
             {referralInfo.hasBonus && (
               <div className="mt-3 pt-3 border-t border-white/20">
-                <div className="flex justify-between text-sm">
-                  <span>🪙 STON Bonus</span>
-                  <span className="font-semibold">Added to balance</span>
+                <div className="text-center mb-2">
+                  <p className="text-sm font-semibold">🎉 Referral Successfully Processed!</p>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span>🎰 Free Spin</span>
-                  <span className="font-semibold">Ready to use</span>
+                  <span>🎁 Your Welcome Bonus</span>
+                  <span className="font-semibold">{adminConfig?.welcomeBonus || 50} STON</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span>🪙 Referrer Reward</span>
+                  <span className="font-semibold">{adminConfig?.referralReward || 100} STON</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span>🎰 Referrer Bonus</span>
+                  <span className="font-semibold">+1 Mystery Box</span>
+                </div>
+                <div className="flex justify-between text-sm mt-1">
+                  <span>👤 Referred by</span>
+                  <span className="font-semibold">User {referralInfo.referrerId}</span>
                 </div>
               </div>
             )}

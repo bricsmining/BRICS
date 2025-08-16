@@ -33,6 +33,10 @@ const defaultConfig = {
   tasksEnabled: true,
   referralEnabled: true,
   
+  // Referral System (editable in admin panel)
+  referralReward: 100, // STON tokens awarded to referrer
+  welcomeBonus: 50, // STON tokens awarded to referred user
+  
   // Exchange & Rates (editable in admin panel)
   stonToTonRate: 0.0000001, // 1 STON = 0.0000001 TON
   usdToTonRate: 5.50, // 1 USD = 5.50 TON (example)
