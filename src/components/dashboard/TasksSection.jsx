@@ -412,27 +412,39 @@ const TasksSection = ({ tasks = [], user = {}, refreshUserData, isLoading }) => 
 
   // Admin notification via backend API with enhanced system
   const sendAdminNotification = useCallback(async (type, data) => {
+    console.log('[SEND ADMIN NOTIFICATION] Called with type:', type);
+    console.log('[SEND ADMIN NOTIFICATION] Data:', JSON.stringify(data, null, 2));
+    
     try {
+      const requestBody = { 
+        api: import.meta.env.VITE_ADMIN_API_KEY,
+        type: type,
+        data: data
+      };
+      
+      console.log('[SEND ADMIN NOTIFICATION] Request body:', JSON.stringify(requestBody, null, 2));
+      
       const response = await fetch('/api/notifications?action=admin', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ 
-          api: import.meta.env.VITE_ADMIN_API_KEY,
-          type: type,
-          data: data
-        })
+        body: JSON.stringify(requestBody)
       });
       
+      console.log('[SEND ADMIN NOTIFICATION] Response status:', response.status);
+      
       if (!response.ok) {
-        throw new Error(`Failed to send notification: ${response.status}`);
+        const errorText = await response.text();
+        console.error('[SEND ADMIN NOTIFICATION] Response error:', errorText);
+        throw new Error(`Failed to send notification: ${response.status} - ${errorText}`);
       }
       
       const result = await response.json();
+      console.log('[SEND ADMIN NOTIFICATION] Response result:', JSON.stringify(result, null, 2));
       return result.success;
     } catch (err) {
-      console.error("Failed to send admin notification:", err);
+      console.error("[SEND ADMIN NOTIFICATION] Failed to send admin notification:", err);
       
       toast({
         title: "Warning",
@@ -791,17 +803,23 @@ const TasksSection = ({ tasks = [], user = {}, refreshUserData, isLoading }) => 
         success = await requestManualVerification(user.id, task.id);
 
         if (success) {
-          await sendAdminNotification('task_submission', {
-            userId: user.id,
-            userName: user.username || user.first_name || user.last_name || 'Unknown',
-            username: user.username || 'None',
-            taskTitle: task.title,
-            taskType: task.type || 'Manual Task',
-            taskId: task.id,
-            reward: task.reward,
-            target: task.target || 'N/A',
-            submission: 'Manual verification requested'
-          });
+          console.log('[TASK SUBMISSION] Sending admin notification for task:', task.id);
+          try {
+            await sendAdminNotification('task_submission', {
+              userId: user.id,
+              userName: user.username || user.first_name || user.last_name || 'Unknown',
+              username: user.username || 'None',
+              taskTitle: task.title,
+              taskType: task.type || 'Manual Task',
+              taskId: task.id,
+              reward: task.reward,
+              target: task.target || 'N/A',
+              submission: 'Manual verification requested'
+            });
+            console.log('[TASK SUBMISSION] Admin notification sent successfully');
+          } catch (notificationError) {
+            console.error('[TASK SUBMISSION] Failed to send admin notification:', notificationError);
+          }
         }
         toast({
           title: success ? 'Verification Requested' : 'Request Failed',

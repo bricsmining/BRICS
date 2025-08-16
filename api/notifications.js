@@ -44,12 +44,24 @@ export default async function handler(req, res) {
 
 // Send notification to admin
 async function handleAdminNotification(req, res) {
+  console.log('[NOTIFICATIONS] handleAdminNotification called');
+  console.log('[NOTIFICATIONS] Request body:', JSON.stringify(req.body, null, 2));
+  
   const { api, type, data } = req.body;
 
+  console.log('[NOTIFICATIONS] Extracted type:', type);
+  console.log('[NOTIFICATIONS] Extracted data:', JSON.stringify(data, null, 2));
+
   // Verify API key
+  console.log('[NOTIFICATIONS] API key provided:', api ? 'Yes' : 'No');
+  console.log('[NOTIFICATIONS] Expected API key:', process.env.ADMIN_API_KEY ? 'Configured' : 'Not configured');
+  
   if (!api || api !== process.env.ADMIN_API_KEY) {
+    console.error('[NOTIFICATIONS] API key validation failed');
     return res.status(403).json({ success: false, message: 'Invalid API key.' });
   }
+  
+  console.log('[NOTIFICATIONS] API key validation passed');
 
   if (!BOT_TOKEN) {
     return res.status(500).json({ success: false, message: 'Bot token not configured.' });

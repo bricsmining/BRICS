@@ -1207,7 +1207,7 @@ async function handleWithdrawalApproval(callbackQuery, data, isApproval) {
     } else {
       await sendMessage(
         callbackQuery.message.chat.id,
-        `❌ Error processing withdrawal: ${result.message || 'Unknown error'}`,
+        `❌ Error processing withdrawal: ${result.error || result.message || 'Unknown error'}`,
         { parse_mode: 'Markdown' }
       );
     }
@@ -1292,7 +1292,7 @@ async function handleTaskApproval(callbackQuery, data, isApproval) {
     } else {
       await sendMessage(
         callbackQuery.message.chat.id,
-        `❌ Error processing task: ${result.message || 'Unknown error'}`,
+        `❌ Error processing task: ${result.error || result.message || 'Unknown error'}`,
         { parse_mode: 'Markdown' }
       );
     }
