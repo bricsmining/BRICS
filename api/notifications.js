@@ -254,24 +254,14 @@ ${data.referrerId ? `• Referred by: \`${data.referrerId}\`` : ''}
 • Target: ${data.target || 'N/A'}
 • Submission: ${data.submission || 'No submission provided'}
 
-🔍 *Action Required: Review and Process*
+🔍 *Action Required: Review and Process in Admin Panel*
 
 🕐 *Time:* ${timestamp}`,
         keyboard: [
           [
             {
-              text: '✅ Approve',
-              callback_data: `approve_task_${data.taskId}_${data.userId}`
-            },
-            {
-              text: '❌ Reject',
-              callback_data: `reject_task_${data.taskId}_${data.userId}`
-            }
-          ],
-          [
-            {
-              text: '📋 View Submission',
-              callback_data: `view_task_${data.taskId}_${data.userId}`
+              text: '🎛️ Open Admin Panel',
+              web_app: { url: `${process.env.NEXTAUTH_URL || 'https://skyton.vercel.app'}/admin` }
             }
           ]
         ]
@@ -308,24 +298,14 @@ ${data.referrerId ? `• Referred by: \`${data.referrerId}\`` : ''}
 • Ads Watched: ${stats.totalAdsWatched || 0}
 • Mining Cards: ${stats.miningCards || 0}
 
-🔍 *Action Required: Review and Process*
+🔍 *Action Required: Review and Process in Admin Panel*
 
 🕐 *Time:* ${timestamp}`,
         keyboard: [
           [
             {
-              text: '✅ Approve',
-              callback_data: `approve_withdrawal_${data.withdrawalId}_${data.userId}`
-            },
-            {
-              text: '❌ Reject',
-              callback_data: `reject_withdrawal_${data.withdrawalId}_${data.userId}`
-            }
-          ],
-          [
-            {
-              text: '📋 View Details',
-              callback_data: `view_withdrawal_${data.withdrawalId}_${data.userId}`
+              text: '🎛️ Open Admin Panel',
+              web_app: { url: `${process.env.NEXTAUTH_URL || 'https://skyton.vercel.app'}/admin` }
             }
           ]
         ]
