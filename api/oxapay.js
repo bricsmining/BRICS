@@ -213,9 +213,12 @@ const createPayout = async (payoutData) => {
     amount: numericAmount,
   };
 
-  // Add optional fields only if they have valid values
+  // Add network field - required for TON and other multi-network currencies
   if (network) {
     requestData.network = network;
+  } else if (currency.toUpperCase() === 'TON') {
+    // TON requires network parameter
+    requestData.network = 'TON';
   }
 
   if (description) {
@@ -240,7 +243,7 @@ const createPayout = async (payoutData) => {
 
   console.log('Creating payout with data:', JSON.stringify(requestData, null, 2));
 
-  return await makeOxapayRequest('/payout', 'POST', requestData, true);
+  return await makeOxapayRequest('/v1/payout', 'POST', requestData, true);
 };
 
 // Get payment status
