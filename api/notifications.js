@@ -78,18 +78,29 @@ async function handleAdminNotification(req, res) {
     }
 
     // Generate notification message based on type
-    const message = generateAdminMessage(type, data);
+    const messageData = generateAdminMessage(type, data);
     
-    if (!message) {
+    if (!messageData) {
       console.error('[NOTIFICATIONS] Invalid notification type:', type);
       return res.status(400).json({ success: false, message: 'Invalid notification type.' });
     }
 
     console.log(`[NOTIFICATIONS] Sending notification - Type: ${type}`);
-    console.log(`[NOTIFICATIONS] Message preview: ${message.substring(0, 100)}...`);
+    
+    // Handle both old string format and new object format with keyboards
+    let messageText, options = {};
+    if (typeof messageData === 'string') {
+      messageText = messageData;
+      console.log(`[NOTIFICATIONS] Message preview: ${messageText.substring(0, 100)}...`);
+    } else {
+      messageText = messageData.text;
+      options = messageData.keyboard ? { reply_markup: { inline_keyboard: messageData.keyboard } } : {};
+      console.log(`[NOTIFICATIONS] Message preview: ${messageText.substring(0, 100)}...`);
+      console.log(`[NOTIFICATIONS] Keyboard buttons: ${messageData.keyboard ? messageData.keyboard.length : 0} rows`);
+    }
 
     // Send notification to admin
-    const success = await sendTelegramMessage(adminChatId, message);
+    const success = await sendTelegramMessage(adminChatId, messageText, options);
     
     if (success) {
       return res.status(200).json({ success: true, message: 'Admin notification sent successfully.' });
@@ -170,29 +181,81 @@ ${data.referrerId ? `• Referred by: \`${data.referrerId}\`` : ''}
 🕐 *Time:* ${timestamp}`;
 
     case 'task_submission':
-      return `📋 *Task Submission!*
+      return {
+        text: `📋 *Task Submission!*
 
-👤 *User:* \`${data.userId}\` (${data.userName || 'Unknown'})
-📝 *Task:* ${data.taskTitle || 'Unknown Task'}
-💰 *Reward:* ${data.reward || 0} STON
-🔗 *Target:* ${data.target || 'N/A'}
+👤 *User Details:*
+• ID: \`${data.userId}\`
+• Name: ${data.userName || 'Unknown'}
+• Username: @${data.username || 'None'}
 
-*Action Required: Review and approve/reject*
+📝 *Task Details:*
+• Title: ${data.taskTitle || 'Unknown Task'}
+• Type: ${data.taskType || 'Manual Task'}
+• Reward: ${data.reward || 0} STON
+• Target: ${data.target || 'N/A'}
+• Submission: ${data.submission || 'No submission provided'}
 
-🕐 *Time:* ${timestamp}`;
+🔍 *Action Required: Review and Process*
+
+🕐 *Time:* ${timestamp}`,
+        keyboard: [
+          [
+            {
+              text: '✅ Approve',
+              callback_data: `approve_task_${data.taskId || data.userId}_${Date.now()}`
+            },
+            {
+              text: '❌ Reject',
+              callback_data: `reject_task_${data.taskId || data.userId}_${Date.now()}`
+            }
+          ],
+          [
+            {
+              text: '📋 View Submission',
+              callback_data: `view_task_${data.taskId || data.userId}`
+            }
+          ]
+        ]
+      };
 
     case 'withdrawal_request':
-      return `💸 *Withdrawal Request!*
+      return {
+        text: `💸 *Withdrawal Request!*
 
-👤 *User:* \`${data.userId}\` (${data.userName || 'Unknown'})
-💰 *Amount:* ${data.amount || 0} STON
-💳 *Method:* ${data.method || 'Unknown'}
-📍 *Address:* \`${data.address || 'Not provided'}\`
-💵 *Current Balance:* ${data.currentBalance || 0} STON
+👤 *User Details:*
+• ID: \`${data.userId}\`
+• Name: ${data.userName || 'Unknown'}
+• Username: @${data.username || 'None'}
 
-*Action Required: Process withdrawal*
+💰 *Withdrawal Details:*
+• Amount: ${data.amount || 0} STON
+• Method: ${data.method || 'Unknown'}
+• Address: \`${data.address || 'Not provided'}\`
+• Current Balance: ${data.currentBalance || 0} STON
 
-🕐 *Time:* ${timestamp}`;
+🔍 *Action Required: Review and Process*
+
+🕐 *Time:* ${timestamp}`,
+        keyboard: [
+          [
+            {
+              text: '✅ Approve',
+              callback_data: `approve_withdrawal_${data.withdrawalId || data.userId}_${Date.now()}`
+            },
+            {
+              text: '❌ Reject',
+              callback_data: `reject_withdrawal_${data.withdrawalId || data.userId}_${Date.now()}`
+            }
+          ],
+          [
+            {
+              text: '📋 View Details',
+              callback_data: `view_withdrawal_${data.withdrawalId || data.userId}`
+            }
+          ]
+        ]
+      };
 
     case 'task_completion':
       return `✅ *Task Completed!*
@@ -330,18 +393,21 @@ Keep sharing to earn more rewards! 🚀
 }
 
 // Send Telegram message
-async function sendTelegramMessage(chatId, message) {
+async function sendTelegramMessage(chatId, message, options = {}) {
   try {
     const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
+    
+    const payload = {
+      chat_id: chatId,
+      text: message,
+      parse_mode: 'Markdown',
+      ...options
+    };
     
     const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chat_id: chatId,
-        text: message,
-        parse_mode: 'Markdown'
-      })
+      body: JSON.stringify(payload)
     });
 
     const result = await response.json();
