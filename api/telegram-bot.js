@@ -144,7 +144,9 @@ async function handleStartWithReferral(chatId, userId, referrerId, userInfo) {
         newUserId: userId,
         newUserName: userInfo.first_name || 'Unknown',
         referrerId: referrerId,
-        reward: referralResult.reward
+        referrerReward: referralResult.referrerReward,
+        welcomeBonus: referralResult.welcomeBonus,
+        reward: referralResult.referrerReward // Keep for backward compatibility
       });
       
       // Send welcome message with referral bonus
@@ -161,9 +163,9 @@ async function handleStartWithReferral(chatId, userId, referrerId, userInfo) {
 You've been invited by a friend and earned bonus rewards! 
 
 🎁 *Referral Bonus Applied:*
-• ${referralResult.reward} STON tokens added
-• Free spin on the reward wheel  
-• Special welcome bonus
+• ${referralResult.welcomeBonus} STON welcome bonus for you
+• ${referralResult.referrerReward} STON reward for your referrer
+• Free spin on the reward wheel
 
 Your SkyTON app is launching automatically... 🚀
       `, {
@@ -183,7 +185,8 @@ Your SkyTON app is launching automatically... 🚀
       // Notify referrer about successful referral
       await notifyUserDirect(referrerId, 'successful_referral', {
         newUserName: userInfo.first_name || `User ${userId}`,
-        reward: referralResult.reward,
+        reward: referralResult.referrerReward,
+        welcomeBonus: referralResult.welcomeBonus,
         referrerId: referrerId
       });
       
@@ -561,6 +564,7 @@ async function processReferralDirect(newUserId, referrerId, userInfo) {
     // Update referrer with new referral
     const referrerUpdate = {
       referrals: increment(1),
+      balance: increment(referrerReward), // ADD MISSING BALANCE UPDATE
       weeklyReferrals: needsReset ? 1 : increment(1),
       'balanceBreakdown.referral': increment(referrerReward),
       referredUsers: arrayUnion(newUserId.toString()),
@@ -699,7 +703,8 @@ function generateAdminMessage(type, data) {
 👥 *Referral Info:*
 • Referrer: \`${data.referrerId}\`
 • New User: \`${data.newUserId}\` (${data.newUserName || 'Unknown'})
-• Reward: ${data.reward || 0} STON + 1 Free Spin
+• Referrer Reward: ${data.referrerReward || data.reward || 0} STON + 1 Free Spin
+• Welcome Bonus: ${data.welcomeBonus || 0} STON to new user
 
 🕐 *Time:* ${timestamp}`;
 
@@ -1090,6 +1095,7 @@ Your friend joined SkyTON through your referral link!
 👥 *New Member:* ${data.newUserName || 'Friend'}
 💰 *Your Reward:* ${data.reward || 0} STON
 🎰 *Bonus:* 1 Free Spin added
+🎁 *Their Welcome:* ${data.welcomeBonus || 0} STON bonus
 
 Keep sharing to earn more rewards! 🚀
 
