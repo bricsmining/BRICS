@@ -117,20 +117,45 @@ async function handleAdminNotification(req, res) {
     if (typeof messageData === 'string') {
       messageText = messageData;
       console.log(`[NOTIFICATIONS] Message preview: ${messageText.substring(0, 100)}...`);
+      console.log(`[NOTIFICATIONS] Message length: ${messageText.length} characters`);
     } else {
       messageText = messageData.text;
       options = messageData.keyboard ? { reply_markup: { inline_keyboard: messageData.keyboard } } : {};
       console.log(`[NOTIFICATIONS] Message preview: ${messageText.substring(0, 100)}...`);
+      console.log(`[NOTIFICATIONS] Message length: ${messageText.length} characters`);
       console.log(`[NOTIFICATIONS] Keyboard buttons: ${messageData.keyboard ? messageData.keyboard.length : 0} rows`);
+      
+      // Check callback data lengths
+      if (messageData.keyboard) {
+        messageData.keyboard.forEach((row, i) => {
+          row.forEach((button, j) => {
+            console.log(`[NOTIFICATIONS] Button [${i}][${j}]: "${button.text}" - callback_data length: ${button.callback_data?.length || 0}`);
+            if (button.callback_data && button.callback_data.length > 64) {
+              console.error(`[NOTIFICATIONS] Callback data too long: ${button.callback_data}`);
+            }
+          });
+        });
+      }
     }
 
     // Send notification to admin
+    console.log(`[NOTIFICATIONS] About to send message to admin: ${adminChatId}`);
     const success = await sendTelegramMessage(adminChatId, messageText, options);
     
     if (success) {
+      console.log('[NOTIFICATIONS] Admin notification sent successfully');
       return res.status(200).json({ success: true, message: 'Admin notification sent successfully.' });
     } else {
-      return res.status(500).json({ success: false, message: 'Failed to send admin notification.' });
+      console.error('[NOTIFICATIONS] Failed to send admin notification via Telegram API');
+      return res.status(500).json({ 
+        success: false, 
+        message: 'Failed to send admin notification. Check Telegram API logs for details.',
+        details: {
+          chatId: adminChatId,
+          messageLength: messageText.length,
+          hasKeyboard: !!options.reply_markup
+        }
+      });
     }
 
   } catch (error) {
@@ -471,11 +496,33 @@ async function sendTelegramMessage(chatId, message, options = {}) {
     
     if (result.ok) {
       console.log('[TELEGRAM] Message sent successfully');
+      return true;
     } else {
       console.error('[TELEGRAM] Failed to send message:', result.description || result.error_code);
+      
+      // If markdown parsing failed, try without markdown
+      if (result.error_code === 400 && result.description?.includes('parse')) {
+        console.log('[TELEGRAM] Retrying without markdown...');
+        const fallbackPayload = {
+          chat_id: chatId,
+          text: message,
+          ...options
+        };
+        
+        const fallbackResponse = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(fallbackPayload)
+        });
+        
+        const fallbackResult = await fallbackResponse.json();
+        console.log('[TELEGRAM] Fallback result:', JSON.stringify(fallbackResult, null, 2));
+        
+        return fallbackResult.ok;
+      }
+      
+      return false;
     }
-    
-    return result.ok;
   } catch (error) {
     console.error('[TELEGRAM] Error sending Telegram message:', error);
     return false;
