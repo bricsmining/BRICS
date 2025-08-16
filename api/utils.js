@@ -135,9 +135,8 @@ async function handleReferral(req, res) {
       console.log(`Created new user ${newUserId} with referrer ${referredById} and welcome bonus ${welcomeBonus}`);
     }
 
-    // Update referrer's stats with dynamic reward AND free spin
+    // Update referrer's stats with reward AND free spin (simplified approach)
     const referrerData = referredBySnap.data();
-    const currentDate = new Date();
     
     // Check if this user is already in referredUsers to prevent duplicate rewards
     const existingReferredUsers = referrerData.referredUsers || [];
@@ -150,44 +149,16 @@ async function handleReferral(req, res) {
       });
     }
     
-    // Check if we need to reset weekly referrals
-    const lastReset = referrerData.weeklyReferralsLastReset;
-    let weeklyReferrals = referrerData.weeklyReferrals || 0;
-    let needsReset = false;
-    
-    if (lastReset) {
-      const daysSinceReset = (currentDate - lastReset.toDate()) / (1000 * 60 * 60 * 24);
-      if (daysSinceReset >= 7) {
-        weeklyReferrals = 0;
-        needsReset = true;
-      }
-    }
-    
-    // Increment weekly referrals
-    weeklyReferrals += 1;
-    
-    const updates = {
+    // Simple, direct update like your working example
+    await referredByRef.update({
       referrals: FieldValue.increment(1),
       balance: FieldValue.increment(referrerReward),
       'balanceBreakdown.referral': FieldValue.increment(referrerReward),
       referredUsers: FieldValue.arrayUnion(newUserId),
       freeSpins: FieldValue.increment(1), // Add 1 free spin for successful referral
       totalSpinsEarned: FieldValue.increment(1), // Track total spins earned
-      lastReferralDate: currentDate,
-      weeklyReferrals: weeklyReferrals,
-      referralHistory: FieldValue.arrayUnion({
-        userId: newUserId,
-        joinedAt: currentDate,
-        timestamp: currentDate,
-        reward: referrerReward
-      })
-    };
-    
-    if (needsReset || !lastReset) {
-      updates.weeklyReferralsLastReset = currentDate;
-    }
-    
-    await referredByRef.update(updates);
+      lastReferralDate: new Date()
+    });
 
     // Send notifications
     try {
