@@ -230,6 +230,22 @@ export const approveWithdrawal = async (withdrawalId, userId, amount) => {
       throw new Error('No wallet address found in withdrawal request');
     }
 
+    // Get user data to retrieve TON memo
+    const userRef = doc(db, 'users', userId);
+    const userDoc = await getDoc(userRef);
+    
+    if (!userDoc.exists()) {
+      throw new Error('User not found');
+    }
+    
+    const userData = userDoc.data();
+    const tonMemo = userData.tonMemo;
+    
+    // Check if memo exists (required for new connections)
+    if (!tonMemo) {
+      throw new Error('User wallet does not have a memo configured. Please reconnect wallet with memo.');
+    }
+
     // Convert STON to TON for payout
     const tonAmount = stonToTon(amount);
     
@@ -237,20 +253,25 @@ export const approveWithdrawal = async (withdrawalId, userId, amount) => {
 
     // Call OxaPay payout API with v1 specification
     try {
+      const payoutData = {
+        address: walletAddress,
+        amount: parseFloat(tonAmount),
+        currency: 'TON',
+        network: 'TON',
+        memo: tonMemo, // Always include memo (now required)
+        description: `SkyTON withdrawal for ${username || userId}`,
+        withdrawalId: withdrawalId,
+        userId: userId
+      };
+
+      console.log(`Including required TON memo in payout: ${tonMemo}`);
+
       const payoutResponse = await fetch('/api/oxapay?action=payout', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          address: walletAddress,
-          amount: parseFloat(tonAmount),
-          currency: 'TON',
-          network: 'TON',
-          description: `SkyTON withdrawal for ${username || userId}`,
-          withdrawalId: withdrawalId,
-          userId: userId
-        })
+        body: JSON.stringify(payoutData)
       });
 
       const payoutResult = await payoutResponse.json();
@@ -290,13 +311,39 @@ export const approveWithdrawal = async (withdrawalId, userId, amount) => {
             notificationType: 'withdrawal_approved',
             data: {
               amount: parseFloat(amount),
-              method: 'TON Wallet',
-              address: walletAddress
+              tonAmount: parseFloat(tonAmount),
+              address: walletAddress,
+              trackId: payoutResult.data.track_id
             }
           })
         });
       } catch (notificationError) {
         console.error('Failed to send approval notification to user:', notificationError);
+      }
+
+      // Send detailed success notification to admin
+      try {
+        await fetch(`${apiBaseUrl}/api/notifications`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'admin',
+            notificationType: 'payout_success',
+            data: {
+              userId: userId,
+              username: username || userId,
+              amount: parseFloat(amount),
+              tonAmount: parseFloat(tonAmount),
+              address: walletAddress,
+              memo: tonMemo,
+              trackId: payoutResult.data.track_id,
+              withdrawalId: withdrawalId,
+              status: payoutResult.data.status
+            }
+          })
+        });
+      } catch (notificationError) {
+        console.error('Failed to send admin success notification:', notificationError);
       }
 
       console.log(`Withdrawal ${withdrawalId} approved and payout initiated for user ${userId}`);
@@ -314,21 +361,24 @@ export const approveWithdrawal = async (withdrawalId, userId, amount) => {
         payoutFailedAt: serverTimestamp()
       });
 
-      // Send failure notification to admin via server API
+      // Send detailed failure notification to admin via server API
       try {
         await fetch(`${apiBaseUrl}/api/notifications`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             type: 'admin',
-            notificationType: 'withdrawal_approval_failed',
+            notificationType: 'payout_failed',
             data: {
               userId: userId,
               username: username || userId,
               amount: parseFloat(amount),
               tonAmount: parseFloat(tonAmount),
               address: walletAddress,
-              error: payoutError.message
+              memo: tonMemo,
+              withdrawalId: withdrawalId,
+              error: payoutError.message,
+              errorDetails: payoutError.details || 'No additional details available'
             }
           })
         });
@@ -336,8 +386,8 @@ export const approveWithdrawal = async (withdrawalId, userId, amount) => {
         console.error('Failed to send failure notification:', notificationError);
       }
 
-      // Re-throw the error so the UI can handle it
-      throw payoutError;
+      // Return false instead of throwing to allow proper error handling in UI
+      return false;
     }
 
   } catch (error) {

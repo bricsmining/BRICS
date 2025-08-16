@@ -206,6 +206,12 @@ const UserManagementTab = ({ users = [], searchTerm, setSearchTerm, handleBanTog
                           </button>
                         )}
                       </p>
+                      {user.tonMemo && (
+                        <p className="flex items-center gap-1.5 text-xs text-[#BCCCDC] mt-1">
+                          <span className="font-medium">Memo:</span>
+                          <span className="font-mono text-gray-300 break-all">{user.tonMemo}</span>
+                        </p>
+                      )}
                       <p className="flex items-center gap-1.5">
                         <Calendar className="w-3.5 h-3.5 text-[#FFD429]" />
                         <span className="font-medium text-[#BCCCDC]">Joined:</span> {formatDate(user.joinedAt)}

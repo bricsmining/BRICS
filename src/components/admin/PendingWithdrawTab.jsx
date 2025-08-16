@@ -249,18 +249,28 @@ const PendingWithdrawTab = ({ pendingWithdrawals = [], onApprove, onReject }) =>
     setProcessing(prev => ({ ...prev, [withdrawal.id]: 'approving' }));
     
     try {
-      await onApprove(withdrawal.id, withdrawal.userId, withdrawal.amount);
-      toast({
-        title: 'Withdrawal Approved',
-        description: `${withdrawal.amount} STON withdrawal approved for ${withdrawal.username || withdrawal.userId}`,
-        variant: 'success',
-        className: 'bg-[#1a1a1a] text-white',
-      });
+      const success = await onApprove(withdrawal.id, withdrawal.userId, withdrawal.amount);
+      
+      if (success) {
+        toast({
+          title: 'Withdrawal Approved ✅',
+          description: `${withdrawal.amount} STON (${stonToTon(withdrawal.amount)} TON) withdrawal approved and payout initiated for ${withdrawal.username || withdrawal.userId}`,
+          variant: 'success',
+          className: 'bg-[#1a1a1a] text-white',
+        });
+      } else {
+        toast({
+          title: 'Payout Failed ❌',
+          description: `Withdrawal approved but payout failed for ${withdrawal.username || withdrawal.userId}. Check admin notifications for details.`,
+          variant: 'destructive',
+          className: 'bg-[#1a1a1a] text-white',
+        });
+      }
     } catch (error) {
       console.error(`Error approving withdrawal:`, error);
       toast({
-        title: 'Error',
-        description: 'Failed to approve withdrawal',
+        title: 'Approval Error ❌',
+        description: `Failed to approve withdrawal: ${error.message || 'Unknown error'}`,
         variant: 'destructive',
         className: 'bg-[#1a1a1a] text-white',
       });

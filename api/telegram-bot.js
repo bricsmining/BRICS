@@ -953,6 +953,46 @@ ${data.message}
 
 🕐 *Time:* ${timestamp}`;
 
+    case 'payout_success':
+      return `✅ *Payout Successful!*
+
+👤 *User Details:*
+• ID: \`${data.userId}\`
+• Name: ${data.username || 'Unknown'}
+
+💰 *Payout Details:*
+• Amount: ${data.amount} STON (${data.tonAmount} TON)
+• Address: \`${data.address}\`
+${data.memo ? `• Memo: \`${data.memo}\`` : ''}
+• Track ID: \`${data.trackId}\`
+• Status: ${data.status}
+• Withdrawal ID: \`${data.withdrawalId}\`
+
+🎉 Payout has been successfully processed through OxaPay!
+
+🕐 *Time:* ${timestamp}`;
+
+    case 'payout_failed':
+      return `❌ *Payout Failed!*
+
+👤 *User Details:*
+• ID: \`${data.userId}\`
+• Name: ${data.username || 'Unknown'}
+
+💰 *Payout Details:*
+• Amount: ${data.amount} STON (${data.tonAmount} TON)
+• Address: \`${data.address}\`
+${data.memo ? `• Memo: \`${data.memo}\`` : ''}
+• Withdrawal ID: \`${data.withdrawalId}\`
+
+❗ *Error Details:*
+• Error: ${data.error}
+• Details: ${data.errorDetails}
+
+⚠️ User's balance was NOT deducted. Manual intervention may be required.
+
+🕐 *Time:* ${timestamp}`;
+
     default:
       return null;
   }

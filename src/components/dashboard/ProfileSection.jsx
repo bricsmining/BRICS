@@ -852,16 +852,62 @@ const MysteryBoxSection = ({ user, refreshUserData, navigate }) => {
   );
 };
 
+// TON memo validation function
+const validateTonMemo = (memo) => {
+  if (!memo || memo.trim() === '') {
+    return { valid: false, error: 'Memo is required for TON wallet connection' }; // Memo is mandatory
+  }
+  
+  const trimmedMemo = memo.trim();
+  
+  // TON memo should be alphanumeric and can contain some special characters
+  // Length should be reasonable (typically 1-120 characters)
+  if (trimmedMemo.length < 1) {
+    return { valid: false, error: 'Memo cannot be empty' };
+  }
+  
+  if (trimmedMemo.length > 120) {
+    return { valid: false, error: 'Memo must be 120 characters or less' };
+  }
+  
+  // Allow alphanumeric, spaces, and common punctuation
+  const validMemoRegex = /^[a-zA-Z0-9\s\-_.,!@#$%^&*()+=[\]{}|;:'"<>?/\\~`]+$/;
+  if (!validMemoRegex.test(trimmedMemo)) {
+    return { valid: false, error: 'Memo contains invalid characters' };
+  }
+  
+  return { valid: true, error: null };
+};
+
 // Separate components for better organization (keeping existing ones)
 const WalletDialog = ({ isOpen, onClose, onConnect }) => {
   const [walletInput, setWalletInput] = useState("");
+  const [memoInput, setMemoInput] = useState("");
   const [isConnecting, setIsConnecting] = useState(false);
+  const [memoError, setMemoError] = useState("");
+
+  const handleMemoChange = (e) => {
+    const memo = e.target.value;
+    setMemoInput(memo);
+    
+    const validation = validateTonMemo(memo);
+    setMemoError(validation.valid ? "" : validation.error);
+  };
 
   const handleConnect = async () => {
+    // Validate memo before connecting
+    const memoValidation = validateTonMemo(memoInput);
+    if (!memoValidation.valid) {
+      setMemoError(memoValidation.error);
+      return;
+    }
+
     setIsConnecting(true);
     try {
-      await onConnect(walletInput);
+      await onConnect(walletInput, memoInput.trim() || null);
       setWalletInput("");
+      setMemoInput("");
+      setMemoError("");
     } finally {
       setIsConnecting(false);
     }
@@ -869,13 +915,17 @@ const WalletDialog = ({ isOpen, onClose, onConnect }) => {
 
   if (!isOpen) return null;
 
+  const isValidWallet = walletInput.length === 48 && (walletInput.startsWith("EQ") || walletInput.startsWith("UQ"));
+  const isValidMemo = memoInput.trim() !== '' && !memoError;
+  const canConnect = isValidWallet && isValidMemo && !isConnecting;
+
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <motion.div
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.9, opacity: 0 }}
-        className="bg-gradient-to-br from-gray-900 to-gray-800 border border-gray-600/50 text-white w-full max-w-sm p-4 rounded-2xl shadow-2xl relative"
+        className="bg-gradient-to-br from-gray-900 to-gray-800 border border-gray-600/50 text-white w-full max-w-md p-6 rounded-2xl shadow-2xl relative"
       >
         <button
           className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
@@ -884,20 +934,77 @@ const WalletDialog = ({ isOpen, onClose, onConnect }) => {
         >
           <X className="w-6 h-6" />
         </button>
-        <h2 className="text-lg font-bold mb-4 text-center">
-          Connect TON Wallet
-        </h2>
-        <Input
-          value={walletInput}
-          onChange={(e) => setWalletInput(e.target.value)}
-          placeholder="EQ... or UQ..."
-          className="mb-4 h-10 text-white placeholder:text-gray-400 bg-gray-800/50 border border-gray-600/50 rounded-xl focus:border-blue-500 transition-colors"
-          aria-label="TON wallet address"
-        />
+        
+        <div className="text-center mb-6">
+          <h2 className="text-xl font-bold mb-2">Connect TON Wallet</h2>
+          <p className="text-sm text-gray-400">
+            Connect your TON wallet for secure withdrawals
+          </p>
+        </div>
+
+        {/* Warning Section */}
+        <div className="bg-red-900/20 border border-red-600/30 rounded-xl p-4 mb-4">
+          <div className="flex items-start space-x-3">
+            <div className="flex-shrink-0">
+              <svg className="w-5 h-5 text-red-500 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold text-red-500 mb-1">Critical - Read Carefully</h3>
+              <p className="text-xs text-red-200">
+                Both wallet address AND memo are REQUIRED. Double-check both fields carefully. Incorrect information WILL result in lost funds and failed transactions.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          {/* Wallet Address Input */}
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              TON Wallet Address *
+            </label>
+            <Input
+              value={walletInput}
+              onChange={(e) => setWalletInput(e.target.value)}
+              placeholder="EQ... or UQ..."
+              className="h-12 text-white placeholder:text-gray-500 bg-gray-800/50 border border-gray-600/50 rounded-xl focus:border-blue-500 transition-colors"
+              aria-label="TON wallet address"
+            />
+            {walletInput && !isValidWallet && (
+              <p className="text-red-400 text-xs mt-1">
+                TON address must be 48 characters starting with EQ or UQ
+              </p>
+            )}
+          </div>
+
+          {/* Memo Input */}
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              Memo (Required) *
+            </label>
+            <Input
+              value={memoInput}
+              onChange={handleMemoChange}
+              placeholder="Enter your wallet memo (required)"
+              className="h-12 text-white placeholder:text-gray-500 bg-gray-800/50 border border-gray-600/50 rounded-xl focus:border-blue-500 transition-colors"
+              aria-label="TON memo"
+              required
+            />
+            {memoError && (
+              <p className="text-red-400 text-xs mt-1">{memoError}</p>
+            )}
+            <p className="text-gray-500 text-xs mt-1">
+              Memo is required for all TON wallet transactions
+            </p>
+          </div>
+        </div>
+
         <Button
-          className="w-full h-10 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 rounded-xl font-semibold disabled:opacity-50"
+          className="w-full h-12 mt-6 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
           onClick={handleConnect}
-          disabled={isConnecting || !walletInput.trim()}
+          disabled={!canConnect}
         >
           {isConnecting ? (
             <>
@@ -1331,39 +1438,63 @@ const ProfileSection = ({ user, refreshUserData }) => {
     }
   }, [toast]);
 
-  const handleConnectWallet = useCallback(async (walletInput) => {
+  const handleConnectWallet = useCallback(async (walletInput, memoInput) => {
     if (!user?.id) return;
     
+    // Validate wallet address
     if (
-      walletInput.length === 48 &&
-      (walletInput.startsWith("EQ") || walletInput.startsWith("UQ"))
+      !walletInput ||
+      walletInput.length !== 48 ||
+      (!walletInput.startsWith("EQ") && !walletInput.startsWith("UQ"))
     ) {
-      const success = await connectWallet(user.id, walletInput);
+      toast({
+        title: "Invalid Wallet Address",
+        description: "TON address must be 48 characters starting with EQ or UQ.",
+        variant: "destructive",
+        className: "bg-[#1a1a1a] text-white",
+      });
+      return;
+    }
+
+    // Validate memo (required)
+    if (!memoInput || memoInput.trim() === '') {
+      toast({
+        title: "Memo Required",
+        description: "Memo is required for TON wallet connection.",
+        variant: "destructive",
+        className: "bg-[#1a1a1a] text-white",
+      });
+      return;
+    }
+
+    try {
+      const success = await connectWallet(user.id, walletInput, memoInput);
       if (success) {
         const updatedUser = await getCurrentUser(user.id);
         if (updatedUser) refreshUserData(updatedUser);
         setShowWalletDialog(false);
         toast({
-          title: "Wallet Connected",
+          title: "Wallet Connected ✅",
           description: `Wallet ${walletInput.substring(
             0,
             6
-          )}...${walletInput.substring(walletInput.length - 4)} added.`,
+          )}...${walletInput.substring(walletInput.length - 4)} with memo connected successfully.`,
           variant: "success",
           className: "bg-[#1a1a1a] text-white",
         });
       } else {
         toast({
-          title: "Error",
+          title: "Connection Failed",
           description: "Failed to connect wallet. Please try again.",
           variant: "destructive",
           className: "bg-[#1a1a1a] text-white",
         });
       }
-    } else {
+    } catch (error) {
+      console.error('Wallet connection error:', error);
       toast({
-        title: "Invalid Wallet",
-        description: "TON address must be 48 characters starting with EQ or UQ.",
+        title: "Connection Error",
+        description: error.message || "Failed to connect wallet. Please try again.",
         variant: "destructive",
         className: "bg-[#1a1a1a] text-white",
       });
@@ -2413,6 +2544,16 @@ const ProfileSection = ({ user, refreshUserData }) => {
                     </button>
                   </div>
                 </div>
+                {user.tonMemo && (
+                  <div className="mt-2 px-3 py-2 bg-gray-700/30 rounded-xl border border-gray-600/30">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-gray-400">Memo:</span>
+                      <span className="text-xs font-mono text-gray-300 flex-1 break-all">
+                        {user.tonMemo}
+                      </span>
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               <Button

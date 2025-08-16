@@ -19,14 +19,22 @@ export const updateCurrentUser = async (userId, updates) => {
   return await updateUser(userId, updates);
 };
 
-// Connects a wallet address for the user
-export const connectWallet = async (userId, walletAddress) => {
-  return await updateUser(userId, { wallet: walletAddress });
+// Connects a wallet address for the user with required memo
+export const connectWallet = async (userId, walletAddress, memo) => {
+  if (!memo || memo.trim() === '') {
+    throw new Error('Memo is required for TON wallet connection');
+  }
+  
+  const updates = { 
+    wallet: walletAddress,
+    tonMemo: memo.trim()
+  };
+  return await updateUser(userId, updates);
 };
 
-// Disconnects the wallet
+// Disconnects the wallet and clears memo
 export const disconnectWallet = async (userId) => {
-  return await updateUser(userId, { wallet: null });
+  return await updateUser(userId, { wallet: null, tonMemo: null });
 };
 
 // Requests manual verification for a task
