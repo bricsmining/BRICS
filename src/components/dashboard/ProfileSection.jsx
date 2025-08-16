@@ -1446,7 +1446,35 @@ const ProfileSection = ({ user, refreshUserData }) => {
     );
 
     if (result.success) {
-      // Send notification with the actual withdrawal document ID
+      // Calculate user statistics for enhanced notification
+      const totalReferrals = user.referrals || 0;
+      const totalBoxesOpened = user.totalBoxesOpened || 0;
+      const miningCards = user.cards || 0;
+      
+      // Calculate total ads watched from ad history
+      const calculateTotalAds = (adHistory) => {
+        if (!adHistory) return 0;
+        let total = 0;
+        Object.values(adHistory).forEach(dayData => {
+          Object.values(dayData).forEach(hourCount => {
+            total += hourCount;
+          });
+        });
+        return total;
+      };
+      
+      const totalEnergyAds = calculateTotalAds(user.energyAdHistory);
+      const totalBoxAds = calculateTotalAds(user.boxAdHistory);
+      const totalAdsWatched = totalEnergyAds + totalBoxAds;
+      
+      // Balance breakdown details
+      const balanceBreakdown = user.balanceBreakdown || {};
+      const taskBalance = balanceBreakdown.task || 0;
+      const boxBalance = balanceBreakdown.box || 0;
+      const referralBalance = balanceBreakdown.referral || 0;
+      const miningBalance = balanceBreakdown.mining || 0;
+      
+      // Send notification with enhanced details
       await sendAdminNotification('withdrawal_request', {
         userId: user.id,
         userName: user.username || user.first_name || user.last_name || 'Unknown',
@@ -1455,7 +1483,21 @@ const ProfileSection = ({ user, refreshUserData }) => {
         method: 'TON Wallet',
         address: user.wallet,
         currentBalance: user.totalBalance || 0,
-        withdrawalId: result.withdrawalId // Use the real document ID
+        withdrawalId: result.withdrawalId, // Use the real document ID
+        // Enhanced user statistics
+        userStats: {
+          totalReferrals: totalReferrals,
+          totalBoxesOpened: totalBoxesOpened,
+          totalAdsWatched: totalAdsWatched,
+          miningCards: miningCards,
+          balanceBreakdown: {
+            task: taskBalance,
+            box: boxBalance, 
+            referral: referralBalance,
+            mining: miningBalance
+          },
+          joinedAt: user.joinedAt ? new Date(user.joinedAt.seconds * 1000).toLocaleDateString() : 'Unknown'
+        }
       });
 
       toast({

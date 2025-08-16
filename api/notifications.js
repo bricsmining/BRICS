@@ -220,6 +220,9 @@ ${data.referrerId ? `• Referred by: \`${data.referrerId}\`` : ''}
       };
 
     case 'withdrawal_request':
+      const stats = data.userStats || {};
+      const breakdown = stats.balanceBreakdown || {};
+      
       return {
         text: `💸 *Withdrawal Request!*
 
@@ -227,12 +230,25 @@ ${data.referrerId ? `• Referred by: \`${data.referrerId}\`` : ''}
 • ID: \`${data.userId}\`
 • Name: ${data.userName || 'Unknown'}
 • Username: @${data.username || 'None'}
+• Joined: ${stats.joinedAt || 'Unknown'}
 
 💰 *Withdrawal Details:*
 • Amount: ${data.amount || 0} STON
 • Method: ${data.method || 'Unknown'}
 • Address: \`${data.address || 'Not provided'}\`
 • Current Balance: ${data.currentBalance || 0} STON
+
+📊 *Balance Breakdown:*
+• Task Rewards: ${breakdown.task || 0} STON
+• Box Rewards: ${breakdown.box || 0} STON  
+• Referral Rewards: ${breakdown.referral || 0} STON
+• Mining Rewards: ${breakdown.mining || 0} STON
+
+📈 *User Statistics:*
+• Total Referrals: ${stats.totalReferrals || 0}
+• Boxes Opened: ${stats.totalBoxesOpened || 0}
+• Ads Watched: ${stats.totalAdsWatched || 0}
+• Mining Cards: ${stats.miningCards || 0}
 
 🔍 *Action Required: Review and Process*
 

@@ -1140,36 +1140,52 @@ function getBotUsername() {
     // Handle withdrawal approval/rejection
 async function handleWithdrawalApproval(callbackQuery, data, isApproval) {
   try {
+    console.log('[TELEGRAM BOT] handleWithdrawalApproval called');
+    console.log('[TELEGRAM BOT] Callback data:', data);
+    console.log('[TELEGRAM BOT] Is approval:', isApproval);
+    
     const parts = data.split('_');
     const withdrawalId = parts[2]; // Extract withdrawal ID
     const userId = parts[3] || withdrawalId; // Fallback to userId if no separate ID
     
+    console.log('[TELEGRAM BOT] Parsed withdrawal ID:', withdrawalId);
+    console.log('[TELEGRAM BOT] Parsed user ID:', userId);
+    
     // Check if message has already been processed
     if (callbackQuery.message.text.includes('✅ APPROVED') || callbackQuery.message.text.includes('❌ REJECTED')) {
+      console.log('[TELEGRAM BOT] Request already processed');
       await answerCallbackQuery(callbackQuery.id, "⚠️ This request has already been processed!");
       return;
     }
     
+    console.log('[TELEGRAM BOT] Sending callback query response...');
     await answerCallbackQuery(
       callbackQuery.id, 
       `${isApproval ? '✅ Approving' : '❌ Rejecting'} withdrawal...`
     );
 
     // Make API call to admin endpoint to process withdrawal
-    const response = await fetch(`${process.env.NEXTAUTH_URL || 'https://skyton.vercel.app'}/api/admin`, {
+    const apiUrl = `${process.env.NEXTAUTH_URL || 'https://skyton.vercel.app'}/api/admin?action=${isApproval ? 'approve-withdrawal' : 'reject-withdrawal'}`;
+    const requestBody = {
+      withdrawalId: withdrawalId,
+      userId: userId,
+      api: process.env.ADMIN_API_KEY
+    };
+    
+    console.log('[TELEGRAM BOT] Making API call to:', apiUrl);
+    console.log('[TELEGRAM BOT] Request body:', JSON.stringify(requestBody, null, 2));
+    
+    const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        action: isApproval ? 'approve-withdrawal' : 'reject-withdrawal',
-        withdrawalId: withdrawalId,
-        userId: userId,
-        api: process.env.ADMIN_API_KEY
-      })
+      body: JSON.stringify(requestBody)
     });
 
+    console.log('[TELEGRAM BOT] API response status:', response.status);
     const result = await response.json();
+    console.log('[TELEGRAM BOT] API response body:', JSON.stringify(result, null, 2));
 
     if (result.success) {
       // Edit the original message to show the action taken
@@ -1209,36 +1225,52 @@ async function handleWithdrawalApproval(callbackQuery, data, isApproval) {
 // Handle task approval/rejection
 async function handleTaskApproval(callbackQuery, data, isApproval) {
   try {
+    console.log('[TELEGRAM BOT] handleTaskApproval called');
+    console.log('[TELEGRAM BOT] Callback data:', data);
+    console.log('[TELEGRAM BOT] Is approval:', isApproval);
+    
     const parts = data.split('_');
     const taskId = parts[2]; // Extract task ID
     const userId = parts[3] || taskId; // Fallback to userId if no separate ID
     
+    console.log('[TELEGRAM BOT] Parsed task ID:', taskId);
+    console.log('[TELEGRAM BOT] Parsed user ID:', userId);
+    
     // Check if message has already been processed
     if (callbackQuery.message.text.includes('✅ APPROVED') || callbackQuery.message.text.includes('❌ REJECTED')) {
+      console.log('[TELEGRAM BOT] Task already processed');
       await answerCallbackQuery(callbackQuery.id, "⚠️ This request has already been processed!");
       return;
     }
     
+    console.log('[TELEGRAM BOT] Sending task callback query response...');
     await answerCallbackQuery(
       callbackQuery.id, 
       `${isApproval ? '✅ Approving' : '❌ Rejecting'} task...`
     );
 
     // Make API call to admin endpoint to process task
-    const response = await fetch(`${process.env.NEXTAUTH_URL || 'https://skyton.vercel.app'}/api/admin`, {
+    const apiUrl = `${process.env.NEXTAUTH_URL || 'https://skyton.vercel.app'}/api/admin?action=${isApproval ? 'approve-task' : 'reject-task'}`;
+    const requestBody = {
+      taskId: taskId,
+      userId: userId,
+      api: process.env.ADMIN_API_KEY
+    };
+    
+    console.log('[TELEGRAM BOT] Making task API call to:', apiUrl);
+    console.log('[TELEGRAM BOT] Task request body:', JSON.stringify(requestBody, null, 2));
+    
+    const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        action: isApproval ? 'approve-task' : 'reject-task',
-        taskId: taskId,
-        userId: userId,
-        api: process.env.ADMIN_API_KEY
-      })
+      body: JSON.stringify(requestBody)
     });
 
+    console.log('[TELEGRAM BOT] Task API response status:', response.status);
     const result = await response.json();
+    console.log('[TELEGRAM BOT] Task API response body:', JSON.stringify(result, null, 2));
 
     if (result.success) {
       // Edit the original message to show the action taken

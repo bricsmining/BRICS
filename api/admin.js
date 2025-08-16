@@ -349,7 +349,12 @@ async function handleGetConfig(req, res) {
 
 // Handle withdrawal approval
 async function handleApproveWithdrawal(req, res) {
+  console.log('[ADMIN API] handleApproveWithdrawal called');
+  console.log('[ADMIN API] Request method:', req.method);
+  console.log('[ADMIN API] Request body:', JSON.stringify(req.body, null, 2));
+  
   if (req.method !== 'POST') {
+    console.log('[ADMIN API] Invalid method, expected POST');
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
@@ -357,17 +362,28 @@ async function handleApproveWithdrawal(req, res) {
   const apiKey = req.body.api || req.headers['x-api-key'];
   const validApiKey = process.env.ADMIN_API_KEY;
 
+  console.log('[ADMIN API] API Key provided:', apiKey ? 'Yes' : 'No');
+  console.log('[ADMIN API] Valid API Key configured:', validApiKey ? 'Yes' : 'No');
+
   if (!apiKey || apiKey !== validApiKey) {
+    console.log('[ADMIN API] Authentication failed');
     return res.status(401).json({ error: 'Unauthorized - Invalid API key' });
   }
+  
+  console.log('[ADMIN API] Authentication successful');
 
   const { withdrawalId, userId } = req.body;
 
+  console.log('[ADMIN API] Withdrawal ID:', withdrawalId);
+  console.log('[ADMIN API] User ID:', userId);
+
   if (!withdrawalId) {
+    console.log('[ADMIN API] Missing withdrawalId');
     return res.status(400).json({ error: 'Missing withdrawalId' });
   }
 
   try {
+    console.log('[ADMIN API] Importing required functions...');
     // Import the approval function
     const { approveWithdrawal } = await import('../src/data/firestore/adminActions.js');
     
@@ -375,23 +391,31 @@ async function handleApproveWithdrawal(req, res) {
     const { getDoc, doc } = await import('firebase/firestore');
     const { db } = await import('../src/lib/serverFirebase.js');
     
+    console.log('[ADMIN API] Getting withdrawal document...');
     const withdrawalRef = doc(db, 'withdrawals', withdrawalId);
     const withdrawalDoc = await getDoc(withdrawalRef);
     
     if (!withdrawalDoc.exists()) {
+      console.log('[ADMIN API] Withdrawal document not found:', withdrawalId);
       return res.status(404).json({ error: 'Withdrawal not found' });
     }
     
     const withdrawalData = withdrawalDoc.data();
+    console.log('[ADMIN API] Withdrawal data:', JSON.stringify(withdrawalData, null, 2));
+    
+    console.log('[ADMIN API] Calling approveWithdrawal function...');
     const success = await approveWithdrawal(withdrawalId, withdrawalData.userId, withdrawalData.amount);
+    console.log('[ADMIN API] Approval result:', success);
 
     if (success) {
+      console.log('[ADMIN API] Withdrawal approved successfully');
       return res.status(200).json({ success: true, message: 'Withdrawal approved successfully' });
     } else {
+      console.log('[ADMIN API] Failed to approve withdrawal');
       return res.status(500).json({ success: false, error: 'Failed to approve withdrawal' });
     }
   } catch (error) {
-    console.error('Error approving withdrawal:', error);
+    console.error('[ADMIN API] Error approving withdrawal:', error);
     return res.status(500).json({ success: false, error: 'Internal server error', details: error.message });
   }
 }
