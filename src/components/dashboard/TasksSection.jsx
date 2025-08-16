@@ -410,23 +410,27 @@ const TasksSection = ({ tasks = [], user = {}, refreshUserData, isLoading }) => 
     }
   }, [user?.id, refreshUserData, toast, triggerFlyingReward]);
 
-  // Admin notification via backend API
-  const sendAdminNotification = useCallback(async (message) => {
+  // Admin notification via backend API with enhanced system
+  const sendAdminNotification = useCallback(async (type, data) => {
     try {
-      const response = await fetch('/api/admin?action=notify', {
+      const response = await fetch('/api/notifications?action=admin', {
         method: 'POST',
         headers: { 
-          'Content-Type': 'application/json',
-          'x-api-key': import.meta.env.VITE_ADMIN_API_KEY
+          'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ message }),
+        body: JSON.stringify({ 
+          api: import.meta.env.VITE_ADMIN_API_KEY,
+          type: type,
+          data: data
+        })
       });
       
       if (!response.ok) {
         throw new Error(`Failed to send notification: ${response.status}`);
       }
-    
-      return true;
+      
+      const result = await response.json();
+      return result.success;
     } catch (err) {
       console.error("Failed to send admin notification:", err);
       
@@ -711,10 +715,16 @@ const TasksSection = ({ tasks = [], user = {}, refreshUserData, isLoading }) => 
               // Trigger flying animation for task reward
               triggerFlyingReward('balance', task.reward);
               
-              const userMention = user.username ? `@${user.username}` : `User ${user.id}`;
-              await sendAdminNotification(
-                `✅ <b>Auto-Verification Success</b>\n${userMention} successfully joined <b>${task.title}</b> (${task.target})\nReward: +${task.reward} STON`
-              );
+              await sendAdminNotification('task_completion', {
+                userId: user.id,
+                userName: user.username || user.first_name || user.last_name || 'Unknown',
+                username: user.username || 'None',
+                taskTitle: task.title,
+                taskType: task.type || 'Telegram Task',
+                reward: task.reward,
+                completionMethod: 'Auto-Verification',
+                target: task.target
+              });
               
               const updatedUser = await getCurrentUser(user.id);
               if (updatedUser) refreshUserData(updatedUser);
@@ -761,10 +771,15 @@ const TasksSection = ({ tasks = [], user = {}, refreshUserData, isLoading }) => 
           // Trigger flying animation for task reward
           triggerFlyingReward('balance', task.reward);
           
-          const userMention = user.username ? `@${user.username}` : `User ${user.id}`;
-          await sendAdminNotification(
-            `✅ <b>Auto-Verification Success</b>\n${userMention} completed <b>${task.title}</b>\nReward: +${task.reward} STON`
-          );
+          await sendAdminNotification('task_completion', {
+            userId: user.id,
+            userName: user.username || user.first_name || user.last_name || 'Unknown',
+            username: user.username || 'None',
+            taskTitle: task.title,
+            taskType: task.type || 'Auto Task',
+            reward: task.reward,
+            completionMethod: 'Auto-Verification'
+          });
         }
         toast({
           title: success ? 'Task Verified!' : 'Verification Failed',
@@ -776,10 +791,17 @@ const TasksSection = ({ tasks = [], user = {}, refreshUserData, isLoading }) => 
         success = await requestManualVerification(user.id, task.id);
 
         if (success) {
-          const userMention = user.username ? `@${user.username}` : `User ${user.id}`;
-          await sendAdminNotification(
-            `🔍 <b>Manual Verification Request</b>\n${userMention} requested verification for <b>${task.title}</b>\nTarget: ${task.target || 'N/A'}\nReward: ${task.reward} STON`
-          );
+          await sendAdminNotification('task_submission', {
+            userId: user.id,
+            userName: user.username || user.first_name || user.last_name || 'Unknown',
+            username: user.username || 'None',
+            taskTitle: task.title,
+            taskType: task.type || 'Manual Task',
+            taskId: task.id,
+            reward: task.reward,
+            target: task.target || 'N/A',
+            submission: 'Manual verification requested'
+          });
         }
         toast({
           title: success ? 'Verification Requested' : 'Request Failed',

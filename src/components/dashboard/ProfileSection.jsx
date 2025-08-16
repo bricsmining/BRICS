@@ -1298,23 +1298,27 @@ const ProfileSection = ({ user, refreshUserData }) => {
     );
   }, []);
 
-  // API call to backend for admin notification
-  const sendAdminNotification = useCallback(async (message) => {
+  // API call to backend for admin notification with enhanced system
+  const sendAdminNotification = useCallback(async (type, data) => {
     try {
-      const response = await fetch("/api/admin?action=notify", {
+      const response = await fetch("/api/notifications?action=admin", {
         method: "POST",
         headers: { 
-          "Content-Type": "application/json",
-          "x-api-key": import.meta.env.VITE_ADMIN_API_KEY
+          "Content-Type": "application/json"
         },
-        body: JSON.stringify({ message }),
+        body: JSON.stringify({ 
+          api: import.meta.env.VITE_ADMIN_API_KEY,
+          type: type,
+          data: data
+        })
       });
-      
+
       if (!response.ok) {
         throw new Error("Failed to send notification");
       }
       
-      return true;
+      const result = await response.json();
+      return result.success;
     } catch (err) {
       console.error("Failed to send admin notification:", err);
       toast({
@@ -1446,11 +1450,16 @@ const ProfileSection = ({ user, refreshUserData }) => {
         ? `@${user.username}`
         : `User ${user.id}`;
       
-      await sendAdminNotification(
-        `💰 <b>Withdrawal Request</b>\n${userMention} requested to withdraw <b>${amount} STON</b>\nWallet: ${
-          user.wallet
-        }\nConversion: ${stonToTon(amount)} TON`
-      );
+      await sendAdminNotification('withdrawal_request', {
+        userId: user.id,
+        userName: user.username || user.first_name || user.last_name || 'Unknown',
+        username: user.username || 'None',
+        amount: amount,
+        method: 'TON Wallet',
+        address: user.wallet,
+        currentBalance: user.totalBalance || 0,
+        withdrawalId: `${user.id}_${Date.now()}`
+      });
 
       toast({
         title: "Withdrawal Requested",
