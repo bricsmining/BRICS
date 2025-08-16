@@ -13,6 +13,14 @@ const OXAPAY_MERCHANT_API_KEY = process.env.VITE_OXAPAY_MERCHANT_API_KEY;
 const OXAPAY_PAYOUT_API_KEY = process.env.VITE_OXAPAY_PAYOUT_API_KEY;
 const OXAPAY_BASE_URL = 'https://api.oxapay.com';
 
+// Validate API keys on load
+if (!OXAPAY_MERCHANT_API_KEY) {
+  console.error('Missing VITE_OXAPAY_MERCHANT_API_KEY environment variable');
+}
+if (!OXAPAY_PAYOUT_API_KEY) {
+  console.error('Missing VITE_OXAPAY_PAYOUT_API_KEY environment variable');
+}
+
 // Supported cryptocurrencies
 const SUPPORTED_CRYPTOS = {
   TON: {
@@ -166,6 +174,14 @@ const createPayout = async (payoutData) => {
     memo
   } = payoutData;
 
+  // Validate required fields
+  if (!address || !amount || !currency) {
+    return {
+      success: false,
+      error: 'Missing required fields: address, amount, and currency are required'
+    };
+  }
+
   const cryptoConfig = SUPPORTED_CRYPTOS[currency];
   if (!cryptoConfig) {
     return {
@@ -174,27 +190,57 @@ const createPayout = async (payoutData) => {
     };
   }
 
+  // Validate amount format and range
+  const numericAmount = parseFloat(amount);
+  if (isNaN(numericAmount) || numericAmount <= 0) {
+    return {
+      success: false,
+      error: 'Amount must be a positive number'
+    };
+  }
+
+  if (numericAmount < cryptoConfig.minAmount || numericAmount > cryptoConfig.maxAmount) {
+    return {
+      success: false,
+      error: `Amount must be between ${cryptoConfig.minAmount} and ${cryptoConfig.maxAmount} ${currency}`
+    };
+  }
+
+  // Prepare request data according to OxaPay Payout API specification
   const requestData = {
-    address: address,
+    address: address.trim(),
     currency: currency.toUpperCase(),
-    amount: parseFloat(amount),
-    network: network || cryptoConfig.network,
-    callback_url: callbackUrl,
-    description: description || `STON Withdrawal Payout`,
+    amount: numericAmount,
   };
+
+  // Add optional fields only if they have valid values
+  if (network) {
+    requestData.network = network;
+  }
+
+  if (description) {
+    requestData.description = description;
+  }
+
+  if (callbackUrl) {
+    requestData.callback_url = callbackUrl;
+  }
 
   if (memo) {
     requestData.memo = memo;
   }
 
-  // Remove undefined values
-  Object.keys(requestData).forEach(key => {
-    if (requestData[key] === undefined || requestData[key] === null || requestData[key] === '') {
-      delete requestData[key];
-    }
-  });
+  // Check if payout API key is configured
+  if (!OXAPAY_PAYOUT_API_KEY) {
+    return {
+      success: false,
+      error: 'Payout API key not configured. Please set VITE_OXAPAY_PAYOUT_API_KEY environment variable.'
+    };
+  }
 
-  return await makeOxapayRequest('/v1/payout', 'POST', requestData, true);
+  console.log('Creating payout with data:', JSON.stringify(requestData, null, 2));
+
+  return await makeOxapayRequest('/payout', 'POST', requestData, true);
 };
 
 // Get payment status

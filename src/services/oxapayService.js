@@ -183,18 +183,26 @@ export const createPayment = async (paymentData) => {
 
 /**
  * Create a payout request for withdrawals
- * Following OxaPay v1 Payout API specification
+ * Following OxaPay Payout API specification
  */
 export const createPayout = async (payoutData) => {
   const {
     amount,
-    currency = 'USDT',
+    currency = 'TON',
     address,
     network,
     description,
     callbackUrl,
     memo
   } = payoutData;
+
+  // Validate required fields
+  if (!address || !amount || !currency) {
+    return {
+      success: false,
+      error: 'Missing required fields: address, amount, and currency are required'
+    };
+  }
 
   // Validate amount against currency limits
   const cryptoConfig = SUPPORTED_CRYPTOS[currency];
@@ -205,36 +213,58 @@ export const createPayout = async (payoutData) => {
     };
   }
 
-  if (amount < cryptoConfig.minAmount || amount > cryptoConfig.maxAmount) {
+  // Validate amount format and range
+  const numericAmount = parseFloat(amount);
+  if (isNaN(numericAmount) || numericAmount <= 0) {
+    return {
+      success: false,
+      error: 'Amount must be a positive number'
+    };
+  }
+
+  if (numericAmount < cryptoConfig.minAmount || numericAmount > cryptoConfig.maxAmount) {
     return {
       success: false,
       error: `Amount must be between ${cryptoConfig.minAmount} and ${cryptoConfig.maxAmount} ${currency}`
     };
   }
 
-  // Prepare request data according to OxaPay v1 Payout API specification
+  // Check if payout API key is configured
+  if (!OXAPAY_PAYOUT_API_KEY) {
+    return {
+      success: false,
+      error: 'Payout API key not configured. Please set VITE_OXAPAY_PAYOUT_API_KEY environment variable.'
+    };
+  }
+
+  // Prepare request data according to OxaPay Payout API specification
   const requestData = {
-    address: address, // Required: Recipient's cryptocurrency address
+    address: address.trim(), // Required: Recipient's cryptocurrency address
     currency: currency.toUpperCase(), // Required: Cryptocurrency symbol
-    amount: parseFloat(amount), // Required: Amount to be sent
-    network: network || cryptoConfig.network, // Blockchain network
-    callback_url: callbackUrl, // URL for status updates
-    description: description || `STON Withdrawal Payout`,
+    amount: numericAmount, // Required: Amount to be sent
   };
+
+  // Add optional fields only if they have valid values
+  if (network) {
+    requestData.network = network;
+  }
+
+  if (description) {
+    requestData.description = description;
+  }
+
+  if (callbackUrl) {
+    requestData.callback_url = callbackUrl;
+  }
 
   // Add memo if provided (for networks that support it like TON)
   if (memo) {
     requestData.memo = memo;
   }
 
-  // Remove any undefined values to avoid validation issues
-  Object.keys(requestData).forEach(key => {
-    if (requestData[key] === undefined || requestData[key] === null || requestData[key] === '') {
-      delete requestData[key];
-    }
-  });
+  console.log('Creating payout with data:', JSON.stringify(requestData, null, 2));
 
-  return await makeOxapayRequest('/v1/payout', 'POST', requestData, true);
+  return await makeOxapayRequest('/payout', 'POST', requestData, true);
 };
 
 /**
