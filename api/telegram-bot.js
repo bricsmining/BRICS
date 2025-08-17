@@ -42,6 +42,13 @@ export default async function handler(req, res) {
 
   try {
     const update = req.body;
+    
+    // Check if this is a direct notification call (not a webhook update)
+    if (update.action) {
+      console.log('[BOT] Processing direct action:', update.action);
+      return await handleDirectAction(req, res, update);
+    }
+    
     console.log('[WEBHOOK] Received update:', JSON.stringify(update, null, 2));
     
     // Handle different types of updates
@@ -59,6 +66,38 @@ export default async function handler(req, res) {
   } catch (error) {
     console.error('[WEBHOOK] Handler error:', error);
     return res.status(500).json({ error: 'Internal server error', details: error.message });
+  }
+}
+
+// Handle direct action calls (for API notifications)
+async function handleDirectAction(req, res, update) {
+  try {
+    const { action, type, userId, data } = update;
+    
+    switch (action) {
+      case 'notify_admin':
+        console.log(`[BOT] Direct admin notification - Type: ${type}`);
+        const adminResult = await notifyAdminDirect(type, data);
+        return res.status(200).json({ 
+          success: adminResult, 
+          message: adminResult ? 'Admin notification sent' : 'Failed to send admin notification' 
+        });
+        
+      case 'notify_user':
+        console.log(`[BOT] Direct user notification - UserId: ${userId}, Type: ${type}`);
+        const userResult = await notifyUserDirect(userId, type, data);
+        return res.status(200).json({ 
+          success: userResult, 
+          message: userResult ? 'User notification sent' : 'Failed to send user notification' 
+        });
+        
+      default:
+        console.error('[BOT] Unknown direct action:', action);
+        return res.status(400).json({ error: 'Unknown action' });
+    }
+  } catch (error) {
+    console.error('[BOT] Error handling direct action:', error);
+    return res.status(500).json({ error: 'Internal server error' });
   }
 }
 

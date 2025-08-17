@@ -303,15 +303,15 @@ export const approveWithdrawal = async (withdrawalId, userId, amount) => {
         balance: increment(-parseFloat(amount))
       });
 
-      // Send user notification about approval via server API
+      // Send user notification about approval via telegram bot
       try {
-        await fetch(`${apiBaseUrl}/api/notifications`, {
+        await fetch('/api/telegram-bot', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            type: 'user',
+            action: 'notify_user',
             userId: userId,
-            notificationType: 'withdrawal_approved',
+            type: 'withdrawal_approved',
             data: {
               amount: parseFloat(amount),
               tonAmount: parseFloat(tonAmount),
@@ -326,12 +326,12 @@ export const approveWithdrawal = async (withdrawalId, userId, amount) => {
 
       // Send detailed success notification to admin
       try {
-        await fetch(`${apiBaseUrl}/api/notifications`, {
+        await fetch('/api/telegram-bot', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            type: 'admin',
-            notificationType: 'payout_success',
+            action: 'notify_admin',
+            type: 'payout_success',
             data: {
               userId: userId,
               username: username || userId,
@@ -364,15 +364,15 @@ export const approveWithdrawal = async (withdrawalId, userId, amount) => {
         payoutFailedAt: serverTimestamp()
       });
 
-      // Send detailed failure notification to admin via server API
+      // Send detailed failure notification to admin via telegram bot
       try {
-        await fetch(`${apiBaseUrl}/api/notifications`, {
+        await fetch('/api/telegram-bot', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            type: 'admin',
-            notificationType: 'payout_failed',
-                          data: {
+            action: 'notify_admin',
+            type: 'payout_failed',
+            data: {
               userId: userId,
               username: username || userId,
               amount: parseFloat(amount),
