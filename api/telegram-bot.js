@@ -666,14 +666,14 @@ async function processReferralDirect(newUserId, referrerId, userInfo) {
       referredUsers: arrayUnion(newUserId.toString()),
       referralHistory: arrayUnion({
         userId: newUserId.toString(),
-        timestamp: serverTimestamp(),
+        timestamp: new Date(),
         reward: referrerReward
       }),
       freeSpins: increment(1) // Give 1 free spin
     };
 
     if (needsReset) {
-      referrerUpdate.weeklyReferralsLastReset = serverTimestamp();
+      referrerUpdate.weeklyReferralsLastReset = new Date();
     }
 
     console.log(`[BOT] Updating referrer document with:`, referrerUpdate);
