@@ -962,13 +962,13 @@ const WalletDialog = ({ isOpen, onClose, onConnect }) => {
             <label className="block text-sm font-medium text-gray-300 mb-2">
               TON Wallet Address *
             </label>
-            <Input
-              value={walletInput}
-              onChange={(e) => setWalletInput(e.target.value)}
-              placeholder="EQ... or UQ..."
+        <Input
+          value={walletInput}
+          onChange={(e) => setWalletInput(e.target.value)}
+          placeholder="EQ... or UQ..."
               className="h-12 text-white placeholder:text-gray-500 bg-gray-800/50 border border-gray-600/50 rounded-xl focus:border-blue-500 transition-colors"
-              aria-label="TON wallet address"
-            />
+          aria-label="TON wallet address"
+        />
             {walletInput && !isValidWallet && (
               <p className="text-red-400 text-xs mt-1">
                 TON address must be 48 characters starting with EQ or UQ
