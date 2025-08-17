@@ -249,9 +249,9 @@ const PendingWithdrawTab = ({ pendingWithdrawals = [], onApprove, onReject }) =>
     setProcessing(prev => ({ ...prev, [withdrawal.id]: 'approving' }));
     
     try {
-      const success = await onApprove(withdrawal.id, withdrawal.userId, withdrawal.amount);
+      const result = await onApprove(withdrawal.id, withdrawal.userId, withdrawal.amount);
       
-      if (success) {
+      if (result.success) {
         toast({
           title: 'Withdrawal Approved ✅',
           description: `${withdrawal.amount} STON (${stonToTon(withdrawal.amount)} TON) withdrawal approved and payout initiated for ${withdrawal.username || withdrawal.userId}`,
@@ -259,11 +259,32 @@ const PendingWithdrawTab = ({ pendingWithdrawals = [], onApprove, onReject }) =>
           className: 'bg-[#1a1a1a] text-white',
         });
       } else {
+        // Format detailed error message
+        let errorDescription = `Withdrawal approved but payout failed for ${withdrawal.username || withdrawal.userId}.`;
+        
+        if (result.oxapayDetails?.error) {
+          const oxError = result.oxapayDetails.error;
+          errorDescription += `\n\n🚨 OxaPay Error: ${oxError.message || oxError.key || 'Unknown error'}`;
+          
+          if (oxError.key === 'amount_exceeds_balance') {
+            errorDescription += '\n💡 Solution: Check OxaPay wallet balance and fund if necessary.';
+          } else if (oxError.key === 'invalid_address') {
+            errorDescription += '\n💡 Solution: Verify the recipient wallet address format.';
+          } else if (oxError.key === 'invalid_amount') {
+            errorDescription += '\n💡 Solution: Check the withdrawal amount and limits.';
+          }
+        } else if (result.error) {
+          errorDescription += `\n\n❌ Error: ${result.error}`;
+        }
+        
+        errorDescription += '\n\n📋 Check admin notifications for full details.';
+        
         toast({
           title: 'Payout Failed ❌',
-          description: `Withdrawal approved but payout failed for ${withdrawal.username || withdrawal.userId}. Check admin notifications for details.`,
+          description: errorDescription,
           variant: 'destructive',
-          className: 'bg-[#1a1a1a] text-white',
+          className: 'bg-[#1a1a1a] text-white max-w-md',
+          duration: 8000, // Show longer for detailed error
         });
       }
     } catch (error) {

@@ -250,11 +250,12 @@ const AdminPage = () => {
   };
 
   const handleApproveWithdrawal = async (withdrawalId, userId, amount) => {
-    const success = await approveWithdrawal(withdrawalId, userId, amount);
-    if (success) {
+    const result = await approveWithdrawal(withdrawalId, userId, amount);
+    if (result.success) {
       const updatedWithdrawals = await getPendingWithdrawals();
       setPendingWithdrawals(updatedWithdrawals);
     }
+    return result; // Return the full result object to the component
   };
 
   const handleRejectWithdrawal = async (withdrawalId) => {

@@ -82,7 +82,15 @@ const makeOxapayRequest = async (endpoint, method = 'GET', data = null, usePayou
         fullResponse: responseData
       });
       
-      throw new Error(`OxaPay API error: ${statusCode} - ${errorMessage}`);
+      const detailedError = new Error(`OxaPay API error: ${statusCode} - ${errorMessage}`);
+      detailedError.oxapayDetails = {
+        httpStatus: statusCode,
+        apiStatus: responseData.status,
+        message: responseData.message,
+        error: responseData.error,
+        fullResponse: responseData
+      };
+      throw detailedError;
     }
 
     return {
@@ -95,7 +103,8 @@ const makeOxapayRequest = async (endpoint, method = 'GET', data = null, usePayou
     return {
       success: false,
       error: error.message,
-      status: error.status || 500
+      status: error.status || 500,
+      oxapayDetails: error.oxapayDetails || null
     };
   }
 };
@@ -697,7 +706,8 @@ async function handleCreatePayout(req, res) {
       console.error('Failed to create payout:', payoutResult.error);
       return res.status(500).json({ 
         error: 'Failed to create payout',
-        details: payoutResult.error 
+        details: payoutResult.error,
+        oxapayDetails: payoutResult.oxapayDetails || null
       });
     }
 

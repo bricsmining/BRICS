@@ -278,7 +278,10 @@ export const approveWithdrawal = async (withdrawalId, userId, amount) => {
 
       if (!payoutResult.success) {
         console.error('OxaPay payout failed:', payoutResult);
-        throw new Error(payoutResult.error || 'Payout creation failed');
+        const detailedError = new Error(payoutResult.error || 'Payout creation failed');
+        detailedError.oxapayDetails = payoutResult.oxapayDetails;
+        detailedError.fullResponse = payoutResult;
+        throw detailedError;
       }
 
       console.log('OxaPay payout created successfully:', payoutResult.data);
@@ -347,7 +350,7 @@ export const approveWithdrawal = async (withdrawalId, userId, amount) => {
       }
 
       console.log(`Withdrawal ${withdrawalId} approved and payout initiated for user ${userId}`);
-      return true;
+      return { success: true };
 
     } catch (payoutError) {
       console.error('Error creating OxaPay payout:', payoutError);
@@ -369,7 +372,7 @@ export const approveWithdrawal = async (withdrawalId, userId, amount) => {
           body: JSON.stringify({
             type: 'admin',
             notificationType: 'payout_failed',
-            data: {
+                          data: {
               userId: userId,
               username: username || userId,
               amount: parseFloat(amount),
@@ -378,7 +381,9 @@ export const approveWithdrawal = async (withdrawalId, userId, amount) => {
               memo: tonMemo,
               withdrawalId: withdrawalId,
               error: payoutError.message,
-              errorDetails: payoutError.details || 'No additional details available'
+              errorDetails: payoutError.details || 'No additional details available',
+              oxapayDetails: payoutError.oxapayDetails || null,
+              fullResponse: payoutError.fullResponse || null
             }
           })
         });
@@ -386,13 +391,23 @@ export const approveWithdrawal = async (withdrawalId, userId, amount) => {
         console.error('Failed to send failure notification:', notificationError);
       }
 
-      // Return false instead of throwing to allow proper error handling in UI
-      return false;
+      // Return error object instead of false to allow proper error handling in UI
+      return { 
+        success: false, 
+        error: payoutError.message,
+        oxapayDetails: payoutError.oxapayDetails,
+        fullResponse: payoutError.fullResponse
+      };
     }
 
   } catch (error) {
     console.error('Error approving withdrawal:', error);
-    return false;
+    return { 
+      success: false, 
+      error: error.message,
+      oxapayDetails: null,
+      fullResponse: null
+    };
   }
 };
 

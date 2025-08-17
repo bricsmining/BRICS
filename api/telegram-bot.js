@@ -1151,25 +1151,51 @@ ${data.memo ? `• Memo: \`${data.memo}\`` : ''}
 🕐 *Time:* ${timestamp}`;
 
     case 'payout_failed':
-      return `❌ *Payout Failed!*
+      let failedMessage = `❌ <b>Payout Failed!</b>
 
-👤 *User Details:*
-• ID: \`${data.userId}\`
+👤 <b>User Details:</b>
+• ID: <code>${data.userId}</code>
 • Name: ${data.username || 'Unknown'}
 
-💰 *Payout Details:*
+💰 <b>Payout Details:</b>
 • Amount: ${data.amount} STON (${data.tonAmount} TON)
-• Address: \`${data.address}\`
-${data.memo ? `• Memo: \`${data.memo}\`` : ''}
-• Withdrawal ID: \`${data.withdrawalId}\`
+• Address: <code>${data.address}</code>
+${data.memo ? `• Memo: <code>${data.memo}</code>` : ''}
+• Withdrawal ID: <code>${data.withdrawalId}</code>
 
-❗ *Error Details:*
+❗ <b>Error Details:</b>
 • Error: ${data.error}
-• Details: ${data.errorDetails}
+• Details: ${data.errorDetails}`;
+
+      // Add detailed OxaPay error information if available
+      if (data.oxapayDetails?.error) {
+        const oxError = data.oxapayDetails.error;
+        failedMessage += `
+
+🚨 <b>OxaPay API Error:</b>
+• Type: <code>${oxError.type || 'Unknown'}</code>
+• Key: <code>${oxError.key || 'Unknown'}</code>
+• Message: ${oxError.message || 'No message'}`;
+
+        if (oxError.key === 'amount_exceeds_balance') {
+          failedMessage += `
+💡 <b>Solution:</b> Check OxaPay wallet balance and fund if necessary.`;
+        } else if (oxError.key === 'invalid_address') {
+          failedMessage += `
+💡 <b>Solution:</b> Verify the recipient wallet address format.`;
+        } else if (oxError.key === 'invalid_amount') {
+          failedMessage += `
+💡 <b>Solution:</b> Check the withdrawal amount and limits.`;
+        }
+      }
+
+      failedMessage += `
 
 ⚠️ User's balance was NOT deducted. Manual intervention may be required.
 
-🕐 *Time:* ${timestamp}`;
+🕐 <b>Time:</b> ${timestamp}`;
+
+      return failedMessage;
 
     default:
       return null;
