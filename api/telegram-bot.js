@@ -165,13 +165,6 @@ async function handleStartWithReferral(chatId, userId, referrerId, userInfo) {
         welcomeBonus: referralResult.welcomeBonus,
         reward: referralResult.referrerReward
       });
-
-      // Mark user as welcomed in database to prevent duplicate messages
-      await updateDoc(userRef, {
-        hasSeenWelcome: true,
-        welcomeMessageShown: true,
-        lastWelcomeDate: serverTimestamp()
-      });
       
       // Send welcome message with referral bonus (NO URL PARAMETERS FOR WELCOME)
       const webAppUrl = WEB_APP_URL; // Clean URL without parameters
@@ -578,7 +571,10 @@ async function processReferralDirect(newUserId, referrerId, userInfo) {
         await updateDoc(newUserRef, {
           invitedBy: referrerId,
           balance: increment(welcomeBonus),
-          'balanceBreakdown.referral': increment(welcomeBonus)
+          'balanceBreakdown.referral': increment(welcomeBonus),
+          hasSeenWelcome: true,
+          welcomeMessageShown: true,
+          lastWelcomeDate: serverTimestamp()
         });
         console.log(`[BOT] Updated existing user ${newUserId} with referrer ${referrerId} and welcome bonus ${welcomeBonus}`);
       }
@@ -621,7 +617,13 @@ async function processReferralDirect(newUserId, referrerId, userInfo) {
         }
       };
       
-      await setDoc(newUserRef, { ...defaultUser, joinedAt: serverTimestamp() });
+      await setDoc(newUserRef, { 
+        ...defaultUser, 
+        joinedAt: serverTimestamp(),
+        hasSeenWelcome: true,
+        welcomeMessageShown: true,
+        lastWelcomeDate: serverTimestamp()
+      });
       console.log(`[BOT] Created new user ${newUserId} with referrer ${referrerId}`);
     }
 
@@ -719,6 +721,7 @@ async function processReferralDirect(newUserId, referrerId, userInfo) {
 // Send notification to admin
 async function notifyAdminDirect(type, data) {
   try {
+    console.log(`[BOT] ===== ADMIN NOTIFICATION START =====`);
     console.log(`[BOT] Attempting to send admin notification - Type: ${type}, Data:`, data);
     
     const adminConfigRef = doc(db, 'admin', 'config');
@@ -768,6 +771,7 @@ async function notifyAdminDirect(type, data) {
     
     await sendMessage(adminChatId, messageText, options);
     console.log('[BOT] Admin notification sent successfully');
+    console.log(`[BOT] ===== ADMIN NOTIFICATION END =====`);
     return true;
 
   } catch (error) {
@@ -780,17 +784,24 @@ async function notifyAdminDirect(type, data) {
 // Send notification to user
 async function notifyUserDirect(userId, type, data) {
   try {
+    console.log(`[BOT] ===== USER NOTIFICATION START =====`);
+    console.log(`[BOT] Sending user notification - UserId: ${userId}, Type: ${type}, Data:`, data);
+    
     const message = generateUserMessage(type, data);
     if (!message) {
       console.log('[BOT] Invalid user notification type:', type);
       return false;
     }
 
+    console.log(`[BOT] Generated message: ${message.substring(0, 100)}...`);
     await sendMessage(userId, message, { parse_mode: 'Markdown' });
+    console.log('[BOT] User notification sent successfully');
+    console.log(`[BOT] ===== USER NOTIFICATION END =====`);
     return true;
 
   } catch (error) {
     console.error('[BOT] Error sending user notification:', error);
+    console.error('[BOT] Stack trace:', error.stack);
     return false;
   }
 }
