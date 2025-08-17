@@ -258,57 +258,71 @@ useEffect(() => {
   let mounted = true;
 
   const updateMiningData = () => {
-    if (!mounted || currentMiningStats.totalRatePerHour === 0) {
-      setMiningProgress(0);
-      setPendingRewards(0);
-      setTimeUntilNextReward('');
-      setCardExpiryTime('');
-      return;
-    }
+    if (!mounted) return;
 
-    const { rewards, timeDiffHours } = calculateMiningRewards();
+    // Always check for card expiry information, even if no active mining
+    const userCardData = currentUser?.cardData || {};
     
-    // Find cards that need renewal priority (less than 20% time left)
+    // Find cards that need renewal priority (less than 20% time left) and next expiring cards
     let priorityCard = null;
     let shortestExpiryCard = null;
     let shortestExpiryTime = null;
     let shortestProgress = 0;
+    let hasActiveCards = currentMiningStats.totalRatePerHour > 0;
     
-    currentMiningStats.activeCards.forEach(card => {
-      const expirationDate = card.expirationDate instanceof Timestamp ? 
-        card.expirationDate.toDate() : 
-        new Date(card.expirationDate);
+    // Check ALL cards (not just active ones) to find next expiring card
+    Object.keys(userCardData).forEach(cardKey => {
+      const cardData = userCardData[cardKey];
+      const cardId = parseInt(cardKey.split('_')[0]);
+      const cardConfig = INDIVIDUAL_CARDS[cardId];
       
-      const timeUntilExpiration = expirationDate.getTime() - new Date().getTime();
-      
-      if (timeUntilExpiration > 0) {
+      if (cardData && cardConfig) {
+        const expirationDate = cardData.expirationDate instanceof Timestamp ? 
+          cardData.expirationDate.toDate() : 
+          new Date(cardData.expirationDate);
+        
+        const timeUntilExpiration = expirationDate.getTime() - new Date().getTime();
+        const isCardActive = timeUntilExpiration > 0;
+        
         // Calculate progress for this card
-        const totalValidityMs = card.validityDays * 24 * 60 * 60 * 1000;
-        const purchaseDate = card.purchaseDate instanceof Timestamp ? 
-          card.purchaseDate.toDate() : 
-          new Date(card.purchaseDate);
+        const totalValidityMs = cardConfig.validityDays * 24 * 60 * 60 * 1000;
+        const purchaseDate = cardData.purchaseDate instanceof Timestamp ? 
+          cardData.purchaseDate.toDate() : 
+          new Date(cardData.purchaseDate);
         const timeElapsedMs = new Date().getTime() - purchaseDate.getTime();
         const progress = Math.max(0, Math.min(100, (timeElapsedMs / totalValidityMs) * 100));
         
-        // Check if card has less than 20% time left (80% progress)
-        const timeLeftPercentage = ((timeUntilExpiration / totalValidityMs) * 100);
-        
-        if (timeLeftPercentage <= 20 && (priorityCard === null || timeUntilExpiration < priorityCard.timeUntilExpiration)) {
-          priorityCard = {
-            card,
-            timeUntilExpiration,
-            progress,
-            cardId: parseInt(card.cardKey.split('_')[0])
-          };
+        // For active cards, check priority (less than 20% time left)
+        if (isCardActive) {
+          const timeLeftPercentage = ((timeUntilExpiration / totalValidityMs) * 100);
+          
+          if (timeLeftPercentage <= 20 && (priorityCard === null || timeUntilExpiration < priorityCard.timeUntilExpiration)) {
+            priorityCard = {
+              cardData,
+              cardConfig,
+              timeUntilExpiration,
+              progress,
+              cardId,
+              cardKey,
+              isActive: true
+            };
+          }
         }
         
-        // Also track the shortest expiring card
-        if (shortestExpiryTime === null || timeUntilExpiration < shortestExpiryTime) {
+        // Track the card with the longest remaining time (next to expire)
+        // For expired cards, we want to show the most recently expired
+        // For active cards, we want to show the soonest to expire
+        if (shortestExpiryTime === null || 
+            (isCardActive && timeUntilExpiration < shortestExpiryTime) ||
+            (!hasActiveCards && timeUntilExpiration > shortestExpiryTime)) {
           shortestExpiryTime = timeUntilExpiration;
           shortestProgress = progress;
           shortestExpiryCard = {
-            card,
-            cardId: parseInt(card.cardKey.split('_')[0])
+            cardData,
+            cardConfig,
+            cardId,
+            cardKey,
+            isActive: isCardActive
           };
         }
       }
@@ -318,26 +332,40 @@ useEffect(() => {
     const cardToDisplay = priorityCard || shortestExpiryCard;
     
     if (cardToDisplay) {
-      const cardConfig = INDIVIDUAL_CARDS[cardToDisplay.cardId];
-      const displayTime = priorityCard ? priorityCard.timeUntilExpiration : shortestExpiryTime;
-      const displayProgress = priorityCard ? priorityCard.progress : shortestProgress;
+      const { cardConfig, timeUntilExpiration = shortestExpiryTime, progress = shortestProgress, isActive } = cardToDisplay;
       
-      // Set card expiry time with card name
-      const urgencyPrefix = priorityCard ? '⚠️ RENEW: ' : '';
-      setCardExpiryTime(`${urgencyPrefix}${cardConfig?.name || 'Card'} - ${formatTimeDuration(displayTime)}`);
-      setMiningProgress(isNaN(displayProgress) ? 0 : displayProgress);
-
-        // Calculate and set next reward time
-        const nextRewardMs = (1 - (timeDiffHours % 1)) * 3600 * 1000;
-        setTimeUntilNextReward(formatTimeDuration(nextRewardMs));
-        
-        // Update pending rewards
-        setPendingRewards(prev => Math.max(prev, rewards));
-      } else {
-      setCardExpiryTime('No Active Cards');
-        setTimeUntilNextReward('--');
+      // Set card expiry time with card name and status
+      let urgencyPrefix = '';
+      let statusText = '';
+      
+      if (priorityCard) {
+        urgencyPrefix = '⚠️ RENEW: ';
+      } else if (!isActive) {
+        urgencyPrefix = '🔄 EXPIRED: ';
+        statusText = ' (Renew to continue mining)';
+      }
+      
+      const timeDisplay = isActive ? formatTimeDuration(timeUntilExpiration) : 'Expired';
+      setCardExpiryTime(`${urgencyPrefix}${cardConfig?.name || 'Card'} - ${timeDisplay}${statusText}`);
+      setMiningProgress(isNaN(progress) ? (isActive ? 0 : 100) : progress);
+    } else {
+      setCardExpiryTime('No Cards Owned');
       setMiningProgress(0);
-        setPendingRewards(0);
+    }
+
+    // Handle mining rewards and timing (only for active mining)
+    if (hasActiveCards) {
+      const { rewards, timeDiffHours } = calculateMiningRewards();
+      
+      // Calculate and set next reward time
+      const nextRewardMs = (1 - (timeDiffHours % 1)) * 3600 * 1000;
+      setTimeUntilNextReward(formatTimeDuration(nextRewardMs));
+      
+      // Update pending rewards
+      setPendingRewards(prev => Math.max(prev, rewards));
+    } else {
+      setTimeUntilNextReward('--');
+      setPendingRewards(0);
     }
   };
 
@@ -348,7 +376,7 @@ useEffect(() => {
     mounted = false;
     clearInterval(interval);
   };
-  }, [calculateMiningRewards, currentMiningStats.totalRatePerHour, formatTimeDuration, currentUser, currentMiningStats]);
+  }, [calculateMiningRewards, currentMiningStats.totalRatePerHour, formatTimeDuration, currentUser]);
 
 
 
@@ -986,31 +1014,47 @@ useEffect(() => {
                 </div>
 
                 {/* Mining Progress */}
-                {currentMiningStats.totalRatePerHour > 0 && (
+                {(currentMiningStats.totalRatePerHour > 0 || cardExpiryTime) && (
                   <div className="mb-3">
                     <div className="flex justify-between items-center mb-2">
-                      <span className="text-xs text-white/80">Card Validity Period</span>
+                      <span className="text-xs text-white/80">Card Validity Status</span>
                       <span className="text-xs text-white/80">
-                        {isNaN(miningProgress) ? '0.0' : (100 - miningProgress).toFixed(1)}% remaining
+                        {cardExpiryTime.includes('EXPIRED') ? 
+                          'Expired - Renew needed' : 
+                          `${isNaN(miningProgress) ? '0.0' : (100 - miningProgress).toFixed(1)}% remaining`
+                        }
                       </span>
                     </div>
                     <div className="w-full bg-white/20 rounded-full h-2 overflow-hidden">
                       <motion.div
-                        className="h-full bg-gradient-to-r from-yellow-400 to-orange-500"
+                        className={`h-full ${cardExpiryTime.includes('EXPIRED') ? 
+                          'bg-gradient-to-r from-red-500 to-orange-600' : 
+                          'bg-gradient-to-r from-yellow-400 to-orange-500'
+                        }`}
                         initial={{ width: 0 }}
-                        animate={{ width: `${isNaN(miningProgress) ? 100 : (100 - miningProgress)}%` }}
+                        animate={{ 
+                          width: cardExpiryTime.includes('EXPIRED') ? 
+                            '100%' : 
+                            `${isNaN(miningProgress) ? 100 : (100 - miningProgress)}%` 
+                        }}
                         transition={{ duration: 0.5 }}
                       />
                     </div>
-                    {currentMiningStats.activeCards.length > 0 && (
+                    {(currentMiningStats.activeCards.length > 0 || cardExpiryTime) && (
                       <div className="grid grid-cols-2 gap-2 mt-2">
                         <div className="text-center">
-                          <p className="text-xs text-orange-300 font-medium">Next Expiry:</p>
+                          <p className="text-xs text-orange-300 font-medium">
+                            {cardExpiryTime.includes('EXPIRED') ? 'Expired Card:' : 'Next Expiry:'}
+                          </p>
                           <p className="text-xs text-white font-mono">{cardExpiryTime}</p>
                         </div>
                         <div className="text-center">
-                          <p className="text-xs text-green-300 font-medium">Next Reward In:</p>
-                          <p className="text-xs text-white font-mono">{timeUntilNextReward}</p>
+                          <p className="text-xs text-green-300 font-medium">
+                            {currentMiningStats.totalRatePerHour > 0 ? 'Next Reward In:' : 'Mining Status:'}
+                          </p>
+                          <p className="text-xs text-white font-mono">
+                            {currentMiningStats.totalRatePerHour > 0 ? timeUntilNextReward : 'Inactive'}
+                          </p>
                         </div>
                       </div>
                     )}
