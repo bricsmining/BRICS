@@ -22,55 +22,9 @@ const ReferralWelcome = () => {
         console.error('Failed to load admin config:', error);
       }
 
-      // Check for referral info
-      const refInfo = getReferralInfo();
-      if (refInfo && refInfo.isFirstTime) { // Only show for first-time referrals
-        setReferralInfo(refInfo);
-        setShowReferralMessage(true);
-        
-        // Show success toast with dynamic rewards
-        const referrerReward = adminConfig?.referralReward || 100;
-        const welcomeBonus = adminConfig?.welcomeBonus || 50;
-        toast({
-          title: '🎉 Welcome Bonus Received!',
-          description: refInfo.hasBonus 
-            ? `You got ${welcomeBonus} STON! Your referrer earned ${referrerReward} STON + free spin!` 
-            : 'Welcome to SkyTON via referral!',
-          variant: 'success',
-          duration: 6000,
-          className: 'bg-gradient-to-r from-green-600 to-emerald-600 text-white border-green-500',
-        });
-
-        // Auto-hide after 10 seconds for referral messages
-        setTimeout(() => {
-          setShowReferralMessage(false);
-          clearReferralInfo(refInfo.userId);
-        }, 10000);
-      }
-
-      // Check for welcome info (non-referred users)
-      const welInfo = getWelcomeInfo();
-      if (welInfo && welInfo.isFirstTime && !refInfo) { // Only show for first-time welcome and no referral
-        setWelcomeInfo(welInfo);
-        setShowWelcomeMessage(true);
-        
-        // Show welcome toast
-        toast({
-          title: '🚀 Welcome to SkyTON!',
-          description: welInfo.hasError 
-            ? 'Ready to start mining STON tokens!' 
-            : 'Your mining journey begins now!',
-          variant: 'default',
-          duration: 4000,
-          className: 'bg-gradient-to-r from-blue-600 to-purple-600 text-white border-blue-500',
-        });
-
-        // Auto-hide after 6 seconds
-        setTimeout(() => {
-          setShowWelcomeMessage(false);
-          clearWelcomeInfo(welInfo.userId);
-        }, 6000);
-      }
+      // DISABLED: Welcome messages are now handled by telegram bot only
+      // This prevents duplicate welcome messages
+      console.log('[WEBAPP] Welcome messages disabled - handled by telegram bot only');
     };
 
     initWelcomeMessages();

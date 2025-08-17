@@ -133,11 +133,23 @@ async function handleStartWithReferral(chatId, userId, referrerId, userInfo) {
   }
 
   try {
-    // Process referral directly with Firebase
+    // Check if user exists first
+    const userRef = doc(db, 'users', userId.toString());
+    const userDoc = await getDoc(userRef);
+    const isNewUser = !userDoc.exists();
+
+    // If user exists, just show them the app
+    if (!isNewUser) {
+      console.log('[BOT] User already exists, showing app only');
+      await handleStart(chatId, userId, userInfo);
+      return;
+    }
+
+    // PROCESS REFERRAL IMMEDIATELY FOR NEW USERS
     const referralResult = await processReferralDirect(userId, referrerId, userInfo);
     
     if (referralResult.success) {
-      console.log('[BOT] Referral processed successfully');
+      console.log('[BOT] NEW USER - Referral processed successfully');
       
       // Send admin notification about new referral
       await notifyAdminDirect('referral', {
@@ -146,11 +158,18 @@ async function handleStartWithReferral(chatId, userId, referrerId, userInfo) {
         referrerId: referrerId,
         referrerReward: referralResult.referrerReward,
         welcomeBonus: referralResult.welcomeBonus,
-        reward: referralResult.referrerReward // Keep for backward compatibility
+        reward: referralResult.referrerReward
+      });
+
+      // Mark user as welcomed in database to prevent duplicate messages
+      await updateDoc(userRef, {
+        hasSeenWelcome: true,
+        welcomeMessageShown: true,
+        lastWelcomeDate: serverTimestamp()
       });
       
-      // Send welcome message with referral bonus
-      const webAppUrlWithReferral = `${WEB_APP_URL}?referred=true&referrer=${encodeURIComponent(referrerId)}&bonus=true&firstTime=true&userId=${encodeURIComponent(userId)}`;
+      // Send welcome message with referral bonus (NO URL PARAMETERS FOR WELCOME)
+      const webAppUrl = WEB_APP_URL; // Clean URL without parameters
       
       // Get admin configuration for dynamic buttons
       const adminConfig = await getAdminConfig();
@@ -165,14 +184,14 @@ You've been invited by a friend and earned bonus rewards!
 🎁 *Referral Bonus Applied:*
 • ${referralResult.welcomeBonus} STON welcome bonus for you
 • ${referralResult.referrerReward} STON reward for your referrer
-• Free spin on the reward wheel
+• Free spin reward for referrer
 
-Your SkyTON app is launching automatically... 🚀
+Start mining and earning more STON tokens! 🚀
       `, {
         parse_mode: 'Markdown',
         reply_markup: {
           inline_keyboard: [
-            [{ text: "🚀 Open SkyTON Mining App", web_app: { url: webAppUrlWithReferral } }],
+            [{ text: "🚀 Open SkyTON Mining App", web_app: { url: webAppUrl } }],
             [{ text: "📢 Join Channel", url: `https://t.me/${channelUsername}` }],
             [
               { text: "🎯 Invite Friends", callback_data: "get_referral_link" },
@@ -208,13 +227,52 @@ async function handleStart(chatId, userId, userInfo, customMessage = null) {
   const userDoc = await getDoc(userRef);
   const isNewUser = !userDoc.exists();
 
-  // Send new user notification to admin only for new users
+  // Send new user notification to admin only for new users (non-referral)
   if (userInfo && isNewUser) {
     await notifyAdminDirect('new_user', {
       userId: userId,
       name: userInfo.first_name || 'Unknown',
       username: userInfo.username || null
     });
+
+    // Mark user as welcomed in database to prevent duplicate messages
+    if (isNewUser) {
+      await setDoc(userRef, {
+        telegramId: userId.toString(),
+        username: userInfo.username || null,
+        firstName: userInfo.first_name || 'Unknown',
+        lastName: userInfo.last_name || '',
+        hasSeenWelcome: true,
+        welcomeMessageShown: true,
+        lastWelcomeDate: serverTimestamp(),
+        balance: 100,
+        balanceBreakdown: {
+          task: 100,
+          box: 0,
+          referral: 0,
+          mining: 0
+        },
+        energy: 500,
+        referrals: 0,
+        referralHistory: [],
+        referralCode: userId.toString(),
+        invitedBy: null,
+        completedTasks: [],
+        referredUsers: [],
+        isBanned: false,
+        isAdmin: false,
+        freeSpins: 0,
+        totalSpinsEarned: 0,
+        cards: 0,
+        miningData: {
+          lastClaimTime: null,
+          miningStartTime: null,
+          isActive: false,
+          totalMined: 0,
+        },
+        joinedAt: serverTimestamp()
+      });
+    }
   }
 
   const message = customMessage || `
@@ -234,7 +292,7 @@ Ready to start your mining journey? 🚀
 
   // Get admin configuration for dynamic buttons
   const adminConfig = await getAdminConfig();
-  const keyboard = await buildInlineKeyboard(adminConfig, isNewUser, userId);
+  const keyboard = await buildInlineKeyboard(adminConfig, false, userId); // Don't show welcome URL params
 
   await sendMessage(chatId, message, {
     parse_mode: 'Markdown',
