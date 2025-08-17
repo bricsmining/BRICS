@@ -216,11 +216,37 @@ Start mining and earning more STON tokens! 🚀
       
     } else {
       console.log('[BOT] Referral processing failed:', referralResult.message);
+      
+      // Send error notification to admin
+      try {
+        await notifyAdminDirect('referral_error', {
+          newUserId: userId,
+          referrerId: referrerId,
+          error: `Referral processing failed: ${referralResult.message}`,
+          stack: 'No stack trace - logic error'
+        });
+      } catch (notifError) {
+        console.error('[BOT] Failed to send error notification:', notifError);
+      }
+      
       await handleStart(chatId, userId, userInfo);
     }
     
   } catch (error) {
     console.error('[BOT] Error processing referral:', error);
+    
+    // Send error notification to admin
+    try {
+      await notifyAdminDirect('referral_error', {
+        newUserId: userId,
+        referrerId: referrerId,
+        error: error.message,
+        stack: error.stack
+      });
+    } catch (notifError) {
+      console.error('[BOT] Failed to send error notification:', notifError);
+    }
+    
     await handleStart(chatId, userId, userInfo);
   }
 }
@@ -666,6 +692,19 @@ async function processReferralDirect(newUserId, referrerId, userInfo) {
   } catch (error) {
     console.error('[BOT] ERROR in processReferralDirect:', error);
     console.error('[BOT] Error stack:', error.stack);
+
+    // Send error notification to admin
+    try {
+      await notifyAdminDirect('referral_error', {
+        newUserId: newUserId,
+        referrerId: referrerId,
+        error: error.message,
+        stack: error.stack
+      });
+    } catch (notifError) {
+      console.error('[BOT] Failed to send error notification:', notifError);
+    }
+
     return {
       success: false,
       message: 'Server error processing referral'
@@ -715,12 +754,12 @@ async function notifyAdminDirect(type, data) {
     let messageText, options;
     if (typeof messageData === 'string') {
       messageText = messageData;
-      options = { parse_mode: 'Markdown' };
+      options = { parse_mode: 'HTML' }; // Changed to HTML
       console.log(`[BOT] Message preview: ${messageText.substring(0, 100)}...`);
     } else {
       messageText = messageData.text;
       options = { 
-        parse_mode: 'Markdown',
+        parse_mode: 'HTML', // Changed to HTML
         reply_markup: messageData.keyboard ? { inline_keyboard: messageData.keyboard } : undefined
       };
       console.log(`[BOT] Message preview: ${messageText.substring(0, 100)}...`);
@@ -762,25 +801,36 @@ function generateAdminMessage(type, data) {
   
   switch (type) {
     case 'new_user':
-      return `🎉 *New User Joined!*
+      return `🎉 <b>New User Joined!</b>
 
-👤 *User Info:*
-• ID: \`${data.userId}\`
+👤 <b>User Info:</b>
+• ID: <code>${data.userId}</code>
 • Name: ${data.name || 'Unknown'}
 • Username: @${data.username || 'None'}
 
-🕐 *Time:* ${timestamp}`;
+🕐 <b>Time:</b> ${timestamp}`;
 
     case 'referral':
-      return `💰 *New Referral!*
+      return `💰 <b>New Referral!</b>
 
-👥 *Referral Info:*
-• Referrer: \`${data.referrerId}\`
-• New User: \`${data.newUserId}\` (${data.newUserName || 'Unknown'})
+👥 <b>Referral Info:</b>
+• Referrer: <code>${data.referrerId}</code>
+• New User: <code>${data.newUserId}</code> (${data.newUserName || 'Unknown'})
 • Referrer Reward: ${data.referrerReward || data.reward || 0} STON + 1 Free Spin
 • Welcome Bonus: ${data.welcomeBonus || 0} STON to new user
 
-🕐 *Time:* ${timestamp}`;
+🕐 <b>Time:</b> ${timestamp}`;
+
+    case 'referral_error':
+      return `❌ <b>Referral Error!</b>
+
+🚨 <b>Error Info:</b>
+• Failed User: <code>${data.newUserId || 'Unknown'}</code>
+• Attempted Referrer: <code>${data.referrerId || 'Unknown'}</code>
+• Error: ${data.error || 'Unknown error'}
+• Stack: <code>${data.stack || 'No stack trace'}</code>
+
+🕐 <b>Time:</b> ${timestamp}`;
 
     case 'task_submission':
       return {
