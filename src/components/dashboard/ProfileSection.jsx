@@ -2128,11 +2128,7 @@ const ProfileSection = ({ user, refreshUserData }) => {
                     <span className="text-xs text-gray-300 font-medium">Joined</span>
                   </div>
                   <p className="text-sm font-bold text-white">
-                    {user.createdAt ? new Date(user.createdAt.seconds * 1000).toLocaleDateString('en-US', {
-                      month: 'short',
-                      day: 'numeric',
-                      year: 'numeric'
-                    }) : 'Unknown'}
+                    {formatDate(user.joinedAt)}
                   </p>
             </div>
               </motion.div>
