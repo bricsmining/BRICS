@@ -794,7 +794,7 @@ async function notifyUserDirect(userId, type, data) {
     }
 
     console.log(`[BOT] Generated message: ${message.substring(0, 100)}...`);
-    await sendMessage(userId, message, { parse_mode: 'Markdown' });
+    await sendMessage(userId, message, { parse_mode: 'HTML' });
     console.log('[BOT] User notification sent successfully');
     console.log(`[BOT] ===== USER NOTIFICATION END =====`);
     return true;
@@ -1180,61 +1180,61 @@ ${data.memo ? `• Memo: \`${data.memo}\`` : ''}
 function generateUserMessage(type, data) {
   switch (type) {
     case 'task_approved':
-      return `✅ *Task Approved!*
+      return `✅ <b>Task Approved!</b>
 
 Your task submission has been approved!
 
-📝 *Task:* ${data.taskTitle || 'Unknown Task'}
-💰 *Reward:* ${data.reward || 0} STON added to your balance
-🎉 *Status:* Completed
+📝 <b>Task:</b> ${data.taskTitle || 'Unknown Task'}
+💰 <b>Reward:</b> ${data.reward || 0} STON added to your balance
+🎉 <b>Status:</b> Completed
 
 Keep completing tasks to earn more STON! 🚀`;
 
     case 'task_rejected':
-      return `❌ *Task Rejected*
+      return `❌ <b>Task Rejected</b>
 
 Your task submission has been rejected.
 
-📝 *Task:* ${data.taskTitle || 'Unknown Task'}
-📝 *Reason:* ${data.reason || 'Requirements not met'}
+📝 <b>Task:</b> ${data.taskTitle || 'Unknown Task'}
+📝 <b>Reason:</b> ${data.reason || 'Requirements not met'}
 
 Please try again following the task requirements. 🔄`;
 
     case 'withdrawal_approved':
-      return `✅ *Withdrawal Approved!*
+      return `✅ <b>Withdrawal Approved!</b>
 
 Your withdrawal request has been approved!
 
-💰 *Amount:* ${data.amount || 0} STON
-💳 *Method:* ${data.method || 'Unknown'}
-📍 *Address:* \`${data.address || 'Not provided'}\`
-⏱️ *Processing Time:* 24-48 hours
+💰 <b>Amount:</b> ${data.amount || 0} STON
+💳 <b>Method:</b> ${data.method || 'Unknown'}
+📍 <b>Address:</b> <code>${data.address || 'Not provided'}</code>
+⏱️ <b>Processing Time:</b> 24-48 hours
 
 Your tokens will be transferred soon! 🚀`;
 
     case 'withdrawal_rejected':
-      return `❌ *Withdrawal Rejected*
+      return `❌ <b>Withdrawal Rejected</b>
 
 Your withdrawal request has been rejected.
 
-💰 *Amount:* ${data.amount || 0} STON
-📝 *Reason:* ${data.reason || 'Invalid request'}
+💰 <b>Amount:</b> ${data.amount || 0} STON
+📝 <b>Reason:</b> ${data.reason || 'Invalid request'}
 
 Your STON balance has been restored. Please try again. 🔄`;
 
     case 'successful_referral':
-      return `🎉 *Successful Referral!*
+      return `🎉 <b>Successful Referral!</b>
 
 Your friend joined SkyTON through your referral link!
 
-👥 *New Member:* ${data.newUserName || 'Friend'}
-💰 *Your Reward:* ${data.reward || 0} STON
-🎰 *Bonus:* 1 Free Spin added
-🎁 *Their Welcome:* ${data.welcomeBonus || 0} STON bonus
+👥 <b>New Member:</b> ${data.newUserName || 'Friend'}
+💰 <b>Your Reward:</b> ${data.reward || 0} STON
+🎰 <b>Bonus:</b> 1 Free Spin added
+🎁 <b>Their Welcome:</b> ${data.welcomeBonus || 0} STON bonus
 
 Keep sharing to earn more rewards! 🚀
 
-*Share your link:* https://t.me/${getBotUsername()}?start=refID${data.referrerId}`;
+<b>Share your link:</b> https://t.me/${getBotUsername()}?start=refID${data.referrerId}`;
 
     case 'task_status':
       return data.message || 'Task status update';
@@ -1243,17 +1243,17 @@ Keep sharing to earn more rewards! 🚀
       return data.message || 'Broadcast message';
 
     case 'new_referral':
-      return `🎉 *New Referral!*
+      return `🎉 <b>New Referral!</b>
 
 Congratulations! Someone joined SkyTON using your referral link!
 
-👥 *New Member:* ${data.newUserName || 'Friend'}
-💰 *Your Reward:* ${data.reward || 0} STON
-🎰 *Bonus:* 1 Free Spin added
+👥 <b>New Member:</b> ${data.newUserName || 'Friend'}
+💰 <b>Your Reward:</b> ${data.reward || 0} STON
+🎰 <b>Bonus:</b> 1 Free Spin added
 
 Keep sharing to earn more rewards! 🚀
 
-*Share your link:* https://t.me/${getBotUsername()}?start=refID${data.referrerId}`;
+<b>Share your link:</b> https://t.me/${getBotUsername()}?start=refID${data.referrerId}`;
 
     default:
       return null;
