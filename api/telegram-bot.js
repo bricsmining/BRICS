@@ -28,11 +28,17 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  // Verify webhook secret for security
+  // Verify webhook secret for security (if configured)
   const providedSecret = req.headers['x-telegram-bot-api-secret-token'];
-  if (WEBHOOK_SECRET && providedSecret !== WEBHOOK_SECRET) {
-    console.error('Invalid webhook secret. Expected:', WEBHOOK_SECRET, 'Got:', providedSecret);
-    return res.status(401).json({ error: 'Unauthorized' });
+  if (WEBHOOK_SECRET) {
+    if (providedSecret !== WEBHOOK_SECRET) {
+      console.error('Invalid webhook secret. Expected:', WEBHOOK_SECRET, 'Got:', providedSecret);
+      return res.status(401).json({ error: 'Unauthorized' });
+    } else {
+      console.log('[WEBHOOK] Secret token verified successfully');
+    }
+  } else {
+    console.warn('[WEBHOOK] No webhook secret configured - allowing request without secret validation');
   }
 
   if (!BOT_TOKEN) {
