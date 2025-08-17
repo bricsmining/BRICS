@@ -23,6 +23,7 @@ import { generateReferralLink, updateUserBalance, updateUserBalanceByType } from
 import { db } from '@/lib/firebase';
 import { doc, getDoc, updateDoc, increment } from 'firebase/firestore';
 import QRCode from '@/components/ui/QRCode';
+import { showRewardedAd } from '@/ads/adsController';
 
 const defaultAvatar =
 	'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQB_4gKwn8q2WBPTwnV14Jmh3B5g56SCiGEBA&usqp=CAU';
@@ -432,6 +433,8 @@ const SpinModal = ({
 	const [showResult, setShowResult] = useState(false);
 	const [selectedReward, setSelectedReward] = useState(null);
 	const [currentUser, setCurrentUser] = useState(user);
+	const [showAdAfterSpin, setShowAdAfterSpin] = useState(false);
+	const [isLoadingAd, setIsLoadingAd] = useState(false);
 
 	// Update current user when user prop changes
 	useEffect(() => {
@@ -445,19 +448,48 @@ const SpinModal = ({
 			setSpinResult(null);
 			setShowResult(false);
 			setSelectedReward(null);
+			setShowAdAfterSpin(false);
+			setIsLoadingAd(false);
 		}
 	}, [isOpen]);
 
-	// Auto-hide result after 5 seconds
+	// Auto-hide result after 5 seconds and show ad
 	useEffect(() => {
 		if (showResult) {
 			const timer = setTimeout(() => {
 				setShowResult(false);
 				setSpinResult(null);
+				// Trigger ad after showing the congratulations message
+				setShowAdAfterSpin(true);
 			}, 5000);
 			return () => clearTimeout(timer);
 		}
 	}, [showResult]);
+
+	// Handle showing ad after spin completion
+	useEffect(() => {
+		if (showAdAfterSpin && !isLoadingAd) {
+			setIsLoadingAd(true);
+			showRewardedAd({
+				onComplete: () => {
+					console.log('Post-spin ad completed successfully');
+					setIsLoadingAd(false);
+					setShowAdAfterSpin(false);
+				},
+				onClose: () => {
+					console.log('Post-spin ad closed');
+					setIsLoadingAd(false);
+					setShowAdAfterSpin(false);
+				},
+				onError: (error) => {
+					console.log('Post-spin ad error:', error);
+					setIsLoadingAd(false);
+					setShowAdAfterSpin(false);
+					// Don't show error toast for ads - just silently continue
+				}
+			});
+		}
+	}, [showAdAfterSpin, isLoadingAd]);
 
 	const handleSpin = async () => {
 		// Check if user has free spins
@@ -556,10 +588,11 @@ const SpinModal = ({
 	};
 
 	const handleClose = () => {
-		if (!isSpinning) {
+		if (!isSpinning && !isLoadingAd) {
 			setShowResult(false);
 			setSpinResult(null);
 			setSelectedReward(null);
+			setShowAdAfterSpin(false);
 			onClose();
 		}
 	};
@@ -578,7 +611,7 @@ const SpinModal = ({
 				<button
 					className='absolute top-4 right-4 text-gray-400 hover:text-white transition-colors z-10'
 					onClick={handleClose}
-					disabled={isSpinning}
+					disabled={isSpinning || isLoadingAd}
 				>
 					<X className='w-6 h-6' />
 				</button>
@@ -650,8 +683,29 @@ const SpinModal = ({
 					)}
 				</AnimatePresence>
 
-				{/* Action Buttons - Hide when showing result */}
-				{!showResult && (
+				{/* Ad Loading Display */}
+				{isLoadingAd && (
+					<motion.div
+						initial={{ opacity: 0, scale: 0.8, y: 20 }}
+						animate={{ opacity: 1, scale: 1, y: 0 }}
+						exit={{ opacity: 0, scale: 0.8, y: -20 }}
+						transition={{ duration: 0.5, ease: 'easeOut' }}
+						className='text-center mb-6'
+					>
+						<div className='bg-gradient-to-r from-blue-600/30 to-indigo-600/30 border-2 border-blue-500/60 rounded-2xl p-3 shadow-xl'>
+							<div className='flex items-center justify-center gap-2 mb-2'>
+								<Loader2 className='h-5 w-5 animate-spin text-blue-400' />
+								<h3 className='text-lg font-bold text-blue-400'>Loading Ad...</h3>
+							</div>
+							<p className='text-sm text-gray-300'>
+								Please wait while we load your reward ad
+							</p>
+						</div>
+					</motion.div>
+				)}
+
+				{/* Action Buttons - Hide when showing result or loading ad */}
+				{!showResult && !isLoadingAd && (
 					<div className='space-y-1.5 mb-3'>
 						<Button
 							onClick={handleSpin}
@@ -683,16 +737,16 @@ const SpinModal = ({
 						<Button
 							onClick={handleClose}
 							variant='outline'
-							disabled={isSpinning}
+							disabled={isSpinning || isLoadingAd}
 							className='w-full h-7 bg-transparent border border-gray-500/50 text-gray-300 hover:bg-gray-600/20 hover:border-gray-400 rounded-xl disabled:opacity-50 text-xs'
 						>
-							{isSpinning ? 'Please wait...' : 'Close'}
+							{isSpinning ? 'Please wait...' : isLoadingAd ? 'Loading ad...' : 'Close'}
 						</Button>
 					</div>
 				)}
 
-				{/* How to earn spins - Hide when showing result */}
-				{!showResult && (
+				{/* How to earn spins - Hide when showing result or loading ad */}
+				{!showResult && !isLoadingAd && (
 					<div className='bg-gradient-to-r from-orange-600/10 to-orange-800/10 backdrop-blur-sm border border-orange-500/20 p-2 rounded-xl'>
 						<h3 className='text-xs font-semibold text-orange-400 mb-1 text-center flex items-center justify-center gap-1'>
 							<Gift className='h-3 w-3' />
