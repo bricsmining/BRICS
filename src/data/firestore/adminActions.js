@@ -241,10 +241,7 @@ export const approveWithdrawal = async (withdrawalId, userId, amount) => {
     const userData = userDoc.data();
     const tonMemo = userData.tonMemo;
     
-    // Check if memo exists (required for new connections)
-    if (!tonMemo) {
-      throw new Error('User wallet does not have a memo configured. Please reconnect wallet with memo.');
-    }
+    // Memo is now optional - no need to check for existence
 
     // Convert STON to TON for payout
     const tonAmount = stonToTon(amount);
@@ -258,13 +255,18 @@ export const approveWithdrawal = async (withdrawalId, userId, amount) => {
         amount: parseFloat(tonAmount),
         currency: 'TON',
         network: 'TON',
-        memo: tonMemo, // Always include memo (now required)
         description: `SkyTON withdrawal for ${username || userId}`,
         withdrawalId: withdrawalId,
         userId: userId
       };
 
-      console.log(`Including required TON memo in payout: ${tonMemo}`);
+      // Only include memo if it exists
+      if (tonMemo && tonMemo.trim() !== '') {
+        payoutData.memo = tonMemo;
+        console.log(`Including TON memo in payout: ${tonMemo}`);
+      } else {
+        console.log('No memo provided - processing withdrawal without memo');
+      }
 
       const payoutResponse = await fetch('/api/oxapay?action=payout', {
         method: 'POST',
@@ -338,7 +340,7 @@ export const approveWithdrawal = async (withdrawalId, userId, amount) => {
               amount: parseFloat(amount),
               tonAmount: parseFloat(tonAmount),
               address: walletAddress,
-              memo: tonMemo,
+              memo: tonMemo || null,
               trackId: payoutResult.data.track_id,
               withdrawalId: withdrawalId,
               status: payoutResult.data.status
@@ -378,7 +380,7 @@ export const approveWithdrawal = async (withdrawalId, userId, amount) => {
               amount: parseFloat(amount),
               tonAmount: parseFloat(tonAmount),
               address: walletAddress,
-              memo: tonMemo,
+              memo: tonMemo || null,
               withdrawalId: withdrawalId,
               error: payoutError.message,
               errorDetails: payoutError.details || 'No additional details available',

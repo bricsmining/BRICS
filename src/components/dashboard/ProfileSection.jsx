@@ -852,20 +852,17 @@ const MysteryBoxSection = ({ user, refreshUserData, navigate }) => {
   );
 };
 
-// TON memo validation function
+// TON memo validation function (memo is now optional)
 const validateTonMemo = (memo) => {
+  // Allow empty memo (optional)
   if (!memo || memo.trim() === '') {
-    return { valid: false, error: 'Memo is required for TON wallet connection' }; // Memo is mandatory
+    return { valid: true, error: null }; // Empty memo is now valid
   }
   
   const trimmedMemo = memo.trim();
   
   // TON memo should be alphanumeric and can contain some special characters
   // Length should be reasonable (typically 1-120 characters)
-  if (trimmedMemo.length < 1) {
-    return { valid: false, error: 'Memo cannot be empty' };
-  }
-  
   if (trimmedMemo.length > 120) {
     return { valid: false, error: 'Memo must be 120 characters or less' };
   }
@@ -916,7 +913,7 @@ const WalletDialog = ({ isOpen, onClose, onConnect }) => {
   if (!isOpen) return null;
 
   const isValidWallet = walletInput.length === 48 && (walletInput.startsWith("EQ") || walletInput.startsWith("UQ"));
-  const isValidMemo = memoInput.trim() !== '' && !memoError;
+  const isValidMemo = !memoError; // Memo is optional, just check for no errors
   const canConnect = isValidWallet && isValidMemo && !isConnecting;
 
   return (
@@ -953,7 +950,7 @@ const WalletDialog = ({ isOpen, onClose, onConnect }) => {
             <div>
               <h3 className="text-sm font-semibold text-red-500 mb-1">Critical - Read Carefully</h3>
               <p className="text-xs text-red-200">
-                Both wallet address AND memo are REQUIRED. Double-check both fields carefully. Incorrect information WILL result in lost funds and failed transactions.
+                Wallet address is REQUIRED. Memo is optional - only add if your wallet/exchange requires it. Double-check address carefully. Incorrect information WILL result in lost funds.
               </p>
             </div>
           </div>
@@ -982,21 +979,20 @@ const WalletDialog = ({ isOpen, onClose, onConnect }) => {
           {/* Memo Input */}
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">
-              Memo (Required) *
+              Memo (Optional)
             </label>
             <Input
               value={memoInput}
               onChange={handleMemoChange}
-              placeholder="Enter your wallet memo (required)"
+              placeholder="Enter your wallet memo (optional)"
               className="h-12 text-white placeholder:text-gray-500 bg-gray-800/50 border border-gray-600/50 rounded-xl focus:border-blue-500 transition-colors"
               aria-label="TON memo"
-              required
             />
             {memoError && (
               <p className="text-red-400 text-xs mt-1">{memoError}</p>
             )}
             <p className="text-gray-500 text-xs mt-1">
-              Memo is required for all TON wallet transactions
+              Memo is optional. Only add if required by your wallet or exchange.
             </p>
           </div>
         </div>
@@ -1456,15 +1452,18 @@ const ProfileSection = ({ user, refreshUserData }) => {
       return;
     }
 
-    // Validate memo (required)
-    if (!memoInput || memoInput.trim() === '') {
-      toast({
-        title: "Memo Required",
-        description: "Memo is required for TON wallet connection.",
-        variant: "destructive",
-        className: "bg-[#1a1a1a] text-white",
-      });
-      return;
+    // Validate memo (optional, but if provided must be valid)
+    if (memoInput && memoInput.trim() !== '') {
+      const memoValidation = validateTonMemo(memoInput);
+      if (!memoValidation.valid) {
+        toast({
+          title: "Invalid Memo",
+          description: memoValidation.error,
+          variant: "destructive",
+          className: "bg-[#1a1a1a] text-white",
+        });
+        return;
+      }
     }
 
     try {

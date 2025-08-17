@@ -19,15 +19,11 @@ export const updateCurrentUser = async (userId, updates) => {
   return await updateUser(userId, updates);
 };
 
-// Connects a wallet address for the user with required memo
+// Connects a wallet address for the user with optional memo
 export const connectWallet = async (userId, walletAddress, memo) => {
-  if (!memo || memo.trim() === '') {
-    throw new Error('Memo is required for TON wallet connection');
-  }
-  
   const updates = { 
     wallet: walletAddress,
-    tonMemo: memo.trim()
+    tonMemo: memo && memo.trim() !== '' ? memo.trim() : null // Store null if memo is empty
   };
   return await updateUser(userId, updates);
 };
