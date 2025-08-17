@@ -72,6 +72,7 @@ async function handleMessage(message) {
 
   // Handle /start command with referral parameter
   if (text && text.startsWith('/start ')) {
+    console.log(`[BOT] /start command with parameter: ${text}`);
     const startParam = text.split(' ')[1];
     let referrerId = null;
     
@@ -80,15 +81,19 @@ async function handleMessage(message) {
       if (startParam.startsWith('refID')) {
         // New format: refID{tgID}
         referrerId = startParam.replace('refID', '');
+        console.log(`[BOT] Extracted referrerId from refID: ${referrerId}`);
       } else if (startParam.startsWith('User_')) {
         // Old format: User_{tgID}
         referrerId = startParam.replace('User_', '');
+        console.log(`[BOT] Extracted referrerId from User_: ${referrerId}`);
       } else {
         // Direct ID format
         referrerId = startParam;
+        console.log(`[BOT] Using direct referrerId: ${referrerId}`);
       }
     }
     
+    console.log(`[BOT] Calling handleStartWithReferral: userId=${userId}, referrerId=${referrerId}`);
     await handleStartWithReferral(chatId, userId, referrerId, message.from);
     return;
   }
@@ -480,7 +485,10 @@ async function buildInlineKeyboard(adminConfig, isNewUser = false, userId = null
 
 // Process referral directly with Firebase
 async function processReferralDirect(newUserId, referrerId, userInfo) {
+  console.log(`[BOT] processReferralDirect STARTED: newUser=${newUserId}, referrer=${referrerId}`);
+  
   try {
+    console.log(`[BOT] Creating Firebase references...`);
     const usersRef = collection(db, 'users');
     const tasksRef = collection(db, 'tasks');
 
@@ -488,13 +496,16 @@ async function processReferralDirect(newUserId, referrerId, userInfo) {
     const referredByRef = doc(usersRef, referrerId.toString());
     const referTaskRef = doc(tasksRef, 'task_refer_friend');
 
+    console.log(`[BOT] Fetching documents from Firebase...`);
     const [newUserSnap, referredBySnap, referTaskSnap] = await Promise.all([
       getDoc(newUserRef),
       getDoc(referredByRef),
       getDoc(referTaskRef)
     ]);
 
+    console.log(`[BOT] Documents fetched. Referrer exists: ${referredBySnap.exists()}`);
     if (!referredBySnap.exists()) {
+      console.log(`[BOT] ERROR: Referrer ${referrerId} not found in database`);
       return { success: false, message: 'Referrer not found.' };
     }
 
@@ -620,6 +631,7 @@ async function processReferralDirect(newUserId, referrerId, userInfo) {
     }
 
     // Update referrer with new referral
+    console.log(`[BOT] Updating referrer ${referrerId} with rewards...`);
     const referrerUpdate = {
       referrals: increment(1),
       balance: increment(referrerReward), // ADD MISSING BALANCE UPDATE
@@ -638,7 +650,10 @@ async function processReferralDirect(newUserId, referrerId, userInfo) {
       referrerUpdate.weeklyReferralsLastReset = serverTimestamp();
     }
 
+    console.log(`[BOT] Updating referrer document with:`, referrerUpdate);
     await updateDoc(referredByRef, referrerUpdate);
+    console.log(`[BOT] Referrer ${referrerId} updated successfully!`);
+    console.log(`[BOT] processReferralDirect COMPLETED SUCCESSFULLY!`);
 
     return {
       success: true,
@@ -649,7 +664,8 @@ async function processReferralDirect(newUserId, referrerId, userInfo) {
     };
 
   } catch (error) {
-    console.error('[BOT] Error in processReferralDirect:', error);
+    console.error('[BOT] ERROR in processReferralDirect:', error);
+    console.error('[BOT] Error stack:', error.stack);
     return {
       success: false,
       message: 'Server error processing referral'
