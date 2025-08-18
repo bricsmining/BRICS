@@ -23,18 +23,16 @@ export const parseLaunchParams = () => {
   
   let hash = window.location.hash ? window.location.hash.slice(1) : '';
 
-  // Check for direct referral URL parameters (new feature)
+  // Only check for Telegram Web App start_param (no direct URL referral parameters)
   const urlParams = new URLSearchParams(window.location.search);
-  const isReferred = urlParams.get('referred') === 'true';
-  let urlReferrerId = urlParams.get('referrer');
-  const hasBonus = urlParams.get('bonus') === 'true';
   const isWelcome = urlParams.get('welcome') === 'true';
   const hasError = urlParams.get('error');
   const isFirstTime = urlParams.get('firstTime') === 'true';
   const urlUserId = urlParams.get('userId');
+  let urlReferrerId = null; // Will only be set from Telegram start_param
 
-  console.log('[WEBAPP] URL parameters:', {
-    isReferred, urlReferrerId, hasBonus, isWelcome, hasError, isFirstTime, urlUserId
+  console.log('[WEBAPP] URL parameters (welcome/error only):', {
+    isWelcome, hasError, isFirstTime, urlUserId
   });
 
   // For bot-first approach, check for start_param from Telegram Web App API
@@ -54,31 +52,29 @@ export const parseLaunchParams = () => {
     console.log('[WEBAPP] Extracted referrerId from start_param:', urlReferrerId);
   }
 
-  // Store temporary referral parameters for later processing (after we get user ID)
-  if ((isReferred && urlReferrerId) || (startParam && urlReferrerId)) {
-    const isMiniAppReferral = startParam && startParam.startsWith('refID');
-    // For Mini App referrals, treat as first time and bonus unless explicitly set otherwise
-    const effectiveFirstTime = isFirstTime || isMiniAppReferral || (startParam && !isFirstTime);
-    const effectiveHasBonus = hasBonus || isMiniAppReferral;
+  // Only store referral info if it comes from Telegram start_param (bot referrals only)
+  if (startParam && urlReferrerId) {
+    const isMiniAppReferral = startParam.startsWith('refID');
+    // For Mini App referrals from bot, treat as first time
+    const effectiveFirstTime = isFirstTime || isMiniAppReferral;
     
     // Store temporary referral data without user-specific key
     const tempReferralData = {
       isReferred: true,
       referrerId: urlReferrerId,
-      hasBonus: effectiveHasBonus,
+      hasBonus: false, // No bonus for bot referrals (handled by bot directly)
       isFirstTime: effectiveFirstTime,
       isMiniAppReferral: isMiniAppReferral,
       userId: urlUserId, // might be null for Mini App referrals
       timestamp: Date.now(),
-      needsProcessing: true // flag to indicate this needs to be processed later
+      needsProcessing: false // Bot already processed referral, no need to process again
     };
     
-    // Store temporarily - will be re-stored with proper user ID later
+    // Store temporarily - for display purposes only (no processing)
     sessionStorage.setItem('tempReferralInfo', JSON.stringify(tempReferralData));
     
-    console.log('Temporary referral info stored for processing:', { 
+    console.log('Bot referral info stored for display only (already processed by bot):', { 
       referrerId: urlReferrerId, 
-      hasBonus: effectiveHasBonus, 
       isFirstTime: effectiveFirstTime,
       isMiniAppReferral 
     });
@@ -187,7 +183,7 @@ export const parseLaunchParams = () => {
   console.log('[WEBAPP] Final result:', {
     telegramUserId: telegramUser?.id,
     referrerId: referrerId,
-    source: startParam ? 'start_param' : (isReferred ? 'URL_params' : 'none')
+    source: startParam ? 'telegram_start_param' : 'none'
   });
 
   return { telegramUser, referrerId };
@@ -200,42 +196,38 @@ export const processReferralInfo = (userId) => {
   let processedReferral = null;
   let processedWelcome = null;
   
-  // Process referral info
+  // Process referral info (display only - bot already processed referrals)
   const tempReferralData = sessionStorage.getItem('tempReferralInfo');
   if (tempReferralData) {
     try {
       const referralData = JSON.parse(tempReferralData);
-      if (referralData.needsProcessing) {
-        // Update referral data with actual user ID
-        referralData.userId = userId;
-        referralData.needsProcessing = false;
+      // Update referral data with actual user ID for display purposes
+      referralData.userId = userId;
+      
+      // Store with user-specific key for display
+      const referralKey = `referralInfo_${userId}`;
+      const existingReferral = sessionStorage.getItem(referralKey);
+      
+      if (!existingReferral || referralData.isFirstTime) {
+        sessionStorage.setItem(referralKey, JSON.stringify(referralData));
         
-        // Store with user-specific key
-        const referralKey = `referralInfo_${userId}`;
-        const existingReferral = sessionStorage.getItem(referralKey);
+        // Also store in general location for backward compatibility
+        sessionStorage.setItem('referralInfo', JSON.stringify(referralData));
         
-        if (!existingReferral || referralData.isFirstTime) {
-          sessionStorage.setItem(referralKey, JSON.stringify(referralData));
-          
-          // Also store in general location for backward compatibility
-          sessionStorage.setItem('referralInfo', JSON.stringify(referralData));
-          
-          console.log('✅ Referral info processed and stored with user ID:', { 
-            userId,
-            referrerId: referralData.referrerId, 
-            hasBonus: referralData.hasBonus, 
-            isFirstTime: referralData.isFirstTime,
-            isMiniAppReferral: referralData.isMiniAppReferral 
-          });
-          
-          processedReferral = referralData;
-        } else {
-          console.log('Referral info already exists for user, skipping duplicate');
-        }
+        console.log('✅ Bot referral info stored for display (already processed by Telegram bot):', { 
+          userId,
+          referrerId: referralData.referrerId, 
+          isFirstTime: referralData.isFirstTime,
+          isMiniAppReferral: referralData.isMiniAppReferral 
+        });
         
-        // Clear temporary data
-        sessionStorage.removeItem('tempReferralInfo');
+        processedReferral = referralData;
+      } else {
+        console.log('Referral info already exists for user, skipping duplicate');
       }
+      
+      // Clear temporary data
+      sessionStorage.removeItem('tempReferralInfo');
     } catch (error) {
       console.error('Error processing referral info:', error);
       sessionStorage.removeItem('tempReferralInfo');

@@ -42,7 +42,7 @@ export const getOrCreateUser = async (telegramUserData, referrerId = null) => {
       const updates = {};
 
       if (!existingData.referralLink || 
-          !existingData.referralLink.includes('/app?start=refID') ||
+          !existingData.referralLink.includes('?start=refID') ||
           existingData.referralLink.includes('?start=User_')) { 
         updates.referralLink = generateReferralLink(userId);
       }
@@ -106,20 +106,10 @@ export const getOrCreateUser = async (telegramUserData, referrerId = null) => {
         console.error('Error sending new user notification:', error);
       }
 
-      // Process Mini App referral if referrerId is provided
+      // Note: Referral processing is now handled exclusively by Telegram bot
+      // Web app referrals are disabled - all referrals go through bot system
       if (referrerId) {
-        // Double-check for self-referral before processing
-        if (userId === referrerId || String(userId) === String(referrerId)) {
-          console.error('❌ Self-referral detected and blocked:', { userId, referrerId });
-        } else {
-          try {
-            // Process referral rewards via API
-            await processMiniAppReferral(userId, referrerId);
-          } catch (error) {
-            console.error('Error processing Mini App referral:', error);
-            // Don't fail user creation if referral processing fails
-          }
-        }
+        console.log('[WEBAPP] Referral detected but skipping processing - handled by Telegram bot:', { userId, referrerId });
       }
       
       return { id: userId, ...newUser };
@@ -327,35 +317,6 @@ export const toggleUserBanStatus = async (telegramId, newStatus) => {
   }
 };
 
-// Process Mini App referral by calling the referral API
-export const processMiniAppReferral = async (newUserId, referrerId) => {
-  try {
-    // Get the base URL for API calls
-    const baseUrl = window.location.origin;
-    const adminApiKey = import.meta.env.VITE_ADMIN_API_KEY;
-    
-    if (!adminApiKey) {
-      console.error('❌ VITE_ADMIN_API_KEY not configured!');
-      console.error('📝 Add VITE_ADMIN_API_KEY=adminsumon7891 to Vercel environment variables');
-      return false;
-    }
-    
-    console.log('🔑 Using admin API key:', adminApiKey.substring(0, 5) + '...');
-    
-    const referralUrl = `${baseUrl}/api/utils?action=refer&api=${encodeURIComponent(adminApiKey)}&new=${encodeURIComponent(newUserId)}&referreby=${encodeURIComponent(referrerId)}`;
-    
-    const response = await fetch(referralUrl);
-    const result = await response.json();
-    
-    if (result.success) {
-      console.log('Mini App referral processed successfully:', result.message);
-      return true;
-    } else {
-      console.error('Mini App referral processing failed:', result.message);
-      return false;
-    }
-  } catch (error) {
-    console.error('Error processing Mini App referral:', error);
-    return false;
-  }
-};
+// NOTE: Web app referral processing has been removed
+// All referrals are now handled exclusively by the Telegram bot system
+// This ensures consistency and prevents duplicate referral processing

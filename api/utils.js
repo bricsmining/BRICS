@@ -16,7 +16,13 @@ export default async function handler(req, res) {
   try {
     switch (action) {
       case 'refer':
-        return await handleReferral(req, res);
+        // Web app referral processing has been removed
+        // All referrals are now handled exclusively by the Telegram bot system
+        return res.status(410).json({ 
+          error: 'Web app referral processing has been removed',
+          message: 'All referrals are handled by Telegram bot only. Use: https://t.me/yourbot?start=refIDxxxxxxx',
+          success: false
+        });
       
       case 'verify-telegram':
         return await handleTelegramVerification(req, res);
@@ -24,7 +30,7 @@ export default async function handler(req, res) {
       default:
         return res.status(400).json({ 
           error: 'Invalid action parameter',
-          availableActions: ['refer', 'verify-telegram']
+          availableActions: ['verify-telegram']
         });
     }
   } catch (error) {
@@ -36,7 +42,10 @@ export default async function handler(req, res) {
   }
 }
 
-// Referral handler
+// NOTE: Web app referral handler has been disabled
+// All referrals are now handled exclusively by the Telegram bot system
+/*
+// Referral handler - DISABLED
 async function handleReferral(req, res) {
   const { api, new: newUserId, referreby: referredById } = req.query;
 
@@ -214,6 +223,7 @@ async function handleReferral(req, res) {
     return res.status(500).json({ success: false, message: 'Server error.' });
   }
 }
+*/ // End of disabled referral handler
 
 // Telegram verification handler
 async function handleTelegramVerification(req, res) {
