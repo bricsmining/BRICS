@@ -159,7 +159,7 @@ const LeaderboardSection = ({ currentUserTelegramId }) => {
                 <div className="w-px h-8 bg-purple-500/30"></div>
                 <div className="text-center flex-1">
                   <p className="text-xs text-gray-300">
-                    {filter === 'weekly' ? 'Top This Week' : 'Top All Time'}
+                    {filter === 'weekly' ? 'Top This Week' : 'Top Referrals'}
                   </p>
                   <p className="text-lg font-bold text-white">
                     {leaderboard[0]?.referrals || 0}
@@ -257,17 +257,27 @@ const LeaderboardSection = ({ currentUserTelegramId }) => {
                         </div>
                       </div>
 
-                      {/* Referrals Count */}
+                      {/* Referrals Count & Balance */}
                       <div className="text-right">
-                        <p className="text-lg font-bold text-white">
-                          {user.referrals || 0}
-                        </p>
-                        <p className="text-xs text-gray-400">
-                          {filter === 'weekly' ? 'this week' : 'all time'}
-                        </p>
+                        <div className="flex items-center gap-2 justify-end">
+                          <div>
+                            <p className="text-lg font-bold text-white">
+                              {user.referrals || 0}
+                            </p>
+                            <p className="text-xs text-gray-400">
+                              {filter === 'weekly' ? 'this week' : 'referrals'}
+                            </p>
+                          </div>
+                          <div className="text-center">
+                            <p className="text-sm font-semibold text-yellow-400">
+                              {(user.balance || 0).toLocaleString()}
+                            </p>
+                            <p className="text-xs text-gray-400">STON</p>
+                          </div>
+                        </div>
                         {filter === 'weekly' && user.totalReferrals && user.totalReferrals > user.referrals && (
-                          <p className="text-xs text-gray-500">
-                            {user.totalReferrals} total
+                          <p className="text-xs text-gray-500 mt-1">
+                            {user.totalReferrals} total referrals
                           </p>
                         )}
                       </div>
@@ -320,9 +330,9 @@ const LeaderboardSection = ({ currentUserTelegramId }) => {
                 ) : (
                   <>
                     <p>• Share your referral link with friends and family</p>
-                    <p>• Post on social media to reach more people</p>
+                    <p>• Complete tasks and mine STON to boost your balance</p>
                     <p>• Help your referrals complete tasks for better retention</p>
-                    <p>• Build long-term referral relationships</p>
+                    <p>• Rankings consider referrals first, then STON balance</p>
                   </>
                 )}
               </div>

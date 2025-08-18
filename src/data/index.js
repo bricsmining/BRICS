@@ -42,13 +42,12 @@ export const getLeaderboardData = async (timePeriod = 'all') => {
         limit(100) // Get more users to filter from
       );
     } else {
-      // All time leaderboard
+      // All time leaderboard - get more users for client-side sorting by referrals + balance
       q = query(
         collection(db, 'users'),
-        where('isBanned', '!=', true), // Filter out banned users
+        where('isBanned', '!=', true),
         orderBy('isBanned'),
-        orderBy('referrals', 'desc'),
-        limit(20)
+        limit(100) // Get more users to sort properly by referrals + balance
       );
     }
 
@@ -97,24 +96,34 @@ export const getLeaderboardData = async (timePeriod = 'all') => {
         lastName: user.lastName || '',
         referrals: referralCount,
         totalReferrals: user.referrals || 0, // Always include total for context
+        balance: user.balance || 0, // Include balance for secondary ranking
         profilePicUrl: user.profilePicUrl || null,
         isBanned: user.isBanned || false
       });
     });
 
-    // Sort by referrals count (in case Firestore ordering wasn't perfect)
-    data.sort((a, b) => b.referrals - a.referrals);
+    // Sort by referrals first, then by balance as secondary criteria
+    data.sort((a, b) => {
+      // Primary: Sort by referrals (descending)
+      if (b.referrals !== a.referrals) {
+        return b.referrals - a.referrals;
+      }
+      // Secondary: If referrals are equal, sort by balance (descending)
+      return b.balance - a.balance;
+    });
 
-    // For weekly, filter out users with 0 weekly referrals and limit to top 20
+    // Filter and limit data based on time period
     let finalData = data;
     if (timePeriod === 'weekly') {
       finalData = data.filter(user => user.referrals > 0).slice(0, 20);
       console.log(`[LEADERBOARD_DATA] Filtered weekly data: ${finalData.length} users with referrals > 0`);
     } else {
-      finalData = data.slice(0, 20);
+      // For all-time, keep users with referrals OR balance > 100 (to show active users)
+      finalData = data.filter(user => user.referrals > 0 || user.balance > 100).slice(0, 20);
+      console.log(`[LEADERBOARD_DATA] Filtered all-time data: ${finalData.length} users with activity`);
     }
 
-    console.log(`[LEADERBOARD_DATA] Final sorted data for ${timePeriod}:`, finalData.slice(0, 3).map(u => ({ id: u.id, name: u.firstName, referrals: u.referrals })));
+    console.log(`[LEADERBOARD_DATA] Final sorted data for ${timePeriod}:`, finalData.slice(0, 3).map(u => ({ id: u.id, name: u.firstName, referrals: u.referrals, balance: u.balance })));
 
     return finalData;
   } catch (error) {
