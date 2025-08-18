@@ -10,6 +10,10 @@ const LeaderboardSection = ({ currentUserTelegramId }) => {
   const [leaderboard, setLeaderboard] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState('all');
+  const [currentUserPosition, setCurrentUserPosition] = useState(null);
+  
+  // Debug: Log the current user ID to help with debugging
+  console.log('[LEADERBOARD] Current user Telegram ID:', currentUserTelegramId);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -18,6 +22,15 @@ const LeaderboardSection = ({ currentUserTelegramId }) => {
         console.log(`[LEADERBOARD] Fetching ${filter} leaderboard data...`);
         const data = await getLeaderboardData(filter);
         console.log(`[LEADERBOARD] Received ${data?.length || 0} entries for ${filter}`);
+        console.log(`[LEADERBOARD] User IDs in leaderboard:`, data?.map(u => u.id));
+        console.log(`[LEADERBOARD] Looking for user ID:`, currentUserTelegramId);
+        
+        // Find current user's position in the full leaderboard
+        const userPosition = currentUserTelegramId ? 
+          data?.findIndex(user => String(user.id) === String(currentUserTelegramId)) + 1 : null;
+        
+        console.log(`[LEADERBOARD] Current user position:`, userPosition || 'Not found');
+        setCurrentUserPosition(userPosition > 0 ? userPosition : null);
         setLeaderboard(data || []);
       } catch (error) {
         console.error(`[LEADERBOARD] Error fetching ${filter} data:`, error);
@@ -28,7 +41,7 @@ const LeaderboardSection = ({ currentUserTelegramId }) => {
     };
 
     fetchData();
-  }, [filter]);
+  }, [filter, currentUserTelegramId]); // Add currentUserTelegramId to dependencies
 
   const getRankSuffix = (rank) => {
     if (rank === 1) return 'st';
@@ -205,7 +218,7 @@ const LeaderboardSection = ({ currentUserTelegramId }) => {
             ) : (
               leaderboard.map((user, index) => {
                 const rank = index + 1;
-                const isCurrentUser = user.id === currentUserTelegramId;
+                const isCurrentUser = String(user.id) === String(currentUserTelegramId);
                 const displayName = user.firstName
                   ? `${user.firstName} ${user.lastName || ''}`.trim()
                   : user.username || `User ${user.id}`;
@@ -288,8 +301,8 @@ const LeaderboardSection = ({ currentUserTelegramId }) => {
             )}
           </motion.div>
 
-          {/* Current User Position (if not in top list) */}
-          {!isLoading && leaderboard.length > 0 && !leaderboard.some(user => user.id === currentUserTelegramId) && (
+          {/* Current User Position */}
+          {!isLoading && leaderboard.length > 0 && currentUserTelegramId && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -302,7 +315,13 @@ const LeaderboardSection = ({ currentUserTelegramId }) => {
                     <Trophy className="h-4 w-4 text-blue-400" />
                     <span className="text-sm text-white">Your Position</span>
                   </div>
-                  <span className="text-sm text-blue-400">Not in top 10</span>
+                  <span className="text-sm text-blue-400">
+                    {currentUserPosition ? (
+                      currentUserPosition <= 20 ? 
+                        `#${currentUserPosition} (in top 20)` : 
+                        `#${currentUserPosition}`
+                    ) : 'Not ranked yet'}
+                  </span>
                 </div>
               </div>
             </motion.div>

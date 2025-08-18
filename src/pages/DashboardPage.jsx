@@ -55,7 +55,7 @@ const DashboardPage = ({ activeView }) => {
         <ReferralSection user={user} />
       )}
       {activeView === 'leaders' && (
-        <LeaderboardSection currentUser TelegramId={user?.id} />
+        <LeaderboardSection currentUserTelegramId={user?.id} />
       )}
       {activeView === 'tasks' && (
         <TasksSection
