@@ -149,16 +149,43 @@ async function handleReferral(req, res) {
       });
     }
     
-    // Simple, direct update like your working example
-    await referredByRef.update({
+    // Check if we need to reset weekly referrals
+    const currentDate = new Date();
+    const lastReset = referrerData.weeklyReferralsLastReset;
+    let weeklyReferrals = referrerData.weeklyReferrals || 0;
+    let needsReset = false;
+    
+    if (lastReset) {
+      const lastResetDate = lastReset.toDate ? lastReset.toDate() : new Date(lastReset);
+      const daysSinceReset = (currentDate - lastResetDate) / (1000 * 60 * 60 * 24);
+      if (daysSinceReset >= 7) {
+        weeklyReferrals = 0;
+        needsReset = true;
+      }
+    }
+
+    // Simple, direct update like your working example with weekly referrals
+    const updateData = {
       referrals: FieldValue.increment(1),
       balance: FieldValue.increment(referrerReward),
       'balanceBreakdown.referral': FieldValue.increment(referrerReward),
       referredUsers: FieldValue.arrayUnion(newUserId),
       freeSpins: FieldValue.increment(1), // Add 1 free spin for successful referral
       totalSpinsEarned: FieldValue.increment(1), // Track total spins earned
-      lastReferralDate: new Date()
-    });
+      lastReferralDate: currentDate,
+      weeklyReferrals: needsReset ? 1 : FieldValue.increment(1),
+      referralHistory: FieldValue.arrayUnion({
+        userId: newUserId,
+        timestamp: currentDate,
+        reward: referrerReward
+      })
+    };
+
+    if (needsReset || !lastReset) {
+      updateData.weeklyReferralsLastReset = currentDate;
+    }
+
+    await referredByRef.update(updateData);
 
     // Send notifications
     try {

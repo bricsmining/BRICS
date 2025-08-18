@@ -20,6 +20,7 @@ export * from '@/data/telegramUtils';
 // Firestore function for leaderboard data with time period filtering
 export const getLeaderboardData = async (timePeriod = 'all') => {
   try {
+    console.log(`[LEADERBOARD_DATA] Fetching leaderboard for period: ${timePeriod}`);
     let q;
     const currentDate = new Date();
     
@@ -31,14 +32,14 @@ export const getLeaderboardData = async (timePeriod = 'all') => {
       startOfWeek.setDate(diff);
       startOfWeek.setHours(0, 0, 0, 0);
 
-      // Query users with referrals made this week
+      console.log(`[LEADERBOARD_DATA] Week starts: ${startOfWeek.toISOString()}`);
+
+      // Simplified query to avoid composite index issues - get all non-banned users and filter client-side
       q = query(
         collection(db, 'users'),
-        where('isBanned', '!=', true), // Filter out banned users
+        where('isBanned', '!=', true),
         orderBy('isBanned'),
-        orderBy('weeklyReferrals', 'desc'),
-        orderBy('referrals', 'desc'),
-        limit(20)
+        limit(100) // Get more users to filter from
       );
     } else {
       // All time leaderboard
@@ -47,13 +48,15 @@ export const getLeaderboardData = async (timePeriod = 'all') => {
         where('isBanned', '!=', true), // Filter out banned users
         orderBy('isBanned'),
         orderBy('referrals', 'desc'),
-        orderBy('balance', 'desc'),
         limit(20)
       );
     }
 
+    console.log(`[LEADERBOARD_DATA] Executing Firestore query...`);
     const querySnapshot = await getDocs(q);
     const data = [];
+
+    console.log(`[LEADERBOARD_DATA] Query returned ${querySnapshot.size} documents`);
 
     querySnapshot.forEach(doc => {
       const user = doc.data();
@@ -63,18 +66,27 @@ export const getLeaderboardData = async (timePeriod = 'all') => {
       if (timePeriod === 'weekly') {
         referralCount = user.weeklyReferrals || 0;
         
+        console.log(`[LEADERBOARD_DATA] User ${doc.id}: weeklyReferrals=${user.weeklyReferrals}, totalReferrals=${user.referrals}`);
+        
         // If weeklyReferrals is not set, try to calculate from referralHistory
-        if (referralCount === 0 && user.referralHistory) {
+        if (referralCount === 0 && user.referralHistory && user.referralHistory.length > 0) {
           const startOfWeek = new Date();
           const day = startOfWeek.getDay();
           const diff = startOfWeek.getDate() - day + (day === 0 ? -6 : 1);
           startOfWeek.setDate(diff);
           startOfWeek.setHours(0, 0, 0, 0);
           
-          referralCount = user.referralHistory.filter(referral => {
-            const referralDate = referral.joinedAt?.toDate ? referral.joinedAt.toDate() : new Date(referral.joinedAt);
+          const weeklyFromHistory = user.referralHistory.filter(referral => {
+            const referralDate = referral.timestamp?.toDate ? referral.timestamp.toDate() : 
+                                 referral.joinedAt?.toDate ? referral.joinedAt.toDate() : 
+                                 new Date(referral.timestamp || referral.joinedAt);
             return referralDate >= startOfWeek;
           }).length;
+          
+          if (weeklyFromHistory > 0) {
+            referralCount = weeklyFromHistory;
+            console.log(`[LEADERBOARD_DATA] Calculated weekly referrals from history: ${weeklyFromHistory}`);
+          }
         }
       }
 
@@ -93,10 +105,58 @@ export const getLeaderboardData = async (timePeriod = 'all') => {
     // Sort by referrals count (in case Firestore ordering wasn't perfect)
     data.sort((a, b) => b.referrals - a.referrals);
 
-    return data;
+    // For weekly, filter out users with 0 weekly referrals and limit to top 20
+    let finalData = data;
+    if (timePeriod === 'weekly') {
+      finalData = data.filter(user => user.referrals > 0).slice(0, 20);
+      console.log(`[LEADERBOARD_DATA] Filtered weekly data: ${finalData.length} users with referrals > 0`);
+    } else {
+      finalData = data.slice(0, 20);
+    }
+
+    console.log(`[LEADERBOARD_DATA] Final sorted data for ${timePeriod}:`, finalData.slice(0, 3).map(u => ({ id: u.id, name: u.firstName, referrals: u.referrals })));
+
+    return finalData;
   } catch (error) {
-    console.error('Failed to fetch leaderboard:', error);
+    console.error(`[LEADERBOARD_DATA] Failed to fetch ${timePeriod} leaderboard:`, error);
     return [];
+  }
+};
+
+// Function to initialize missing weekly referrals fields for existing users
+export const initializeWeeklyReferralsForExistingUsers = async () => {
+  try {
+    console.log('[WEEKLY_INIT] Starting initialization of weekly referrals for existing users...');
+    
+    // Get all users that don't have weeklyReferrals field
+    const usersRef = collection(db, 'users');
+    const q = query(usersRef, where('weeklyReferrals', '==', null));
+    
+    const querySnapshot = await getDocs(q);
+    const batch = writeBatch(db);
+    let updateCount = 0;
+    
+    querySnapshot.forEach((doc) => {
+      const userRef = doc.ref;
+      batch.update(userRef, {
+        weeklyReferrals: 0,
+        weeklyReferralsLastReset: null,
+        referralHistory: [] // Initialize if missing
+      });
+      updateCount++;
+    });
+    
+    if (updateCount > 0) {
+      await batch.commit();
+      console.log(`[WEEKLY_INIT] Initialized weekly referrals for ${updateCount} users`);
+    } else {
+      console.log('[WEEKLY_INIT] All users already have weekly referrals fields');
+    }
+    
+    return { success: true, updatedUsers: updateCount };
+  } catch (error) {
+    console.error('[WEEKLY_INIT] Failed to initialize weekly referrals:', error);
+    return { success: false, error: error.message };
   }
 };
 

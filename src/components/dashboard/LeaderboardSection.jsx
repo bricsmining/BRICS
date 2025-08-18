@@ -14,9 +14,17 @@ const LeaderboardSection = ({ currentUserTelegramId }) => {
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
-      const data = await getLeaderboardData(filter);
-      setLeaderboard(data || []);
-      setIsLoading(false);
+      try {
+        console.log(`[LEADERBOARD] Fetching ${filter} leaderboard data...`);
+        const data = await getLeaderboardData(filter);
+        console.log(`[LEADERBOARD] Received ${data?.length || 0} entries for ${filter}`);
+        setLeaderboard(data || []);
+      } catch (error) {
+        console.error(`[LEADERBOARD] Error fetching ${filter} data:`, error);
+        setLeaderboard([]);
+      } finally {
+        setIsLoading(false);
+      }
     };
 
     fetchData();
