@@ -20,6 +20,7 @@ import {
 } from '@/data';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { showRewardedAd } from '@/ads/adsController';
+import { useAdTimer } from '@/contexts/AdTimerContext';
 
 const ENERGY_REWARD_AMOUNT = 10; // Set how much energy to grant per ad
 const BOX_REWARD_AMOUNT = 1; // Set how many boxes to grant per ad
@@ -296,6 +297,7 @@ const FlyingReward = ({ type, amount, onComplete }) => {
 
 const TasksSection = ({ tasks = [], user = {}, refreshUserData, isLoading }) => {
   const { toast } = useToast();
+  const { setAdShowing, clearAdShowing, isAnyAdShowing } = useAdTimer();
   const navigate = useNavigate();
   const location = useLocation();
   const [clickedTasks, setClickedTasks] = useState({});
@@ -494,7 +496,19 @@ const TasksSection = ({ tasks = [], user = {}, refreshUserData, isLoading }) => 
       return;
     }
 
+    // Check if any other ad is currently showing
+    if (isAnyAdShowing()) {
+      toast({
+        title: "Ad Already Playing",
+        description: "Please wait for the current ad to finish before watching another one.",
+        variant: 'destructive',
+        className: "bg-[#1a1a1a] text-white"
+      });
+      return;
+    }
+
     setIsEnergyAdLoading(true);
+    setAdShowing('energy'); // Block other ads
 
     showRewardedAd({
       onComplete: async () => {
@@ -557,10 +571,12 @@ const TasksSection = ({ tasks = [], user = {}, refreshUserData, isLoading }) => 
           });
         } finally {
           setIsEnergyAdLoading(false);
+          clearAdShowing(); // Unblock other ads
         }
       },
       onClose: () => {
         setIsEnergyAdLoading(false);
+        clearAdShowing(); // Unblock other ads
         toast({
           title: "Ad not completed",
           description: "Watch the full ad to earn energy.",
@@ -570,6 +586,7 @@ const TasksSection = ({ tasks = [], user = {}, refreshUserData, isLoading }) => 
       },
       onError: (err) => {
         setIsEnergyAdLoading(false);
+        clearAdShowing(); // Unblock other ads
         toast({
           title: "No Ad Available",
           description: err || "Try again later.",
@@ -615,7 +632,19 @@ const TasksSection = ({ tasks = [], user = {}, refreshUserData, isLoading }) => 
       return;
     }
 
+    // Check if any other ad is currently showing
+    if (isAnyAdShowing()) {
+      toast({
+        title: "Ad Already Playing",
+        description: "Please wait for the current ad to finish before watching another one.",
+        variant: 'destructive',
+        className: "bg-[#1a1a1a] text-white"
+      });
+      return;
+    }
+
     setIsBoxAdLoading(true);
+    setAdShowing('mystery_box'); // Block other ads
 
     showRewardedAd({
       onComplete: async () => {
@@ -670,10 +699,12 @@ const TasksSection = ({ tasks = [], user = {}, refreshUserData, isLoading }) => 
           });
         } finally {
           setIsBoxAdLoading(false);
+          clearAdShowing(); // Unblock other ads
         }
       },
       onClose: () => {
         setIsBoxAdLoading(false);
+        clearAdShowing(); // Unblock other ads
         toast({
           title: "Ad not completed",
           description: "Watch the full ad to earn a mystery box.",
@@ -683,6 +714,7 @@ const TasksSection = ({ tasks = [], user = {}, refreshUserData, isLoading }) => 
       },
       onError: (err) => {
         setIsBoxAdLoading(false);
+        clearAdShowing(); // Unblock other ads
         toast({
           title: "No Ad Available",
           description: err || "Try again later.",
