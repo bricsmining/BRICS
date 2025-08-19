@@ -45,7 +45,7 @@ const SPIN_REWARDS = [
 		type: 'ston',
 		color: '#607D8B',
 		actualReward: 100,
-		weight: 25, // 40% chance - most common
+		weight: 15, // 40% chance - most common
 		displayValue: '100',
 	},
 	{
@@ -105,7 +105,7 @@ const SPIN_REWARDS = [
 		type: 'ston',
 		color: '#FF9800',
 		actualReward: 10000,
-		weight: 15, // 2% chance - rare
+		weight: 25, // 2% chance - rare
 		displayValue: '10K',
 	},
 	{
