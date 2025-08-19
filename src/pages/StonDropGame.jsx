@@ -8,22 +8,25 @@ import { db } from '@/lib/firebase';
 import { doc, getDoc, updateDoc, increment } from 'firebase/firestore';
 import { showRewardedAd } from '@/ads/adsController';
 
-import backgroundImg from '@/assets/background.jpg';
-import stonImg from '@/assets/ston.png';
-import bombImg from '@/assets/bomb.png';
-import catchSfx from '@/assets/catch.mp3';
-import explosionSfx from '@/assets/explosion.mp3';
+import backgroundImg from '../assets/background.jpg';
+import stonImg from '../assets/ston.png';
+import bombImg from '../assets/bomb.png';
+import catchSfx from '../assets/catch.mp3';
+import explosionSfx from '../assets/explosion.mp3';
 
 const GAME_DURATION = 30;
 const ENERGY_COST = 20;
-const MIN_BOMB_PENALTY = 5; // Minimum points lost from bomb
-const MAX_BOMB_PENALTY = 15; // Maximum points lost from bomb
+const MIN_BOMB_PENALTY = 30; // Minimum points lost from bomb
+const MAX_BOMB_PENALTY = 75; // Maximum points lost from bomb
 
 const getRandomPosition = () => `${Math.random() * 80}%`;
-const getRandomReward = () => Math.floor(Math.random() * 5) + 1;
+const getRandomReward = () => {
+  // Random reward between 15-30 STON
+  return Math.floor(Math.random() * 16) + 15; // 15 to 30
+};
 const getBombPenalty = (currentScore) => {
-  // Scale bomb penalty based on current score (5-15 points)
-  const penalty = Math.min(MAX_BOMB_PENALTY, Math.max(MIN_BOMB_PENALTY, Math.floor(currentScore * 0.1)));
+  // Scale bomb penalty based on current score (30-75 points to balance higher rewards)
+  const penalty = Math.min(75, Math.max(30, Math.floor(currentScore * 0.1)));
   return penalty;
 };
 
@@ -52,8 +55,36 @@ export default function StonDropGame() {
   const { toast } = useToast();
   const containerRef = useRef();
 
-  const catchAudio = useRef(new Audio(catchSfx));
-  const explosionAudio = useRef(new Audio(explosionSfx));
+  const catchAudio = useRef(null);
+  const explosionAudio = useRef(null);
+
+  // Initialize audio
+  useEffect(() => {
+    catchAudio.current = new Audio(catchSfx);
+    explosionAudio.current = new Audio(explosionSfx);
+    
+    // Preload audio
+    catchAudio.current.preload = 'auto';
+    explosionAudio.current.preload = 'auto';
+    
+    // Set volume
+    catchAudio.current.volume = 0.5;
+    explosionAudio.current.volume = 0.5;
+    
+    console.log('🎵 Audio initialized:', { catchSfx, explosionSfx });
+    console.log('🖼️ Images loaded:', { backgroundImg, stonImg, bombImg });
+    
+    return () => {
+      if (catchAudio.current) {
+        catchAudio.current.pause();
+        catchAudio.current = null;
+      }
+      if (explosionAudio.current) {
+        explosionAudio.current.pause();
+        explosionAudio.current = null;
+      }
+    };
+  }, []);
 
   const userId = sessionStorage.getItem("gameUserId");
   const gameTimer = useRef(null);
@@ -311,7 +342,11 @@ export default function StonDropGame() {
     if (drop.isBomb) {
       // Bomb hit - reset combo and apply penalty
       if (navigator.vibrate) navigator.vibrate(300);
-      explosionAudio.current.play().catch(() => {});
+      if (explosionAudio.current) {
+        explosionAudio.current.play().catch((error) => {
+          console.warn('Failed to play explosion sound:', error);
+        });
+      }
       setRedFlash(true);
       setTimeout(() => setRedFlash(false), 1000);
       
@@ -337,7 +372,11 @@ export default function StonDropGame() {
       }
     } else {
       // Gem catch - increase combo and score
-      catchAudio.current.play().catch(() => {});
+      if (catchAudio.current) {
+        catchAudio.current.play().catch((error) => {
+          console.warn('Failed to play catch sound:', error);
+        });
+      }
       setScore(prev => prev + drop.reward);
       setCombo(prev => {
         const newCombo = prev + 1;
@@ -404,9 +443,62 @@ export default function StonDropGame() {
     finalizeGame();
   }, [isGameOver, userId, score, toast]);
 
-  const resetGame = useCallback(() => {
-    window.location.reload();
-  }, []);
+  const resetGame = useCallback(async () => {
+    // Clear all timers
+    clearInterval(gameTimer.current);
+    clearInterval(dropInterval.current);
+    
+    // Reset all game state
+    setDroppables([]);
+    setScore(0);
+    setTimeLeft(GAME_DURATION);
+    setIsGameOver(false);
+    setRedFlash(false);
+    setGameStarted(false);
+    setIsPaused(false);
+    setShowQuitConfirm(false);
+    setIsDoubling(false);
+    setHasDoubled(false);
+    setGameStartTime(null);
+    setCombo(0);
+    setShowCombo(false);
+    setCatchEffects([]);
+    setDoubledAmount(0);
+    
+    // Deduct energy for new game
+    if (userId && userData) {
+      try {
+        const docRef = doc(db, 'users', userId);
+        const snap = await getDoc(docRef);
+        
+        if (snap.exists()) {
+          const data = snap.data();
+          if (data.energy >= ENERGY_COST) {
+            await updateDoc(docRef, { energy: increment(-ENERGY_COST) });
+            setUserData(prev => ({ ...prev, energy: data.energy - ENERGY_COST }));
+          } else {
+            toast({ 
+              title: 'Not enough energy to play again.',
+              description: `You need ${ENERGY_COST} energy to play this game.`,
+              variant: 'destructive',
+              className: "bg-[#1a1a1a] text-white"
+            });
+            navigate('/tasks');
+            return;
+          }
+        }
+      } catch (error) {
+        console.error('Failed to deduct energy:', error);
+        toast({ 
+          title: 'Failed to start new game.',
+          variant: 'destructive',
+          className: "bg-[#1a1a1a] text-white"
+        });
+        navigate('/tasks');
+        return;
+      }
+    }
+  }, [userId, userData, navigate, toast]);
 
   const handleBackClick = useCallback(() => {
     if (!gameStarted || isGameOver) {
@@ -439,11 +531,14 @@ export default function StonDropGame() {
   return (
     <div
       ref={containerRef}
-      className="relative w-full h-screen overflow-hidden"
+      className="relative w-full h-screen overflow-hidden bg-gradient-to-br from-gray-900 via-gray-800 to-black"
       style={{
-        backgroundImage: `url(${backgroundImg})`,
+        backgroundImage: backgroundImg ? `url(${backgroundImg})` : 'none',
         backgroundSize: 'cover',
         backgroundPosition: 'center',
+      }}
+      onError={() => {
+        console.error('Background image failed to load:', backgroundImg);
       }}
     >
       {/* Top bar */}
@@ -507,14 +602,14 @@ export default function StonDropGame() {
               </div>
               <div className="flex items-center gap-2 text-sm text-gray-300 justify-center">
                 <DollarSign className="w-4 h-4 text-green-400" />
-                <span>Earn 1-5 STON per gem</span>
+                <span>Earn 15-30 STON per gem</span>
               </div>
               <div className="flex items-center gap-2 text-sm text-yellow-300 justify-center">
                 <Star className="w-4 h-4 text-yellow-400" />
                 <span>Build combos for bonus points!</span>
               </div>
               <div className="text-xs text-red-400 text-center">
-                ⚠️ Avoid bombs! They reduce your score (5-15 points)
+                ⚠️ Avoid bombs! They reduce your score (30-75 points)
               </div>
               <div className="text-xs text-blue-400 text-center">
                 💡 Game gets harder over time - stay focused!
@@ -578,10 +673,26 @@ export default function StonDropGame() {
             key={drop.id}
             src={drop.isBomb ? bombImg : stonImg}
             onClick={(e) => handleDropClick(drop, e)}
+            onError={(e) => {
+              console.error('Failed to load image:', e.target.src);
+              // Fallback to emoji if image fails to load
+              e.target.style.display = 'none';
+              const fallback = document.createElement('div');
+              fallback.textContent = drop.isBomb ? '💣' : '💎';
+              fallback.className = 'absolute cursor-pointer select-none text-4xl';
+              fallback.style.left = drop.left;
+              fallback.style.top = e.target.style.top;
+              fallback.onclick = (event) => handleDropClick(drop, event);
+              e.target.parentNode.appendChild(fallback);
+            }}
+            onLoad={() => {
+              console.log('✅ Image loaded successfully:', drop.isBomb ? 'bomb' : 'ston');
+            }}
             className="absolute cursor-pointer select-none"
             style={{
               left: drop.left,
-              width: drop.isBomb ? 40 : 24 + drop.reward * 12,
+              width: drop.isBomb ? 40 : Math.min(60, 30 + (drop.reward - 15) * 2), // Size 30-60px based on reward 15-30
+              height: 'auto',
               zIndex: 15,
               userSelect: 'none',
               filter: drop.isBomb ? 'drop-shadow(0 0 8px rgba(255, 0, 0, 0.6))' : 'drop-shadow(0 0 6px rgba(0, 255, 100, 0.4))',
