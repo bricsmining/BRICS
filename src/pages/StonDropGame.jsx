@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
-import { Zap, DollarSign, ArrowLeft, Play, X, Loader2, Gift } from 'lucide-react';
+import { Zap, DollarSign, ArrowLeft, Play, X, Loader2, Gift, Star, Sparkles } from 'lucide-react';
 import { db } from '@/lib/firebase';
 import { doc, getDoc, updateDoc, increment } from 'firebase/firestore';
 import { showRewardedAd } from '@/ads/adsController';
@@ -16,9 +16,16 @@ import explosionSfx from '@/assets/explosion.mp3';
 
 const GAME_DURATION = 30;
 const ENERGY_COST = 20;
+const MIN_BOMB_PENALTY = 5; // Minimum points lost from bomb
+const MAX_BOMB_PENALTY = 15; // Maximum points lost from bomb
 
 const getRandomPosition = () => `${Math.random() * 80}%`;
 const getRandomReward = () => Math.floor(Math.random() * 5) + 1;
+const getBombPenalty = (currentScore) => {
+  // Scale bomb penalty based on current score (5-15 points)
+  const penalty = Math.min(MAX_BOMB_PENALTY, Math.max(MIN_BOMB_PENALTY, Math.floor(currentScore * 0.1)));
+  return penalty;
+};
 
 export default function StonDropGame() {
   const [userData, setUserData] = useState(null);
@@ -35,6 +42,11 @@ export default function StonDropGame() {
   const [isDoubling, setIsDoubling] = useState(false);
   const [hasDoubled, setHasDoubled] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [gameStartTime, setGameStartTime] = useState(null);
+  const [combo, setCombo] = useState(0);
+  const [showCombo, setShowCombo] = useState(false);
+  const [catchEffects, setCatchEffects] = useState([]);
+  const [doubledAmount, setDoubledAmount] = useState(0);
   
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -49,6 +61,7 @@ export default function StonDropGame() {
 
   const startGame = useCallback(() => {
     setGameStarted(true);
+    setGameStartTime(Date.now());
     startTimers();
   }, []);
 
@@ -66,7 +79,12 @@ export default function StonDropGame() {
     }, 1000);
 
     dropInterval.current = setInterval(() => {
-      const isBomb = Math.random() < 0.2;
+      // Progressive difficulty: more bombs and faster drops as time goes on
+      const timeElapsed = GAME_DURATION - timeLeft;
+      const difficultyFactor = Math.min(timeElapsed / GAME_DURATION, 0.5); // Max 50% increase
+      const bombChance = 0.15 + (difficultyFactor * 0.1); // 15% to 25% bomb chance
+      
+      const isBomb = Math.random() < bombChance;
       const reward = getRandomReward();
       const id = crypto.randomUUID();
 
@@ -77,10 +95,11 @@ export default function StonDropGame() {
           left: getRandomPosition(),
           reward,
           isBomb,
+          speed: 3 - (difficultyFactor * 0.5), // Slightly faster as game progresses
         },
       ]);
-    }, 400);
-  }, []);
+    }, Math.max(300, 400 - (Math.min(timeElapsed, 20) * 5))); // Faster drop rate over time
+  }, [timeLeft]);
 
   const pauseGame = useCallback(() => {
     clearInterval(gameTimer.current);
@@ -97,15 +116,26 @@ export default function StonDropGame() {
     clearInterval(gameTimer.current);
     clearInterval(dropInterval.current);
     
-    // Add earned score to balance if game was started
+    // Add earned score to balance if game was started and user earned points
     if (gameStarted && !isGameOver && userId && score > 0) {
       try {
         const docRef = doc(db, 'users', userId);
         await updateDoc(docRef, { balance: increment(score) });
-        toast({ 
-          title: `Game ended! You earned ${score} STON`,
-          className: "bg-[#1a1a1a] text-white"
-        });
+        
+        // Also restore energy if game was very short (less than 5 seconds)
+        const gameTime = gameStartTime ? (Date.now() - gameStartTime) / 1000 : 0;
+        if (gameTime < 5) {
+          await updateDoc(docRef, { energy: increment(ENERGY_COST) });
+          toast({ 
+            title: `Game ended early! Energy refunded and you earned ${score} STON`,
+            className: "bg-[#1a1a1a] text-white"
+          });
+        } else {
+          toast({ 
+            title: `Game ended! You earned ${score} STON`,
+            className: "bg-[#1a1a1a] text-white"
+          });
+        }
       } catch (error) {
         console.error('Failed to update balance:', error);
         toast({ 
@@ -117,7 +147,7 @@ export default function StonDropGame() {
     }
     
     navigate('/tasks');
-  }, [gameStarted, isGameOver, userId, score, navigate, toast]);
+  }, [gameStarted, isGameOver, userId, score, navigate, toast, gameStartTime]);
 
   const handleDoubleReward = useCallback(() => {
     if (hasDoubled || score <= 0) return;
@@ -137,6 +167,7 @@ export default function StonDropGame() {
             setFinalBalance(updatedData.balance);
             
             setScore(prev => prev + doubledScore);
+            setDoubledAmount(doubledScore);
             setHasDoubled(true);
             
             // Notify admin via bot
@@ -261,21 +292,87 @@ export default function StonDropGame() {
     return () => timers.forEach(clearTimeout);
   }, [droppables]);
 
-  const handleDropClick = useCallback((drop) => {
+  // Clean up catch effects
+  useEffect(() => {
+    if (!catchEffects.length) return;
+    const timers = catchEffects.map(effect =>
+      setTimeout(() => {
+        setCatchEffects(prev => prev.filter(e => e.id !== effect.id));
+      }, 2000)
+    );
+    return () => timers.forEach(clearTimeout);
+  }, [catchEffects]);
+
+  const handleDropClick = useCallback((drop, event) => {
     if (isPaused) return;
     
     setDroppables(prev => prev.filter(d => d.id !== drop.id));
+    
     if (drop.isBomb) {
+      // Bomb hit - reset combo and apply penalty
       if (navigator.vibrate) navigator.vibrate(300);
       explosionAudio.current.play().catch(() => {});
       setRedFlash(true);
       setTimeout(() => setRedFlash(false), 1000);
-      setScore(prev => Math.max(0, prev - 20));
+      
+      const penalty = getBombPenalty(score);
+      setScore(prev => Math.max(0, prev - penalty));
+      setCombo(0);
+      setShowCombo(false);
+      
+      // Show bomb penalty effect
+      if (event && containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
+        
+        setCatchEffects(prev => [...prev, {
+          id: crypto.randomUUID(),
+          x,
+          y,
+          text: `-${penalty}`,
+          color: 'text-red-400',
+          isBomb: true
+        }]);
+      }
     } else {
+      // Gem catch - increase combo and score
       catchAudio.current.play().catch(() => {});
       setScore(prev => prev + drop.reward);
+      setCombo(prev => {
+        const newCombo = prev + 1;
+        if (newCombo >= 3) {
+          setShowCombo(true);
+          setTimeout(() => setShowCombo(false), 2000);
+        }
+        return newCombo;
+      });
+      
+      // Show catch effect with combo bonus
+      if (event && containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
+        
+        let bonusText = `+${drop.reward}`;
+        let bonusColor = 'text-green-400';
+        
+        if (combo >= 2) {
+          bonusText = `+${drop.reward} (${combo + 1}x)`;
+          bonusColor = 'text-yellow-400';
+        }
+        
+        setCatchEffects(prev => [...prev, {
+          id: crypto.randomUUID(),
+          x,
+          y,
+          text: bonusText,
+          color: bonusColor,
+          isBomb: false
+        }]);
+      }
     }
-  }, [isPaused]);
+  }, [isPaused, score, combo]);
 
   useEffect(() => {
     if (!isGameOver || !userId) return;
@@ -381,7 +478,15 @@ export default function StonDropGame() {
         </div>
         <div className="text-right">
           <div className="text-lg font-bold">00:{timeLeft.toString().padStart(2, '0')}</div>
-          <div className="text-xs text-gray-300">Score: {score}</div>
+          <div className="flex items-center gap-2 text-xs text-gray-300">
+            <span>Score: {score}</span>
+            {combo > 0 && (
+              <span className="bg-yellow-500/20 text-yellow-400 px-2 py-1 rounded-full flex items-center gap-1">
+                <Star className="w-3 h-3" />
+                {combo}x
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
@@ -402,10 +507,17 @@ export default function StonDropGame() {
               </div>
               <div className="flex items-center gap-2 text-sm text-gray-300 justify-center">
                 <DollarSign className="w-4 h-4 text-green-400" />
-                <span>Earn STON by catching gems</span>
+                <span>Earn 1-5 STON per gem</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm text-yellow-300 justify-center">
+                <Star className="w-4 h-4 text-yellow-400" />
+                <span>Build combos for bonus points!</span>
               </div>
               <div className="text-xs text-red-400 text-center">
-                ⚠️ Avoid bombs! They reduce your score by 20 points
+                ⚠️ Avoid bombs! They reduce your score (5-15 points)
+              </div>
+              <div className="text-xs text-blue-400 text-center">
+                💡 Game gets harder over time - stay focused!
               </div>
             </div>
             <div className="flex flex-col gap-3">
@@ -465,31 +577,81 @@ export default function StonDropGame() {
           <motion.img
             key={drop.id}
             src={drop.isBomb ? bombImg : stonImg}
-            onClick={() => handleDropClick(drop)}
+            onClick={(e) => handleDropClick(drop, e)}
             className="absolute cursor-pointer select-none"
             style={{
               left: drop.left,
               width: drop.isBomb ? 40 : 24 + drop.reward * 12,
               zIndex: 15,
               userSelect: 'none',
+              filter: drop.isBomb ? 'drop-shadow(0 0 8px rgba(255, 0, 0, 0.6))' : 'drop-shadow(0 0 6px rgba(0, 255, 100, 0.4))',
             }}
-            initial={{ top: '-12%' }}
+            initial={{ top: '-12%', rotate: 0 }}
             animate={{ 
               top: '100%',
+              rotate: drop.isBomb ? [0, 10, -10, 0] : [0, 5, -5, 0],
               transition: { 
-                duration: 3, 
-                ease: 'linear',
-                paused: isPaused 
+                top: {
+                  duration: drop.speed || 3,
+                  ease: 'linear',
+                },
+                rotate: {
+                  duration: 2,
+                  repeat: Infinity,
+                  ease: 'easeInOut'
+                }
               }
             }}
             exit={{ opacity: 0, scale: 0 }}
-            whileHover={{ scale: 1.1 }}
+            whileHover={{ scale: 1.1, filter: drop.isBomb ? 'drop-shadow(0 0 12px rgba(255, 0, 0, 0.8))' : 'drop-shadow(0 0 10px rgba(0, 255, 100, 0.6))' }}
             whileTap={{ scale: 0.9 }}
             alt={drop.isBomb ? "Bomb" : "STON"}
             draggable={false}
           />
         ))}
       </AnimatePresence>
+
+      {/* Catch Effects */}
+      <AnimatePresence>
+        {catchEffects.map(effect => (
+          <motion.div
+            key={effect.id}
+            className={`absolute font-bold text-lg pointer-events-none z-40 ${effect.color}`}
+            style={{
+              left: effect.x - 30,
+              top: effect.y - 20,
+            }}
+            initial={{ opacity: 1, scale: 1, y: 0 }}
+            animate={{ 
+              opacity: 0, 
+              scale: effect.isBomb ? 1.5 : 1.2, 
+              y: -50,
+              transition: { duration: 2, ease: 'easeOut' }
+            }}
+            exit={{ opacity: 0 }}
+          >
+            {effect.text}
+          </motion.div>
+        ))}
+      </AnimatePresence>
+
+      {/* Combo Display */}
+      {showCombo && combo >= 3 && (
+        <motion.div
+          className="absolute top-20 left-1/2 transform -translate-x-1/2 z-40"
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          exit={{ scale: 0, opacity: 0 }}
+        >
+          <div className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white px-6 py-3 rounded-full font-bold text-xl shadow-2xl border-2 border-yellow-300">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-6 h-6" />
+              <span>{combo}x COMBO!</span>
+              <Sparkles className="w-6 h-6" />
+            </div>
+          </div>
+        </motion.div>
+      )}
 
       {/* Red flash overlay */}
       {redFlash && (
@@ -565,7 +727,7 @@ export default function StonDropGame() {
               {hasDoubled && (
                 <div className="bg-green-600/20 border border-green-500/50 rounded-xl p-3 mb-2">
                   <p className="text-green-400 text-sm font-semibold">
-                    ✅ Rewards Doubled! You earned an extra {score / 2} STON
+                    ✅ Rewards Doubled! You earned an extra {doubledAmount} STON
                   </p>
                 </div>
               )}
