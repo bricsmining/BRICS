@@ -18,6 +18,8 @@ const defaultConfig = {
   adsgramBlockId: 'int-12066',
   monetagEnabled: true,
   monetagZoneId: '9475832',
+  gigapubEnabled: false,
+  gigapubProjectId: '',
   
   // Limits & Features (editable in admin panel)
   dailyEnergyAdLimit: 10,

@@ -346,6 +346,28 @@ const AdminSettings = ({ adminData }) => {
                   placeholder="9475832"
                 />
               </div>
+              
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium text-gray-300">
+                  GigaPub Enabled
+                </label>
+                <Switch
+                  checked={config.gigapubEnabled || false}
+                  onCheckedChange={(checked) => updateConfigField('gigapubEnabled', checked)}
+                />
+              </div>
+              
+              <div>
+                <label className="text-sm font-medium text-gray-300 mb-2 block">
+                  GigaPub Project ID
+                </label>
+                <Input
+                  value={config.gigapubProjectId || ''}
+                  onChange={(e) => updateConfigField('gigapubProjectId', e.target.value)}
+                  className="bg-input border-border focus:border-blue-500 focus:bg-input/80 text-white"
+                  placeholder="YOUR_PROJECT_ID"
+                />
+              </div>
             </div>
           </CardContent>
         </Card>

@@ -1,5 +1,11 @@
 //the spinner is perfectly spninning at first spin but after that from the second spin it showing some issuse like backward spin, slower spin. can you fix the issue by analyzing the targetRotation calculation and the the final rotation calculation... Also check function of the spin completion after animation too....
 
+// GIGAPUB INTEGRATION:
+// - GigaPub ads are now exclusively used for post-spin advertisements
+// - Admin can enable/disable GigaPub and set project ID in admin settings
+// - Enhanced reliability script is automatically injected with fallback servers
+// - Dedicated GigaPub network handler with proper error handling and debugging
+
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Input } from '@/components/ui/input';
@@ -23,7 +29,8 @@ import { generateReferralLink, updateUserBalance, updateUserBalanceByType } from
 import { db } from '@/lib/firebase';
 import { doc, getDoc, updateDoc, increment } from 'firebase/firestore';
 import QRCode from '@/components/ui/QRCode';
-import { showRewardedAd } from '@/ads/adsController';
+import * as gigapub from '@/ads/networks/gigapub';
+import { getAdminConfig } from '@/data/firestore/adminConfig';
 
 const defaultAvatar =
 	'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQB_4gKwn8q2WBPTwnV14Jmh3B5g56SCiGEBA&usqp=CAU';
@@ -435,11 +442,38 @@ const SpinModal = ({
 	const [currentUser, setCurrentUser] = useState(user);
 	const [showAdAfterSpin, setShowAdAfterSpin] = useState(false);
 	const [isLoadingAd, setIsLoadingAd] = useState(false);
+	const [gigapubInitialized, setGigapubInitialized] = useState(false);
 
 	// Update current user when user prop changes
 	useEffect(() => {
 		setCurrentUser(user);
 	}, [user]);
+
+	// Initialize GigaPub when component mounts
+	useEffect(() => {
+		const initializeGigaPub = async () => {
+			try {
+				console.log('Initializing GigaPub for spin ads...');
+				const adminConfig = await getAdminConfig();
+				
+				if (adminConfig.gigapubEnabled && adminConfig.gigapubProjectId) {
+					console.log('GigaPub is enabled, initializing with project ID:', adminConfig.gigapubProjectId);
+					gigapub.initialize({
+						projectId: adminConfig.gigapubProjectId
+					});
+					setGigapubInitialized(true);
+				} else {
+					console.log('GigaPub is disabled or project ID not set');
+					setGigapubInitialized(false);
+				}
+			} catch (error) {
+				console.error('Failed to initialize GigaPub:', error);
+				setGigapubInitialized(false);
+			}
+		};
+
+		initializeGigaPub();
+	}, []);
 
 	// Reset states when modal opens/closes
 	useEffect(() => {
@@ -450,6 +484,7 @@ const SpinModal = ({
 			setSelectedReward(null);
 			setShowAdAfterSpin(false);
 			setIsLoadingAd(false);
+			// Note: Don't reset gigapubInitialized as it should persist
 		}
 	}, [isOpen]);
 
@@ -466,30 +501,51 @@ const SpinModal = ({
 		}
 	}, [showResult]);
 
-	// Handle showing ad after spin completion
+	// Handle showing GigaPub ad after spin completion
 	useEffect(() => {
-		if (showAdAfterSpin && !isLoadingAd) {
+		if (showAdAfterSpin && !isLoadingAd && gigapubInitialized) {
 			setIsLoadingAd(true);
-			showRewardedAd({
+			
+			// Check if GigaPub is available before showing ad
+			if (!gigapub.isAvailable()) {
+				console.log('GigaPub is not available, skipping ad');
+				setIsLoadingAd(false);
+				setShowAdAfterSpin(false);
+				return;
+			}
+			
+			console.log('Showing GigaPub ad after spin completion...');
+			gigapub.showAd({
 				onComplete: () => {
-					console.log('Post-spin ad completed successfully');
+					console.log('GigaPub post-spin ad completed successfully');
 					setIsLoadingAd(false);
 					setShowAdAfterSpin(false);
+					// Optional: Add extra reward for watching ad
+					toast({
+						title: '🎁 Bonus Reward!',
+						description: 'Thank you for watching the ad!',
+						variant: 'default',
+						className: 'bg-gradient-to-r from-green-600 to-emerald-600 text-white border-green-500',
+					});
 				},
 				onClose: () => {
-					console.log('Post-spin ad closed');
+					console.log('GigaPub post-spin ad closed');
 					setIsLoadingAd(false);
 					setShowAdAfterSpin(false);
 				},
 				onError: (error) => {
-					console.log('Post-spin ad error:', error);
+					console.log('GigaPub post-spin ad error:', error);
 					setIsLoadingAd(false);
 					setShowAdAfterSpin(false);
 					// Don't show error toast for ads - just silently continue
 				}
 			});
+		} else if (showAdAfterSpin && !isLoadingAd && !gigapubInitialized) {
+			// If GigaPub is not initialized, skip the ad
+			console.log('GigaPub not initialized, skipping post-spin ad');
+			setShowAdAfterSpin(false);
 		}
-	}, [showAdAfterSpin, isLoadingAd]);
+	}, [showAdAfterSpin, isLoadingAd, gigapubInitialized, toast]);
 
 	const handleSpin = async () => {
 		// Check if user has free spins
@@ -695,10 +751,10 @@ const SpinModal = ({
 						<div className='bg-gradient-to-r from-blue-600/30 to-indigo-600/30 border-2 border-blue-500/60 rounded-2xl p-3 shadow-xl'>
 							<div className='flex items-center justify-center gap-2 mb-2'>
 								<Loader2 className='h-5 w-5 animate-spin text-blue-400' />
-								<h3 className='text-lg font-bold text-blue-400'>Loading Ad...</h3>
+								<h3 className='text-lg font-bold text-blue-400'>Loading GigaPub Ad...</h3>
 							</div>
 							<p className='text-sm text-gray-300'>
-								Please wait while we load your reward ad
+								Please wait while we load your exclusive spin reward ad
 							</p>
 						</div>
 					</motion.div>
