@@ -470,9 +470,19 @@ const SpinModal = ({
 					// Wait a bit and then check if it's available
 					setTimeout(() => {
 						const isAvailable = gigapub.isAvailable();
-						console.log('GigaPub availability after init:', isAvailable);
-						console.log('GigaPub status:', gigapub.getStatus());
+						const status = gigapub.getStatus();
+						console.log('📊 GigaPub availability after init:', isAvailable);
+						console.log('📊 GigaPub status after init:', status);
+						console.log('📊 Window.showGiga available:', typeof window.showGiga === 'function');
+						console.log('📊 Window.gigapubReady flag:', window.gigapubReady);
 						setGigapubInitialized(isAvailable);
+						
+						if (!isAvailable) {
+							console.error('🚨 GigaPub failed to initialize properly!');
+							console.error('🚨 Please check admin settings and GigaPub project ID');
+						} else {
+							console.log('✅ GigaPub initialized successfully and ready for spin ads!');
+						}
 					}, 2000);
 				} else {
 					console.log('GigaPub is disabled or project ID not set:', {
@@ -518,52 +528,62 @@ const SpinModal = ({
 
 	// Handle showing GigaPub ad after spin completion
 	useEffect(() => {
-		if (showAdAfterSpin && !isLoadingAd && gigapubInitialized) {
-			console.log('🎯 SPIN AD TRIGGER: Starting GigaPub ad...');
-			setIsLoadingAd(true);
-			
-			// Check if GigaPub is available before showing ad
-			const isAvailable = gigapub.isAvailable();
-			console.log('🎯 GigaPub availability check:', isAvailable);
-			console.log('🎯 GigaPub detailed status:', gigapub.getStatus());
-			
-			if (!isAvailable) {
-				console.log('🚫 GigaPub is not available, skipping ad');
-				setIsLoadingAd(false);
-				setShowAdAfterSpin(false);
-				return;
-			}
-			
-			console.log('🎯 Showing GigaPub ad after spin completion...');
-			gigapub.showAd({
-				onComplete: () => {
-					console.log('GigaPub post-spin ad completed successfully');
+		console.log('🎯 SPIN AD EFFECT TRIGGERED:', {
+			showAdAfterSpin,
+			isLoadingAd,
+			gigapubInitialized,
+			gigapubAvailable: gigapubInitialized ? gigapub.isAvailable() : 'N/A'
+		});
+		
+		if (showAdAfterSpin && !isLoadingAd) {
+			// Check if GigaPub is properly initialized and available
+			if (gigapubInitialized) {
+				console.log('🎯 SPIN AD TRIGGER: Starting GigaPub ad...');
+				setIsLoadingAd(true);
+				
+				// Check if GigaPub is available before showing ad
+				const isAvailable = gigapub.isAvailable();
+				console.log('🎯 GigaPub availability check:', isAvailable);
+				console.log('🎯 GigaPub detailed status:', gigapub.getStatus());
+				
+				if (!isAvailable) {
+					console.log('🚫 GigaPub is not available, skipping ad entirely');
 					setIsLoadingAd(false);
 					setShowAdAfterSpin(false);
-					// Optional: Add extra reward for watching ad
-					toast({
-						title: '🎁 Bonus Reward!',
-						description: 'Thank you for watching the ad!',
-						variant: 'default',
-						className: 'bg-gradient-to-r from-green-600 to-emerald-600 text-white border-green-500',
-					});
-				},
-				onClose: () => {
-					console.log('GigaPub post-spin ad closed');
-					setIsLoadingAd(false);
-					setShowAdAfterSpin(false);
-				},
-				onError: (error) => {
-					console.log('GigaPub post-spin ad error:', error);
-					setIsLoadingAd(false);
-					setShowAdAfterSpin(false);
-					// Don't show error toast for ads - just silently continue
+					return;
 				}
-			});
-		} else if (showAdAfterSpin && !isLoadingAd && !gigapubInitialized) {
-			// If GigaPub is not initialized, skip the ad
-			console.log('GigaPub not initialized, skipping post-spin ad');
-			setShowAdAfterSpin(false);
+				
+				console.log('🎯 Showing GigaPub ad after spin completion...');
+				gigapub.showAd({
+					onComplete: () => {
+						console.log('✅ GigaPub post-spin ad completed successfully');
+						setIsLoadingAd(false);
+						setShowAdAfterSpin(false);
+						// Optional: Add extra reward for watching ad
+						toast({
+							title: '🎁 Bonus Reward!',
+							description: 'Thank you for watching the ad!',
+							variant: 'default',
+							className: 'bg-gradient-to-r from-green-600 to-emerald-600 text-white border-green-500',
+						});
+					},
+					onClose: () => {
+						console.log('❌ GigaPub post-spin ad closed');
+						setIsLoadingAd(false);
+						setShowAdAfterSpin(false);
+					},
+					onError: (error) => {
+						console.log('⚠️ GigaPub post-spin ad error:', error);
+						setIsLoadingAd(false);
+						setShowAdAfterSpin(false);
+						// Don't show error toast for ads - just silently continue
+					}
+				});
+			} else {
+				// If GigaPub is not initialized, skip the ad entirely
+				console.log('🚫 GigaPub not initialized, skipping post-spin ad entirely');
+				setShowAdAfterSpin(false);
+			}
 		}
 	}, [showAdAfterSpin, isLoadingAd, gigapubInitialized, toast]);
 
