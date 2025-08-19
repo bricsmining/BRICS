@@ -122,7 +122,7 @@ function App() {
   // --- AD TIMER LOGIC ---
   const adTimerRef = useRef(null);
   const prevIsGameRoute = useRef(null);
-  const { shouldPauseAds, setAdShowing, clearAdShowing } = useAdTimer();
+  const { shouldPauseAds } = useAdTimer();
 
   const isGameRoute = location.pathname === "/game";
   const isAdminRoute = location.pathname === "/admin" || location.pathname.startsWith("/admin/");
@@ -150,22 +150,12 @@ function App() {
       }
       
       console.log("⏰ Ad timer triggered - showing general ad");
-      setAdShowing('general'); // Block other ads
       showRewardedAd({
-        onComplete: () => {
-          console.log("✅ General ad completed.");
-          clearAdShowing(); // Unblock other ads
-        },
-        onClose: () => {
-          console.log("❌ General ad closed.");
-          clearAdShowing(); // Unblock other ads
-        },
-        onError: (err) => {
-          console.error("⚠️ General ad error:", err);
-          clearAdShowing(); // Unblock other ads
-        }
+        onComplete: () => console.log("✅ General ad completed."),
+        onClose: () => console.log("❌ General ad closed."),
+        onError: (err) => console.error("⚠️ General ad error:", err)
       });
-    }, 5 * 60 * 1000); // 5 minutes
+    }, 2 * 60 * 1000); // 2 minutes
   };
 
   // Helper to stop ad timer

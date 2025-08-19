@@ -540,14 +540,6 @@ const SpinModal = ({
 			// Check if GigaPub is properly initialized and available
 			if (gigapubInitialized) {
 				console.log('🎯 SPIN AD TRIGGER: Starting GigaPub ad...');
-				
-				// Check if any other ad is currently showing
-				if (isAnyAdShowing()) {
-					console.log('🚫 Another ad is currently showing, skipping GigaPub ad');
-					setShowAdAfterSpin(false);
-					return;
-				}
-				
 				setIsLoadingAd(true);
 				
 				// Check if GigaPub is available before showing ad
@@ -563,13 +555,11 @@ const SpinModal = ({
 				}
 				
 				console.log('🎯 Showing GigaPub ad after spin completion...');
-				setAdShowing('gigapub'); // Block other ads
 				gigapub.showAd({
 					onComplete: () => {
 						console.log('✅ GigaPub post-spin ad completed successfully');
 						setIsLoadingAd(false);
 						setShowAdAfterSpin(false);
-						clearAdShowing(); // Unblock other ads
 						// Optional: Add extra reward for watching ad
 						toast({
 							title: '🎁 Bonus Reward!',
@@ -582,13 +572,11 @@ const SpinModal = ({
 						console.log('❌ GigaPub post-spin ad closed');
 						setIsLoadingAd(false);
 						setShowAdAfterSpin(false);
-						clearAdShowing(); // Unblock other ads
 					},
 					onError: (error) => {
 						console.log('⚠️ GigaPub post-spin ad error:', error);
 						setIsLoadingAd(false);
 						setShowAdAfterSpin(false);
-						clearAdShowing(); // Unblock other ads
 						// Don't show error toast for ads - just silently continue
 					}
 				});
@@ -598,7 +586,7 @@ const SpinModal = ({
 				setShowAdAfterSpin(false);
 			}
 		}
-	}, [showAdAfterSpin, isLoadingAd, gigapubInitialized, toast, setAdShowing, clearAdShowing, isAnyAdShowing]);
+	}, [showAdAfterSpin, isLoadingAd, gigapubInitialized, toast]);
 
 	const handleSpin = async () => {
 		// Check if user has free spins
@@ -876,7 +864,7 @@ const SpinModal = ({
 // Main ReferralSection Component - UPDATED
 const ReferralSection = ({ user, refreshUserData }) => {
 	const { toast } = useToast();
-	const { pauseAdTimer, resumeAdTimer, setAdShowing, clearAdShowing, isAnyAdShowing } = useAdTimer();
+	const { pauseAdTimer, resumeAdTimer } = useAdTimer();
 	const [referredUsers, setReferredUsers] = useState([]);
 	const [referrerInfo, setReferrerInfo] = useState(null);
 	const [loadingReferrals, setLoadingReferrals] = useState(true);

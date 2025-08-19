@@ -16,7 +16,6 @@ export const useAdTimer = () => {
 export const AdTimerProvider = ({ children }) => {
   const [isSpinPopupOpen, setIsSpinPopupOpen] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
-  const [currentAdShowing, setCurrentAdShowing] = useState(null); // 'gigapub', 'monetag', 'adsgram', null
 
   // Function to pause ad timer (called when spin popup opens)
   const pauseAdTimer = useCallback(() => {
@@ -34,37 +33,15 @@ export const AdTimerProvider = ({ children }) => {
 
   // Function to check if ads should be paused
   const shouldPauseAds = useCallback(() => {
-    return isSpinPopupOpen || isPaused || currentAdShowing !== null;
-  }, [isSpinPopupOpen, isPaused, currentAdShowing]);
-
-  // Function to set ad as showing (prevents other ads)
-  const setAdShowing = useCallback((adNetwork) => {
-    console.log(`🔒 ${adNetwork} ad started - blocking other ads`);
-    setCurrentAdShowing(adNetwork);
-  }, []);
-
-  // Function to clear ad showing status (allows other ads)
-  const clearAdShowing = useCallback(() => {
-    const previousAd = currentAdShowing;
-    console.log(`🔓 ${previousAd} ad ended - unblocking other ads`);
-    setCurrentAdShowing(null);
-  }, [currentAdShowing]);
-
-  // Function to check if any ad is currently showing
-  const isAnyAdShowing = useCallback(() => {
-    return currentAdShowing !== null;
-  }, [currentAdShowing]);
+    return isSpinPopupOpen || isPaused;
+  }, [isSpinPopupOpen, isPaused]);
 
   const value = {
     isSpinPopupOpen,
     isPaused,
-    currentAdShowing,
     pauseAdTimer,
     resumeAdTimer,
-    shouldPauseAds,
-    setAdShowing,
-    clearAdShowing,
-    isAnyAdShowing
+    shouldPauseAds
   };
 
   return (
