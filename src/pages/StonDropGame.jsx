@@ -91,46 +91,66 @@ export default function StonDropGame() {
   const dropInterval = useRef(null);
 
   const startGame = useCallback(() => {
-    setGameStarted(true);
-    setGameStartTime(Date.now());
-    startTimers();
-  }, []);
+    console.log('🎮 Starting game...');
+    try {
+      setGameStarted(true);
+      setGameStartTime(Date.now());
+      startTimers();
+      console.log('✅ Game started successfully');
+    } catch (error) {
+      console.error('❌ Failed to start game:', error);
+      toast({
+        title: 'Failed to start game',
+        description: 'Please try again.',
+        variant: 'destructive',
+        className: "bg-[#1a1a1a] text-white"
+      });
+    }
+  }, [startTimers, toast]);
 
   const startTimers = useCallback(() => {
+    let currentTime = GAME_DURATION;
+    
     gameTimer.current = setInterval(() => {
       setTimeLeft(prev => {
-        if (prev <= 1) {
+        currentTime = prev - 1;
+        if (currentTime <= 0) {
           clearInterval(gameTimer.current);
           clearInterval(dropInterval.current);
           setIsGameOver(true);
           return 0;
         }
-        return prev - 1;
+        return currentTime;
       });
     }, 1000);
 
     dropInterval.current = setInterval(() => {
-      // Progressive difficulty: more bombs and faster drops as time goes on
-      const timeElapsed = GAME_DURATION - timeLeft;
-      const difficultyFactor = Math.min(timeElapsed / GAME_DURATION, 0.5); // Max 50% increase
-      const bombChance = 0.15 + (difficultyFactor * 0.1); // 15% to 25% bomb chance
-      
-      const isBomb = Math.random() < bombChance;
-      const reward = getRandomReward();
-      const id = crypto.randomUUID();
+      try {
+        // Progressive difficulty: more bombs and faster drops as time goes on
+        const timeElapsed = GAME_DURATION - currentTime;
+        const difficultyFactor = Math.min(timeElapsed / GAME_DURATION, 0.5); // Max 50% increase
+        const bombChance = 0.15 + (difficultyFactor * 0.1); // 15% to 25% bomb chance
+        
+        const isBomb = Math.random() < bombChance;
+        const reward = getRandomReward();
+        const id = crypto.randomUUID();
 
-      setDroppables(prev => [
-        ...prev,
-        {
+        const newDrop = {
           id,
           left: getRandomPosition(),
           reward,
           isBomb,
           speed: 3 - (difficultyFactor * 0.5), // Slightly faster as game progresses
-        },
-      ]);
-    }, Math.max(300, 400 - (Math.min(timeElapsed, 20) * 5))); // Faster drop rate over time
-  }, [timeLeft]);
+        };
+
+        console.log('🎯 Creating drop:', isBomb ? '💣 Bomb' : `💎 Gem (${reward} STON)`);
+        
+        setDroppables(prev => [...prev, newDrop]);
+      } catch (error) {
+        console.error('❌ Error creating drop:', error);
+      }
+    }, 400); // Fixed interval to avoid timing issues
+  }, []);
 
   const pauseGame = useCallback(() => {
     clearInterval(gameTimer.current);
