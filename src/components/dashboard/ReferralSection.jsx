@@ -31,6 +31,7 @@ import { doc, getDoc, updateDoc, increment } from 'firebase/firestore';
 import QRCode from '@/components/ui/QRCode';
 import * as gigapub from '@/ads/networks/gigapub';
 import { getAdminConfig } from '@/data/firestore/adminConfig';
+import { useAdTimer } from '@/contexts/AdTimerContext';
 
 const defaultAvatar =
 	'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQB_4gKwn8q2WBPTwnV14Jmh3B5g56SCiGEBA&usqp=CAU';
@@ -863,6 +864,7 @@ const SpinModal = ({
 // Main ReferralSection Component - UPDATED
 const ReferralSection = ({ user, refreshUserData }) => {
 	const { toast } = useToast();
+	const { pauseAdTimer, resumeAdTimer } = useAdTimer();
 	const [referredUsers, setReferredUsers] = useState([]);
 	const [referrerInfo, setReferrerInfo] = useState(null);
 	const [loadingReferrals, setLoadingReferrals] = useState(true);
@@ -875,6 +877,22 @@ const ReferralSection = ({ user, refreshUserData }) => {
 	useEffect(() => {
 		setCurrentUser(user);
 	}, [user]);
+
+	// Pause/resume ad timer when spin modal opens/closes
+	useEffect(() => {
+		if (showSpinModal) {
+			console.log('🎯 Spin modal opened - pausing ad timer');
+			pauseAdTimer();
+		} else {
+			console.log('🎯 Spin modal closed - resuming ad timer');
+			resumeAdTimer();
+		}
+
+		// Cleanup: always resume on unmount
+		return () => {
+			resumeAdTimer();
+		};
+	}, [showSpinModal, pauseAdTimer, resumeAdTimer]);
 
 	const referralLink =
 		currentUser.referralLink || generateReferralLink(currentUser.id);

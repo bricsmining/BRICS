@@ -13,6 +13,7 @@ import StonDropGame from '@/pages/StonDropGame';
 import Navigation from '@/components/layout/Navigation';
 import { Toaster } from '@/components/ui/toaster';
 import ReferralWelcome from '@/components/ReferralWelcome';
+import { AdTimerProvider, useAdTimer } from '@/contexts/AdTimerContext';
 import { initializeAppData } from '@/data';
 import { Loader2 } from 'lucide-react';
 import { initializeAdNetworks, showRewardedAd } from '@/ads/adsController';
@@ -121,6 +122,7 @@ function App() {
   // --- AD TIMER LOGIC ---
   const adTimerRef = useRef(null);
   const prevIsGameRoute = useRef(null);
+  const { shouldPauseAds } = useAdTimer();
 
   const isGameRoute = location.pathname === "/game";
   const isAdminRoute = location.pathname === "/admin" || location.pathname.startsWith("/admin/");
@@ -141,10 +143,17 @@ function App() {
   const startAdTimer = () => {
     if (adTimerRef.current) clearInterval(adTimerRef.current);
     adTimerRef.current = setInterval(() => {
+      // Check if ads should be paused (e.g., spin popup is open)
+      if (shouldPauseAds()) {
+        console.log("⏸️ Ad timer skipped - spin popup is open");
+        return;
+      }
+      
+      console.log("⏰ Ad timer triggered - showing general ad");
       showRewardedAd({
-        onComplete: () => console.log("Ad completed."),
-        onClose: () => console.log("Ad closed."),
-        onError: (err) => console.error("Ad error:", err)
+        onComplete: () => console.log("✅ General ad completed."),
+        onClose: () => console.log("❌ General ad closed."),
+        onError: (err) => console.error("⚠️ General ad error:", err)
       });
     }, 2 * 60 * 1000); // 2 minutes
   };
@@ -157,7 +166,7 @@ function App() {
     }
   };
 
-  // Manage ad timer based on route
+  // Manage ad timer based on route and pause state
   useEffect(() => {
     // Only start ad timer if not in game and the user is loaded
     if (!isLoading && currentUser && !isGameRoute) {
@@ -168,7 +177,7 @@ function App() {
     prevIsGameRoute.current = isGameRoute;
     // Clean up on unmount
     return () => stopAdTimer();
-  }, [isLoading, currentUser, isGameRoute]);
+  }, [isLoading, currentUser, isGameRoute, shouldPauseAds]);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -282,7 +291,9 @@ function App() {
 export default function WrappedApp() {
   return (
     <Router>
-      <App />
+      <AdTimerProvider>
+        <App />
+      </AdTimerProvider>
     </Router>
   );
 }
