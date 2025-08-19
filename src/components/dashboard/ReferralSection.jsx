@@ -458,12 +458,27 @@ const SpinModal = ({
 				
 				if (adminConfig.gigapubEnabled && adminConfig.gigapubProjectId) {
 					console.log('GigaPub is enabled, initializing with project ID:', adminConfig.gigapubProjectId);
+					console.log('Admin config:', { 
+						gigapubEnabled: adminConfig.gigapubEnabled, 
+						gigapubProjectId: adminConfig.gigapubProjectId 
+					});
+					
 					gigapub.initialize({
 						projectId: adminConfig.gigapubProjectId
 					});
-					setGigapubInitialized(true);
+					
+					// Wait a bit and then check if it's available
+					setTimeout(() => {
+						const isAvailable = gigapub.isAvailable();
+						console.log('GigaPub availability after init:', isAvailable);
+						console.log('GigaPub status:', gigapub.getStatus());
+						setGigapubInitialized(isAvailable);
+					}, 2000);
 				} else {
-					console.log('GigaPub is disabled or project ID not set');
+					console.log('GigaPub is disabled or project ID not set:', {
+						enabled: adminConfig.gigapubEnabled,
+						projectId: adminConfig.gigapubProjectId
+					});
 					setGigapubInitialized(false);
 				}
 			} catch (error) {
@@ -504,17 +519,22 @@ const SpinModal = ({
 	// Handle showing GigaPub ad after spin completion
 	useEffect(() => {
 		if (showAdAfterSpin && !isLoadingAd && gigapubInitialized) {
+			console.log('🎯 SPIN AD TRIGGER: Starting GigaPub ad...');
 			setIsLoadingAd(true);
 			
 			// Check if GigaPub is available before showing ad
-			if (!gigapub.isAvailable()) {
-				console.log('GigaPub is not available, skipping ad');
+			const isAvailable = gigapub.isAvailable();
+			console.log('🎯 GigaPub availability check:', isAvailable);
+			console.log('🎯 GigaPub detailed status:', gigapub.getStatus());
+			
+			if (!isAvailable) {
+				console.log('🚫 GigaPub is not available, skipping ad');
 				setIsLoadingAd(false);
 				setShowAdAfterSpin(false);
 				return;
 			}
 			
-			console.log('Showing GigaPub ad after spin completion...');
+			console.log('🎯 Showing GigaPub ad after spin completion...');
 			gigapub.showAd({
 				onComplete: () => {
 					console.log('GigaPub post-spin ad completed successfully');

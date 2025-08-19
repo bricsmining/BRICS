@@ -41,6 +41,47 @@ function loadGigaPubScript() {
   }
   
   scriptLoadAttempted = true;
+  console.log('Loading GigaPub script for project ID:', config.projectId);
+  
+  try {
+    // Try the simple approach first
+    const script = document.createElement('script');
+    script.src = `https://ad.gigapub.tech/script?id=${config.projectId}`;
+    script.async = true;
+    
+    script.onload = function() {
+      console.log('GigaPub SDK loaded successfully');
+      scriptLoaded = true;
+      waitForGigaPubSDK();
+    };
+    
+    script.onerror = function() {
+      console.error('Primary GigaPub server failed, trying enhanced reliability script...');
+      loadEnhancedScript();
+    };
+    
+    document.head.appendChild(script);
+    
+    // Also set a timeout to try enhanced script if primary doesn't load
+    setTimeout(() => {
+      if (!scriptLoaded) {
+        console.log('Primary script taking too long, trying enhanced reliability...');
+        loadEnhancedScript();
+      }
+    }, 5000);
+    
+  } catch (error) {
+    console.error('Failed to load GigaPub script:', error);
+    loadEnhancedScript();
+  }
+}
+
+/**
+ * Load enhanced reliability script as fallback
+ */
+function loadEnhancedScript() {
+  if (scriptLoaded) return;
+  
   console.log('Loading GigaPub enhanced reliability script...');
   
   try {
@@ -48,7 +89,7 @@ function loadGigaPubScript() {
     const script = document.createElement('script');
     script.setAttribute('data-project-id', config.projectId);
     
-    // Enhanced reliability script from GigaPub documentation
+    // Enhanced reliability script from GigaPub documentation  
     script.innerHTML = `
       !function(){
         var s=document.currentScript,p=s.getAttribute('data-project-id')||'default';
@@ -85,7 +126,7 @@ function loadGigaPubScript() {
     waitForGigaPubSDK();
     
   } catch (error) {
-    console.error('Failed to inject GigaPub script:', error);
+    console.error('Failed to inject enhanced GigaPub script:', error);
   }
 }
 
@@ -99,17 +140,40 @@ function waitForGigaPubSDK() {
   const checkSDK = () => {
     attempts++;
     
-    if (typeof window.showGiga === 'function') {
+    // Check for both showGiga function and gigapubReady flag
+    if (typeof window.showGiga === 'function' || window.gigapubReady) {
       console.log('GigaPub SDK loaded successfully');
       scriptLoaded = true;
       isInitialized = true;
       console.log('GigaPub initialized successfully with project ID:', config.projectId);
+      
+      // Double check that showGiga is available
+      if (typeof window.showGiga !== 'function') {
+        console.warn('GigaPub ready flag set but showGiga function not available');
+        // Give it a bit more time
+        setTimeout(() => {
+          if (typeof window.showGiga === 'function') {
+            console.log('GigaPub showGiga function now available');
+          } else {
+            console.error('GigaPub showGiga function still not available after ready flag');
+          }
+        }, 1000);
+      }
+      
+      return; // Exit the polling
     } else if (attempts >= maxAttempts) {
       console.error('GigaPub SDK failed to load after', maxAttempts * 100, 'ms');
       console.error('window.showGiga function not available');
+      console.error('window.gigapubReady:', window.gigapubReady);
       console.error('Available window functions:', Object.keys(window).filter(key => key.toLowerCase().includes('giga')));
     } else {
-      console.log(`Waiting for GigaPub SDK to load... (attempt ${attempts}/${maxAttempts})`);
+      if (attempts % 20 === 0) { // Log every 2 seconds
+        console.log(`Waiting for GigaPub SDK to load... (attempt ${attempts}/${maxAttempts})`);
+        console.log('Current state:', {
+          showGiga: typeof window.showGiga,
+          gigapubReady: window.gigapubReady
+        });
+      }
       setTimeout(checkSDK, 100);
     }
   };
