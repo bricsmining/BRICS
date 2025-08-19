@@ -598,7 +598,7 @@ const SpinModal = ({
 				setShowAdAfterSpin(false);
 			}
 		}
-	}, [showAdAfterSpin, isLoadingAd, gigapubInitialized, toast]);
+	}, [showAdAfterSpin, isLoadingAd, gigapubInitialized, toast, setAdShowing, clearAdShowing, isAnyAdShowing]);
 
 	const handleSpin = async () => {
 		// Check if user has free spins
