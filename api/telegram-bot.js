@@ -666,9 +666,9 @@ async function processReferralDirect(newUserId, referrerId, userInfo) {
         username: userInfo.username || `user_${newUserId}`,
         firstName: userInfo.first_name || '',
         lastName: userInfo.last_name || '',
-        balance: 100, // Only starting balance, no referral bonus yet
+        balance: 0, // No starting balance
         balanceBreakdown: {
-          task: 100, // Default starting balance
+          task: 0, // No default starting balance
           box: 0,
           referral: 0, // No referral bonus yet - will be added after 3 tasks
           mining: 0

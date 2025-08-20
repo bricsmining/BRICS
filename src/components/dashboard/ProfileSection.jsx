@@ -1276,7 +1276,7 @@ const ProfileSection = ({ user, refreshUserData }) => {
   const achievements = useMemo(() => {
     const tasks = user.tasks || {};
     const tasksDone = Object.values(tasks).filter(task => task?.completed).length;
-    const referrals = user.referrals?.length || 0;
+    const referrals = user.referrals || 0;
     const balance = user.balance || 0;
     
     const earnedAchievements = [];
@@ -2426,7 +2426,7 @@ const ProfileSection = ({ user, refreshUserData }) => {
               </div>
                 <div className="flex items-center justify-center gap-2">
               <p className="text-lg font-bold text-white">
-                    {user.referrals?.length || 0}
+                    {user.referrals || 0}
                   </p>
                   {/* Referral Achievement Badge */}
                   {achievements.find(a => a.id.startsWith('ref_')) && (
