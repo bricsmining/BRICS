@@ -697,18 +697,28 @@ const SpinModal = ({
 	if (!isOpen) return null;
 
 	return (
-		<div className='fixed inset-0 bg-black/90 backdrop-blur-sm z-50' style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+		<div 
+			className='fixed top-0 left-0 w-full h-full bg-black/90 backdrop-blur-sm z-50' 
+			style={{ 
+				display: 'flex', 
+				alignItems: 'center', 
+				justifyContent: 'center',
+				position: 'fixed',
+				top: '0',
+				left: '0',
+				right: '0',
+				bottom: '0'
+			}}
+		>
 			<motion.div
 				initial={{ scale: 0.8, opacity: 0 }}
 				animate={{ scale: 1, opacity: 1 }}
 				exit={{ scale: 0.8, opacity: 0 }}
-				className='bg-gradient-to-br from-gray-900 to-gray-800 border border-gray-600/50 text-white w-full max-w-sm p-3 rounded-3xl shadow-2xl relative'
+				className='bg-gradient-to-br from-gray-900 to-gray-800 border border-gray-600/50 text-white w-full max-w-sm p-3 rounded-3xl shadow-2xl'
 				style={{ 
-					maxHeight: '80vh', 
-					overflowY: 'auto',
-					position: 'relative',
-					top: '0',
-					transform: 'none'
+					margin: '1rem',
+					maxHeight: 'calc(100vh - 2rem)',
+					minHeight: 'auto'
 				}}
 			>
 				{/* Close Button */}
