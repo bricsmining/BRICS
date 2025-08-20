@@ -232,14 +232,16 @@ async function handleStartWithReferral(chatId, userId, referrerId, userInfo) {
       await sendMessage(chatId, `
 🎉 *Welcome to SkyTON!*
 
-You've been invited by a friend and earned bonus rewards! 
+You've been invited by a friend! 
 
-🎁 *Referral Bonus Applied:*
-• ${referralResult.welcomeBonus} STON welcome bonus for you
-• ${referralResult.referrerReward} STON reward for your referrer
-• Free spin reward for referrer
+🎁 *Pending Referral Rewards:*
+⏳ ${referralResult.welcomeBonus} STON bonus for you (after completing 3 tasks)
+⏳ ${referralResult.referrerReward} STON reward for your referrer (after you complete 3 tasks)
+⏳ Free spin reward for referrer (after you complete 3 tasks)
 
-Start mining and earning more STON tokens! 🚀
+✅ *Complete 3 tasks to unlock all rewards!*
+
+Start mining and completing tasks now! 🚀
       `, {
         parse_mode: 'Markdown',
         reply_markup: {
@@ -254,12 +256,23 @@ Start mining and earning more STON tokens! 🚀
         }
       });
       
-      // Notify referrer about successful referral
-      await notifyUserDirect(referrerId, 'successful_referral', {
-        newUserName: userInfo.first_name || `User ${userId}`,
-        reward: referralResult.referrerReward,
-        welcomeBonus: referralResult.welcomeBonus,
-        referrerId: referrerId
+      // Notify referrer about PENDING referral (not immediate reward)
+      await sendMessage(referrerId, `👥 *New Referral Joined!*
+
+Someone joined SkyTON through your referral link!
+
+👤 *New Member:* ${userInfo.first_name || 'Friend'}
+⏳ *Status:* Pending (needs to complete 3 tasks)
+
+🎁 *Rewards when they complete 3 tasks:*
+• ${referralResult.referrerReward} STON for you
+• 1 Free Spin for you  
+• ${referralResult.welcomeBonus} STON welcome bonus for them
+
+Keep sharing to get more referrals! 🚀
+
+*Share your link:* https://t.me/${getBotUsername()}?start=refID${referrerId}`, {
+        parse_mode: 'Markdown'
       });
       
     } else {

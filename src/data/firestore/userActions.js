@@ -199,6 +199,8 @@ export const completeTaskForUser = async (userId, taskId) => {
 
     // Check for pending referral rewards after task completion
     try {
+      console.log(`[TASK] Checking referral rewards for user ${userId} after task completion`);
+      
       const response = await fetch('/api/telegram-bot', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -210,12 +212,18 @@ export const completeTaskForUser = async (userId, taskId) => {
       
       if (response.ok) {
         const result = await response.json();
+        console.log(`[TASK] Referral rewards check result for user ${userId}:`, result);
+        
         if (result.success && result.rewardsDistributed) {
-          console.log(`Referral rewards distributed for user ${userId}:`, result);
+          console.log(`[TASK] ✅ Referral rewards distributed for user ${userId}:`, result);
+        } else if (result.tasksCompleted !== undefined) {
+          console.log(`[TASK] User ${userId} has completed ${result.tasksCompleted}/${result.tasksRequired} tasks`);
         }
+      } else {
+        console.error(`[TASK] Failed to check referral rewards for user ${userId}:`, response.status, response.statusText);
       }
     } catch (error) {
-      console.error('Error checking referral rewards:', error);
+      console.error('[TASK] Error checking referral rewards:', error);
     }
 
     return true;

@@ -971,9 +971,11 @@ const ReferralSection = ({ user, refreshUserData }) => {
 	useEffect(() => {
 		const fetchReferredUsers = async () => {
 			setLoadingReferrals(true);
-			const referredIds = currentUser.referredUsers || [];
-			const fetchedUsers = await Promise.all(
-				referredIds.map(async (uid) => {
+			
+			// Get completed referrals from referredUsers array
+			const completedIds = currentUser.referredUsers || [];
+			const completedUsers = await Promise.all(
+				completedIds.map(async (uid) => {
 					const ref = doc(db, 'users', uid);
 					const snap = await getDoc(ref);
 					if (snap.exists()) {
@@ -982,12 +984,49 @@ const ReferralSection = ({ user, refreshUserData }) => {
 							id: uid,
 							name: data.firstName || data.username || `User ${uid}`,
 							photo: data.profilePicUrl || defaultAvatar,
+							status: 'completed'
 						};
 					}
 					return null;
 				})
 			);
-			setReferredUsers(fetchedUsers.filter(Boolean));
+			
+			// Get pending referrals from pendingReferrals array
+			const pendingReferrals = currentUser.pendingReferrals || [];
+			const pendingUsers = await Promise.all(
+				pendingReferrals.map(async (pending) => {
+					const ref = doc(db, 'users', pending.userId);
+					const snap = await getDoc(ref);
+					if (snap.exists()) {
+						const data = snap.data();
+						return {
+							id: pending.userId,
+							name: data.firstName || data.username || `User ${pending.userId}`,
+							photo: data.profilePicUrl || defaultAvatar,
+							status: pending.status || 'pending',
+							tasksCompleted: pending.tasksCompleted || 0,
+							tasksRequired: pending.tasksRequired || 3
+						};
+					}
+					return null;
+				})
+			);
+			
+			// Combine and deduplicate (completed takes priority over pending)
+			const allUsers = [...completedUsers.filter(Boolean), ...pendingUsers.filter(Boolean)];
+			const uniqueUsers = allUsers.reduce((acc, user) => {
+				const existing = acc.find(u => u.id === user.id);
+				if (!existing) {
+					acc.push(user);
+				} else if (user.status === 'completed' && existing.status === 'pending') {
+					// Replace pending with completed status
+					const index = acc.findIndex(u => u.id === user.id);
+					acc[index] = user;
+				}
+				return acc;
+			}, []);
+			
+			setReferredUsers(uniqueUsers);
 			setLoadingReferrals(false);
 		};
 
@@ -1011,7 +1050,7 @@ const ReferralSection = ({ user, refreshUserData }) => {
 
 		fetchReferredUsers();
 		fetchReferrerInfo();
-	}, [currentUser.referredUsers, currentUser.invitedBy]);
+	}, [currentUser.referredUsers, currentUser.pendingReferrals, currentUser.invitedBy]);
 
 	return (
 		<div
@@ -1167,24 +1206,50 @@ const ReferralSection = ({ user, refreshUserData }) => {
 										Referred Users
 									</p>
 								</div>
-								<div className='grid grid-cols-2 gap-2'>
+								<div className='grid grid-cols-1 gap-2'>
 									{referredUsers.map((u, index) => (
 										<motion.div
 											key={u.id}
 											initial={{ opacity: 0, y: 20 }}
 											animate={{ opacity: 1, y: 0 }}
 											transition={{ delay: 0.7 + index * 0.1 }}
-											className='bg-gradient-to-r from-gray-800/50 to-gray-900/50 backdrop-blur-sm border border-gray-600/50 p-2 rounded-xl flex items-center gap-2 hover:scale-105 transition-all duration-300'
+											className={`bg-gradient-to-r backdrop-blur-sm border p-3 rounded-xl hover:scale-105 transition-all duration-300 ${
+												u.status === 'completed' 
+													? 'from-green-800/50 to-emerald-900/50 border-green-500/50' 
+													: 'from-orange-800/50 to-yellow-900/50 border-orange-500/50'
+											}`}
 										>
-											<Avatar className='h-6 w-6'>
-												<AvatarImage src={u.photo} />
-												<AvatarFallback className='bg-gradient-to-br from-blue-600 to-purple-700 text-white text-xs'>
-													{u.name?.charAt(0)}
-												</AvatarFallback>
-											</Avatar>
-											<span className='text-xs truncate text-white'>
-												{u.name}
-											</span>
+											<div className='flex items-center justify-between'>
+												<div className='flex items-center gap-3'>
+													<Avatar className='h-8 w-8'>
+														<AvatarImage src={u.photo} />
+														<AvatarFallback className='bg-gradient-to-br from-blue-600 to-purple-700 text-white text-xs'>
+															{u.name?.charAt(0)}
+														</AvatarFallback>
+													</Avatar>
+													<div>
+														<span className='text-sm font-medium text-white'>
+															{u.name}
+														</span>
+														{u.status === 'pending' && (
+															<div className='text-xs text-gray-300 mt-1'>
+																Tasks: {u.tasksCompleted || 0}/{u.tasksRequired || 3}
+															</div>
+														)}
+													</div>
+												</div>
+												<div className='flex items-center gap-2'>
+													{u.status === 'completed' ? (
+														<>
+															<span className='text-xs font-medium text-green-400'>✅ Completed</span>
+														</>
+													) : (
+														<>
+															<span className='text-xs font-medium text-orange-400'>⏳ Pending</span>
+														</>
+													)}
+												</div>
+											</div>
 										</motion.div>
 									))}
 								</div>
