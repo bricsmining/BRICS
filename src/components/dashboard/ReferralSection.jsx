@@ -514,7 +514,7 @@ const SpinModal = ({
 		}
 	}, [isOpen]);
 
-	// Auto-hide result after 5 seconds and show ad
+	// Auto-hide result after 2 seconds and show ad (reduced from 5 seconds for faster experience)
 	useEffect(() => {
 		if (showResult) {
 			const timer = setTimeout(() => {
@@ -522,7 +522,7 @@ const SpinModal = ({
 				setSpinResult(null);
 				// Trigger ad after showing the congratulations message
 				setShowAdAfterSpin(true);
-			}, 5000);
+			}, 2000);
 			return () => clearTimeout(timer);
 		}
 	}, [showResult]);
@@ -878,19 +878,24 @@ const ReferralSection = ({ user, refreshUserData }) => {
 		setCurrentUser(user);
 	}, [user]);
 
-	// Pause/resume ad timer when spin modal opens/closes
+	// Pause/resume ad timer when spin modal opens/closes AND prevent body scroll
 	useEffect(() => {
 		if (showSpinModal) {
-			console.log('🎯 Spin modal opened - pausing ad timer');
+			console.log('🎯 Spin modal opened - pausing ad timer and preventing scroll');
 			pauseAdTimer();
+			// Prevent body scroll when modal is open
+			document.body.style.overflow = 'hidden';
 		} else {
-			console.log('🎯 Spin modal closed - resuming ad timer');
+			console.log('🎯 Spin modal closed - resuming ad timer and enabling scroll');
 			resumeAdTimer();
+			// Restore body scroll when modal is closed
+			document.body.style.overflow = 'unset';
 		}
 
-		// Cleanup: always resume on unmount
+		// Cleanup: always restore scroll on unmount
 		return () => {
 			resumeAdTimer();
+			document.body.style.overflow = 'unset';
 		};
 	}, [showSpinModal, pauseAdTimer, resumeAdTimer]);
 
@@ -993,9 +998,9 @@ const ReferralSection = ({ user, refreshUserData }) => {
 
 	return (
 		<div
-			className='relative w-full min-h-screen bg-gradient-to-br from-[#0a0a0a] via-[#0f0f0f] to-[#1a1a1a] text-white overflow-y-auto'
+			className={`relative w-full min-h-screen bg-gradient-to-br from-[#0a0a0a] via-[#0f0f0f] to-[#1a1a1a] text-white ${showSpinModal ? 'overflow-hidden' : 'overflow-y-auto'}`}
 			style={{
-				touchAction: 'pan-y',
+				touchAction: showSpinModal ? 'none' : 'pan-y',
 				userSelect: 'none',
 				WebkitUserSelect: 'none',
 				WebkitTouchCallout: 'none',
