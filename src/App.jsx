@@ -229,9 +229,15 @@ function App() {
     );
   }
 
-  // Check for maintenance mode (unless user is admin or accessing admin routes)
-  if (adminConfig?.maintenanceMode && !isAdminRoute && (!currentUser?.isAdmin)) {
-    return <MaintenanceMode config={adminConfig} />;
+  // Check for maintenance mode (unless accessing admin routes or user is admin)
+  if (adminConfig?.maintenanceMode && !isAdminRoute) {
+    // Allow admins to bypass maintenance mode
+    if (currentUser && currentUser.isAdmin === true) {
+      // Admin user can proceed
+    } else {
+      // Non-admin user or no user - show maintenance mode
+      return <MaintenanceMode config={adminConfig} />;
+    }
   }
 
   // Show Telegram warning if user is not in Telegram context, but NOT on /admin

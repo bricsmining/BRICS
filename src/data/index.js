@@ -538,12 +538,12 @@ import { getAdminConfig } from '@/data/firestore/adminConfig';
 
 // Energy Management Constants (fallback values)
 const DEFAULT_MAX_ENERGY = 500;
-const ENERGY_REWARD_AMOUNT = 10;
+const DEFAULT_ENERGY_REWARD_AMOUNT = 10;
 const DEFAULT_DAILY_ENERGY_AD_LIMIT = 10; // Maximum energy ads per day
 const DEFAULT_HOURLY_ENERGY_AD_LIMIT = 3; // Maximum energy ads per hour
 
 // Mystery Box Management Constants (fallback values)
-const BOX_REWARD_AMOUNT = 1;
+const DEFAULT_BOX_REWARD_AMOUNT = 1;
 const DEFAULT_DAILY_BOX_AD_LIMIT = 10; // Maximum mystery box ads per day
 const DEFAULT_HOURLY_BOX_AD_LIMIT = 3; // Maximum mystery box ads per hour
 
@@ -560,6 +560,7 @@ export const addEnergyFromAd = async (userId) => {
     const MAX_ENERGY = adminConfig?.maxEnergy || DEFAULT_MAX_ENERGY;
     const DAILY_ENERGY_AD_LIMIT = adminConfig?.dailyEnergyAdLimit || DEFAULT_DAILY_ENERGY_AD_LIMIT;
     const HOURLY_ENERGY_AD_LIMIT = adminConfig?.hourlyEnergyAdLimit || DEFAULT_HOURLY_ENERGY_AD_LIMIT;
+    const ENERGY_REWARD_AMOUNT = adminConfig?.energyRewardAmount || DEFAULT_ENERGY_REWARD_AMOUNT;
 
     const userRef = doc(db, 'users', userId);
     
@@ -753,6 +754,7 @@ export const addBoxFromAd = async (userId) => {
     const adminConfig = await getAdminConfig();
     const DAILY_BOX_AD_LIMIT = adminConfig?.dailyBoxAdLimit || DEFAULT_DAILY_BOX_AD_LIMIT;
     const HOURLY_BOX_AD_LIMIT = adminConfig?.hourlyBoxAdLimit || DEFAULT_HOURLY_BOX_AD_LIMIT;
+    const BOX_REWARD_AMOUNT = adminConfig?.boxRewardAmount || DEFAULT_BOX_REWARD_AMOUNT;
 
     const userRef = doc(db, 'users', userId);
     

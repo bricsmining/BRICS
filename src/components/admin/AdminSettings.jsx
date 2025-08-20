@@ -456,6 +456,43 @@ const AdminSettings = ({ adminData }) => {
             </div>
             
             <div className="border-t border-gray-600 pt-4">
+              <h4 className="text-sm font-medium text-gray-300 mb-3">Ad Rewards</h4>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-gray-300 mb-2 block">
+                    Energy Reward Amount
+                  </label>
+                  <Input
+                    type="number"
+                    value={config.energyRewardAmount || 10}
+                    onChange={(e) => updateConfigField('energyRewardAmount', parseInt(e.target.value))}
+                    className="bg-input border-border focus:border-blue-500 focus:bg-input/80 text-white"
+                    placeholder="10"
+                  />
+                  <p className="text-xs text-gray-400 mt-1">
+                    Energy points awarded per ad watch
+                  </p>
+                </div>
+                
+                <div>
+                  <label className="text-sm font-medium text-gray-300 mb-2 block">
+                    Box Reward Amount
+                  </label>
+                  <Input
+                    type="number"
+                    value={config.boxRewardAmount || 1}
+                    onChange={(e) => updateConfigField('boxRewardAmount', parseInt(e.target.value))}
+                    className="bg-input border-border focus:border-blue-500 focus:bg-input/80 text-white"
+                    placeholder="1"
+                  />
+                  <p className="text-xs text-gray-400 mt-1">
+                    Mystery boxes awarded per ad watch
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="border-t border-gray-600 pt-4">
               <h4 className="text-sm font-medium text-gray-300 mb-3">Referral System</h4>
               <div className="grid grid-cols-2 gap-4">
                 <div>

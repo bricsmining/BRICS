@@ -28,6 +28,8 @@ const defaultConfig = {
   hourlyBoxAdLimit: 3,
   maxEnergy: 500,
   minWithdrawalAmount: 100000000, // 10 TON in STON
+  energyRewardAmount: 10, // Energy reward per ad watch
+  boxRewardAmount: 1, // Box reward per ad watch
   
   // Feature Toggles (editable in admin panel)
   withdrawalEnabled: true,
