@@ -534,16 +534,18 @@ export const logEnergyTransaction = async (userId, type, amount, source = 'unkno
   }
 };
 
-// Energy Management Constants
-const MAX_ENERGY = 500;
-const ENERGY_REWARD_AMOUNT = 10;
-const DAILY_ENERGY_AD_LIMIT = 10; // Maximum energy ads per day
-const HOURLY_ENERGY_AD_LIMIT = 3; // Maximum energy ads per hour
+import { getAdminConfig } from '@/data/firestore/adminConfig';
 
-// Mystery Box Management Constants
+// Energy Management Constants (fallback values)
+const DEFAULT_MAX_ENERGY = 500;
+const ENERGY_REWARD_AMOUNT = 10;
+const DEFAULT_DAILY_ENERGY_AD_LIMIT = 10; // Maximum energy ads per day
+const DEFAULT_HOURLY_ENERGY_AD_LIMIT = 3; // Maximum energy ads per hour
+
+// Mystery Box Management Constants (fallback values)
 const BOX_REWARD_AMOUNT = 1;
-const DAILY_BOX_AD_LIMIT = 10; // Maximum mystery box ads per day
-const HOURLY_BOX_AD_LIMIT = 3; // Maximum mystery box ads per hour
+const DEFAULT_DAILY_BOX_AD_LIMIT = 10; // Maximum mystery box ads per day
+const DEFAULT_HOURLY_BOX_AD_LIMIT = 3; // Maximum mystery box ads per hour
 
 // Function to add energy from ads with limits
 export const addEnergyFromAd = async (userId) => {
@@ -553,6 +555,12 @@ export const addEnergyFromAd = async (userId) => {
   }
 
   try {
+    // Get admin config for dynamic limits
+    const adminConfig = await getAdminConfig();
+    const MAX_ENERGY = adminConfig?.maxEnergy || DEFAULT_MAX_ENERGY;
+    const DAILY_ENERGY_AD_LIMIT = adminConfig?.dailyEnergyAdLimit || DEFAULT_DAILY_ENERGY_AD_LIMIT;
+    const HOURLY_ENERGY_AD_LIMIT = adminConfig?.hourlyEnergyAdLimit || DEFAULT_HOURLY_ENERGY_AD_LIMIT;
+
     const userRef = doc(db, 'users', userId);
     
     // Check if user exists
@@ -569,7 +577,7 @@ export const addEnergyFromAd = async (userId) => {
     if (currentEnergy >= MAX_ENERGY) {
       return { 
         success: false, 
-        error: 'Energy is already full! Maximum energy is 500.',
+        error: `Energy is already full! Maximum energy is ${MAX_ENERGY}.`,
         type: 'energy_full'
       };
     }
@@ -656,6 +664,12 @@ export const checkEnergyAdAvailability = async (userId) => {
   }
 
   try {
+    // Get admin config for dynamic limits
+    const adminConfig = await getAdminConfig();
+    const MAX_ENERGY = adminConfig?.maxEnergy || DEFAULT_MAX_ENERGY;
+    const DAILY_ENERGY_AD_LIMIT = adminConfig?.dailyEnergyAdLimit || DEFAULT_DAILY_ENERGY_AD_LIMIT;
+    const HOURLY_ENERGY_AD_LIMIT = adminConfig?.hourlyEnergyAdLimit || DEFAULT_HOURLY_ENERGY_AD_LIMIT;
+
     const userRef = doc(db, 'users', userId);
     const userDoc = await getDoc(userRef);
     
@@ -735,6 +749,11 @@ export const addBoxFromAd = async (userId) => {
   }
 
   try {
+    // Get admin config for dynamic limits
+    const adminConfig = await getAdminConfig();
+    const DAILY_BOX_AD_LIMIT = adminConfig?.dailyBoxAdLimit || DEFAULT_DAILY_BOX_AD_LIMIT;
+    const HOURLY_BOX_AD_LIMIT = adminConfig?.hourlyBoxAdLimit || DEFAULT_HOURLY_BOX_AD_LIMIT;
+
     const userRef = doc(db, 'users', userId);
     
     // Check if user exists
@@ -826,6 +845,11 @@ export const checkBoxAdAvailability = async (userId) => {
   }
 
   try {
+    // Get admin config for dynamic limits
+    const adminConfig = await getAdminConfig();
+    const DAILY_BOX_AD_LIMIT = adminConfig?.dailyBoxAdLimit || DEFAULT_DAILY_BOX_AD_LIMIT;
+    const HOURLY_BOX_AD_LIMIT = adminConfig?.hourlyBoxAdLimit || DEFAULT_HOURLY_BOX_AD_LIMIT;
+
     const userRef = doc(db, 'users', userId);
     const userDoc = await getDoc(userRef);
     

@@ -229,8 +229,8 @@ function App() {
     );
   }
 
-  // Check for maintenance mode (unless user is admin)
-  if (adminConfig?.maintenanceMode && !isAdmin && !isAdminRoute) {
+  // Check for maintenance mode (unless user is admin or accessing admin routes)
+  if (adminConfig?.maintenanceMode && !isAdminRoute && (!currentUser?.isAdmin)) {
     return <MaintenanceMode config={adminConfig} />;
   }
 

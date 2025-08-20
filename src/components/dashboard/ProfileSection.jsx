@@ -1042,7 +1042,7 @@ const WithdrawDialog = ({ isOpen, onClose, user, onWithdraw, stonToTon, adminCon
   if (!isOpen) return null;
 
   const amount = parseFloat(withdrawAmount) || 0;
-  const minWithdrawal = adminConfig?.minWithdrawalAmount || 100;
+  const minWithdrawal = adminConfig?.minWithdrawalAmount || 100000000;
   const isValidAmount = amount >= minWithdrawal && amount <= (user.balance || 0);
 
   return (
@@ -1558,7 +1558,7 @@ const ProfileSection = ({ user, refreshUserData }) => {
     if (!user?.id || !withdrawAmount) return;
 
     const amount = parseFloat(withdrawAmount);
-    const minWithdrawal = adminConfig?.minWithdrawalAmount || 100;
+    const minWithdrawal = globalAdminConfig?.minWithdrawalAmount || 100000000;
 
     if (amount < minWithdrawal || amount > (user.balance || 0)) {
       toast({
@@ -2575,8 +2575,19 @@ const ProfileSection = ({ user, refreshUserData }) => {
               whileTap={{ scale: 0.98 }}
           >
             <Button
-                className="w-full h-10 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold rounded-2xl border-0 shadow-lg hover:shadow-xl transition-all duration-300 relative overflow-hidden group disabled:opacity-50 disabled:cursor-not-allowed"
-              onClick={() => setShowWithdrawDialog(true)}
+                className="w-full h-10 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold rounded-2xl border-0 shadow-lg hover:shadow-xl transition-all duration-300 relative overflow-hidden group disabled:opacity-50 disabled:cursor-not-allowed disabled:from-gray-600 disabled:to-gray-700"
+              onClick={() => {
+                if (globalAdminConfig?.withdrawalEnabled === false) {
+                  toast({
+                    title: "Withdrawals Disabled",
+                    description: "Withdrawals have been temporarily disabled by the administrator.",
+                    variant: "destructive",
+                    className: "bg-[#1a1a1a] text-white",
+                  });
+                  return;
+                }
+                setShowWithdrawDialog(true);
+              }}
               disabled={globalAdminConfig?.withdrawalEnabled === false}
             >
                 <motion.div
