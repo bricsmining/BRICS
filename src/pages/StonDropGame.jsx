@@ -90,25 +90,9 @@ export default function StonDropGame() {
   const gameTimer = useRef(null);
   const dropInterval = useRef(null);
 
-  const startGame = useCallback(() => {
-    console.log('🎮 Starting game...');
-    try {
-      setGameStarted(true);
-      setGameStartTime(Date.now());
-      startTimers();
-      console.log('✅ Game started successfully');
-    } catch (error) {
-      console.error('❌ Failed to start game:', error);
-      toast({
-        title: 'Failed to start game',
-        description: 'Please try again.',
-        variant: 'destructive',
-        className: "bg-[#1a1a1a] text-white"
-      });
-    }
-  }, [startTimers, toast]);
-
-  const startTimers = useCallback(() => {
+  // Game timer functions - defined as regular functions to avoid hoisting issues
+  const initializeTimers = () => {
+    console.log('🎮 Initializing game timers...');
     let currentTime = GAME_DURATION;
     
     gameTimer.current = setInterval(() => {
@@ -150,7 +134,25 @@ export default function StonDropGame() {
         console.error('❌ Error creating drop:', error);
       }
     }, 400); // Fixed interval to avoid timing issues
-  }, []);
+  };
+
+  const startGame = useCallback(() => {
+    console.log('🎮 Starting game...');
+    try {
+      setGameStarted(true);
+      setGameStartTime(Date.now());
+      initializeTimers();
+      console.log('✅ Game started successfully');
+    } catch (error) {
+      console.error('❌ Failed to start game:', error);
+      toast({
+        title: 'Failed to start game',
+        description: 'Please try again.',
+        variant: 'destructive',
+        className: "bg-[#1a1a1a] text-white"
+      });
+    }
+  }, [toast]);
 
   const pauseGame = useCallback(() => {
     clearInterval(gameTimer.current);
@@ -160,8 +162,8 @@ export default function StonDropGame() {
 
   const resumeGame = useCallback(() => {
     setIsPaused(false);
-    startTimers();
-  }, [startTimers]);
+    initializeTimers();
+  }, []);
 
   const quitGame = useCallback(async () => {
     clearInterval(gameTimer.current);
