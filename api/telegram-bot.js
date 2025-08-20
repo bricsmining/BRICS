@@ -343,9 +343,9 @@ async function handleStart(chatId, userId, userInfo, customMessage = null) {
         hasSeenWelcome: true,
         welcomeMessageShown: true,
         lastWelcomeDate: serverTimestamp(),
-        balance: 100,
+        balance: 0,
         balanceBreakdown: {
-          task: 100,
+          task: 0,
           box: 0,
           referral: 0,
           mining: 0
@@ -824,9 +824,11 @@ async function processPendingReferralRewards(userId) {
       return { success: false, message: 'No pending referral rewards' };
     }
     
-    // Count completed tasks
+    // Count completed tasks (excluding daily check-in)
     const userTasks = userData.tasks || {};
-    const completedTasks = Object.keys(userTasks).filter(taskId => userTasks[taskId] === true);
+    const completedTasks = Object.keys(userTasks).filter(taskId => 
+      userTasks[taskId] === true && taskId !== 'task_daily_checkin'
+    );
     const tasksCompleted = completedTasks.length;
     
     console.log(`[BOT] User ${userId} has completed ${tasksCompleted}/${pendingReward.tasksRequired} tasks`);

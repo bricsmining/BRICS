@@ -309,30 +309,10 @@ export const performCheckInForUser = async (userId) => {
     if (canCheckIn) {
       await updateDoc(userRef, {
         balance: increment(reward),
-        lastCheckIn: serverTimestamp(),
-        [`tasks.${checkInTaskId}`]: true
+        'balanceBreakdown.task': increment(reward), // Add reward to task balance breakdown
+        lastCheckIn: serverTimestamp()
+        // Note: NOT setting tasks.task_daily_checkin = true because check-in doesn't count as task for referral
       });
-
-      // Check for pending referral rewards after check-in
-      try {
-        console.log(`[CHECKIN] Checking referral rewards for user ${userId} after daily check-in`);
-        
-        const response = await fetch('/api/telegram-bot', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            action: 'check_referral_rewards',
-            userId: userId
-          })
-        });
-        
-        if (response.ok) {
-          const result = await response.json();
-          console.log(`[CHECKIN] Referral rewards check result:`, result);
-        }
-      } catch (error) {
-        console.error('[CHECKIN] Error checking referral rewards:', error);
-      }
 
       return { success: true, reward };
     } else {
