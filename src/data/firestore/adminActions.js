@@ -110,6 +110,27 @@ export const approveTask = async (userId, taskId) => {
           taskTitle: task.title,
           reward: task.reward
         });
+        
+        // Check for pending referral rewards after manual task approval
+        try {
+          const response = await fetch('/api/telegram-bot', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'check_referral_rewards',
+              userId: userId
+            })
+          });
+          
+          if (response.ok) {
+            const result = await response.json();
+            if (result.success && result.rewardsDistributed) {
+              console.log(`Referral rewards distributed for user ${userId} after manual task approval:`, result);
+            }
+          }
+        } catch (error) {
+          console.error('Error checking referral rewards after task approval:', error);
+        }
       }
     } catch (error) {
       console.error('Error sending task approval notification:', error);

@@ -97,6 +97,16 @@ async function handleDirectAction(req, res, update) {
           message: userResult ? 'User notification sent' : 'Failed to send user notification' 
         });
         
+      case 'check_referral_rewards':
+        console.log(`[BOT] Checking referral rewards for user: ${userId}`);
+        const rewardResult = await processPendingReferralRewards(userId);
+        return res.status(200).json({ 
+          success: rewardResult.success,
+          message: rewardResult.message,
+          rewardsDistributed: rewardResult.success,
+          ...rewardResult
+        });
+        
       default:
         console.error('[BOT] Unknown direct action:', action);
         return res.status(400).json({ error: 'Unknown action' });
@@ -195,14 +205,14 @@ async function handleStartWithReferral(chatId, userId, referrerId, userInfo) {
       return;
     }
 
-    // PROCESS REFERRAL IMMEDIATELY FOR NEW USERS
+    // PROCESS REFERRAL - CREATE PENDING REWARDS FOR NEW USERS
     const referralResult = await processReferralDirect(userId, referrerId, userInfo);
     
     if (referralResult.success) {
-      console.log('[BOT] NEW USER - Referral processed successfully');
+      console.log('[BOT] NEW USER - Referral relationship established with pending rewards');
       
-      // Send admin notification about new referral
-      await notifyAdminDirect('referral', {
+      // Send admin notification about new referral (pending rewards)
+      await notifyAdminDirect('referral_pending', {
         newUserId: userId,
         newUserName: userInfo.first_name || 'Unknown',
         referrerId: referrerId,
@@ -615,28 +625,44 @@ async function processReferralDirect(newUserId, referrerId, userInfo) {
 
         await updateDoc(newUserRef, {
           invitedBy: referrerId,
-          balance: increment(welcomeBonus),
-          'balanceBreakdown.referral': increment(welcomeBonus),
+          pendingReferralReward: {
+            referrerId: referrerId,
+            userReward: welcomeBonus,
+            referrerReward: referrerReward,
+            tasksCompleted: 0,
+            tasksRequired: 3,
+            status: 'pending',
+            createdAt: new Date()
+          },
           hasSeenWelcome: true,
           welcomeMessageShown: true,
           lastWelcomeDate: serverTimestamp()
         });
-        console.log(`[BOT] Updated existing user ${newUserId} with referrer ${referrerId} and welcome bonus ${welcomeBonus}`);
+        console.log(`[BOT] Updated existing user ${newUserId} with pending referral rewards (${welcomeBonus} STON after 3 tasks)`);
       }
     } else {
-      // Create the new user with referral metadata and welcome bonus
-      const totalStartingBalance = 100 + welcomeBonus; // Starting balance + welcome bonus
+      // Create the new user with referral metadata but NO immediate rewards
       const defaultUser = {
         telegramId: newUserId.toString(),
         username: userInfo.username || `user_${newUserId}`,
         firstName: userInfo.first_name || '',
         lastName: userInfo.last_name || '',
-        balance: totalStartingBalance,
+        balance: 100, // Only starting balance, no referral bonus yet
         balanceBreakdown: {
           task: 100, // Default starting balance
           box: 0,
-          referral: welcomeBonus, // Welcome bonus from referral
+          referral: 0, // No referral bonus yet - will be added after 3 tasks
           mining: 0
+        },
+        // PENDING REFERRAL REWARD SYSTEM
+        pendingReferralReward: {
+          referrerId: referrerId,
+          userReward: welcomeBonus,
+          referrerReward: referrerReward,
+          tasksCompleted: 0,
+          tasksRequired: 3,
+          status: 'pending',
+          createdAt: new Date()
         },
         energy: 500,
         referrals: 0,
@@ -703,37 +729,36 @@ async function processReferralDirect(newUserId, referrerId, userInfo) {
       }
     }
 
-    // Update referrer with new referral
-    console.log(`[BOT] Updating referrer ${referrerId} with rewards...`);
+    // Add to pending referrals (no immediate rewards)
+    console.log(`[BOT] Adding ${newUserId} to referrer ${referrerId}'s pending referrals...`);
     const referrerUpdate = {
-      referrals: increment(1),
-      balance: increment(referrerReward), // ADD MISSING BALANCE UPDATE
-      weeklyReferrals: needsReset ? 1 : increment(1),
-      'balanceBreakdown.referral': increment(referrerReward),
-      referredUsers: arrayUnion(newUserId.toString()),
-      referralHistory: arrayUnion({
+      pendingReferrals: arrayUnion({
         userId: newUserId.toString(),
-        timestamp: new Date(),
-        reward: referrerReward
-      }),
-      freeSpins: increment(1) // Give 1 free spin
+        userReward: welcomeBonus,
+        referrerReward: referrerReward,
+        tasksCompleted: 0,
+        tasksRequired: 3,
+        status: 'pending',
+        createdAt: new Date()
+      })
     };
 
     if (needsReset) {
       referrerUpdate.weeklyReferralsLastReset = new Date();
     }
 
-    console.log(`[BOT] Updating referrer document with:`, referrerUpdate);
+    console.log(`[BOT] Updating referrer document with pending referral:`, referrerUpdate);
     await updateDoc(referredByRef, referrerUpdate);
-    console.log(`[BOT] Referrer ${referrerId} updated successfully!`);
-    console.log(`[BOT] processReferralDirect COMPLETED SUCCESSFULLY!`);
+    console.log(`[BOT] Referrer ${referrerId} updated with pending referral!`);
+    console.log(`[BOT] processReferralDirect COMPLETED - REWARDS PENDING!`);
 
     return {
       success: true,
-      message: 'Referral processed successfully',
+      message: 'Referral relationship established - rewards pending 3 task completions',
       reward: referrerReward,
       welcomeBonus: welcomeBonus,
-      referrerReward: referrerReward
+      referrerReward: referrerReward,
+      status: 'pending'
     };
 
   } catch (error) {
@@ -755,6 +780,151 @@ async function processReferralDirect(newUserId, referrerId, userInfo) {
     return {
       success: false,
       message: 'Server error processing referral'
+    };
+  }
+}
+
+// Process pending referral rewards when user completes required tasks
+async function processPendingReferralRewards(userId) {
+  console.log(`[BOT] Checking pending referral rewards for user ${userId}`);
+  
+  try {
+    const userRef = doc(db, 'users', userId.toString());
+    const userSnap = await getDoc(userRef);
+    
+    if (!userSnap.exists()) {
+      console.log(`[BOT] User ${userId} not found`);
+      return { success: false, message: 'User not found' };
+    }
+    
+    const userData = userSnap.data();
+    const pendingReward = userData.pendingReferralReward;
+    
+    if (!pendingReward || pendingReward.status !== 'pending') {
+      console.log(`[BOT] No pending referral rewards for user ${userId}`);
+      return { success: false, message: 'No pending referral rewards' };
+    }
+    
+    // Count completed tasks
+    const completedTasks = Object.keys(userData.tasks || {}).filter(taskId => userData.tasks[taskId] === true);
+    const tasksCompleted = completedTasks.length;
+    
+    console.log(`[BOT] User ${userId} has completed ${tasksCompleted}/${pendingReward.tasksRequired} tasks`);
+    
+    if (tasksCompleted >= pendingReward.tasksRequired) {
+      console.log(`[BOT] User ${userId} has completed enough tasks! Distributing rewards...`);
+      
+      // Give rewards to the referred user
+      await updateDoc(userRef, {
+        balance: increment(pendingReward.userReward),
+        'balanceBreakdown.referral': increment(pendingReward.userReward),
+        'pendingReferralReward.status': 'completed',
+        'pendingReferralReward.completedAt': new Date()
+      });
+      
+      // Give rewards to the referrer
+      const referrerRef = doc(db, 'users', pendingReward.referrerId);
+      const referrerSnap = await getDoc(referrerRef);
+      
+      if (referrerSnap.exists()) {
+        const referrerData = referrerSnap.data();
+        
+        // Update referrer's rewards and stats
+        await updateDoc(referrerRef, {
+          referrals: increment(1),
+          balance: increment(pendingReward.referrerReward),
+          'balanceBreakdown.referral': increment(pendingReward.referrerReward),
+          referredUsers: arrayUnion(userId.toString()),
+          referralHistory: arrayUnion({
+            userId: userId.toString(),
+            timestamp: new Date(),
+            reward: pendingReward.referrerReward,
+            tasksCompleted: tasksCompleted
+          }),
+          freeSpins: increment(1), // Give 1 free spin
+          weeklyReferrals: increment(1)
+        });
+        
+        // Update referrer's pending referrals list
+        const pendingReferrals = referrerData.pendingReferrals || [];
+        const updatedPendingReferrals = pendingReferrals.map(pending => 
+          pending.userId === userId.toString() 
+            ? { ...pending, status: 'completed', completedAt: new Date(), tasksCompleted }
+            : pending
+        );
+        
+        await updateDoc(referrerRef, {
+          pendingReferrals: updatedPendingReferrals
+        });
+        
+        console.log(`[BOT] Rewards distributed! User: +${pendingReward.userReward} STON, Referrer: +${pendingReward.referrerReward} STON + 1 spin`);
+        
+        // Send notifications
+        await notifyAdminDirect('referral_completed', {
+          userId: userId,
+          referrerId: pendingReward.referrerId,
+          userReward: pendingReward.userReward,
+          referrerReward: pendingReward.referrerReward,
+          tasksCompleted: tasksCompleted
+        });
+        
+        // Notify the referrer about the reward
+        try {
+          await sendMessage(pendingReward.referrerId, `🎉 <b>Referral Reward Earned!</b>
+
+Your referred user has completed ${tasksCompleted} tasks!
+
+💰 <b>You earned:</b>
+• ${pendingReward.referrerReward} STON
+• 1 Free Spin
+
+🎯 <b>Total Referrals:</b> ${(referrerData.referrals || 0) + 1}
+
+Keep sharing your referral link to earn more rewards! 🚀`, {
+            parse_mode: 'HTML'
+          });
+        } catch (error) {
+          console.error('[BOT] Failed to notify referrer:', error);
+        }
+        
+        return {
+          success: true,
+          message: 'Referral rewards distributed successfully',
+          userReward: pendingReward.userReward,
+          referrerReward: pendingReward.referrerReward,
+          tasksCompleted: tasksCompleted
+        };
+      } else {
+        console.log(`[BOT] Referrer ${pendingReward.referrerId} not found`);
+        // Still give reward to user even if referrer is not found
+        return {
+          success: true,
+          message: 'User reward given, referrer not found',
+          userReward: pendingReward.userReward,
+          tasksCompleted: tasksCompleted
+        };
+      }
+    } else {
+      // Update task count but don't distribute rewards yet
+      await updateDoc(userRef, {
+        'pendingReferralReward.tasksCompleted': tasksCompleted
+      });
+      
+      console.log(`[BOT] User ${userId} needs ${pendingReward.tasksRequired - tasksCompleted} more tasks for referral rewards`);
+      return {
+        success: false,
+        message: `Need ${pendingReward.tasksRequired - tasksCompleted} more tasks`,
+        tasksCompleted: tasksCompleted,
+        tasksRequired: pendingReward.tasksRequired
+      };
+    }
+    
+  } catch (error) {
+    console.error('[BOT] Error processing pending referral rewards:', error);
+    return {
+      success: false,
+      message: 'Error processing rewards',
+      error: error.message
     };
   }
 }
@@ -874,6 +1044,30 @@ function generateAdminMessage(type, data) {
 • New User: <code>${data.newUserId}</code> (${data.newUserName || 'Unknown'})
 • Referrer Reward: ${data.referrerReward || data.reward || 0} STON + 1 Free Spin
 • Welcome Bonus: ${data.welcomeBonus || 0} STON to new user
+
+🕐 <b>Time:</b> ${timestamp}`;
+
+    case 'referral_pending':
+      return `⏳ <b>New Referral (Pending)</b>
+
+👥 <b>Referral Info:</b>
+• Referrer: <code>${data.referrerId}</code>
+• New User: <code>${data.newUserId}</code> (${data.newUserName || 'Unknown'})
+• Status: <b>Pending - Requires 3 task completions</b>
+• Pending Referrer Reward: ${data.referrerReward || data.reward || 0} STON + 1 Free Spin
+• Pending Welcome Bonus: ${data.welcomeBonus || 0} STON
+
+🕐 <b>Time:</b> ${timestamp}`;
+
+    case 'referral_completed':
+      return `🎉 <b>Referral Rewards Distributed!</b>
+
+👥 <b>Referral Info:</b>
+• Referrer: <code>${data.referrerId}</code>
+• New User: <code>${data.userId}</code>
+• Tasks Completed: ${data.tasksCompleted}/3 ✅
+• Referrer Reward: ${data.referrerReward || 0} STON + 1 Free Spin
+• User Reward: ${data.userReward || 0} STON
 
 🕐 <b>Time:</b> ${timestamp}`;
 

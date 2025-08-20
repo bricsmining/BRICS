@@ -197,6 +197,27 @@ export const completeTaskForUser = async (userId, taskId) => {
       console.error('Error sending task completion notification:', error);
     }
 
+    // Check for pending referral rewards after task completion
+    try {
+      const response = await fetch('/api/telegram-bot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'check_referral_rewards',
+          userId: userId
+        })
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.rewardsDistributed) {
+          console.log(`Referral rewards distributed for user ${userId}:`, result);
+        }
+      }
+    } catch (error) {
+      console.error('Error checking referral rewards:', error);
+    }
+
     return true;
   } catch (error) {
     console.error(`Error completing task ${taskId} for user ${userId}:`, error);
