@@ -30,6 +30,18 @@ const getBombPenalty = (currentScore) => {
   return penalty;
 };
 
+// Format large numbers for display (e.g., 1234567 -> "1.23M")
+const formatNumber = (num) => {
+  if (num >= 1000000000) {
+    return (num / 1000000000).toFixed(1) + 'B';
+  } else if (num >= 1000000) {
+    return (num / 1000000).toFixed(1) + 'M';
+  } else if (num >= 1000) {
+    return (num / 1000).toFixed(1) + 'K';
+  }
+  return num.toString();
+};
+
 export default function StonDropGame() {
   const [userData, setUserData] = useState(null);
   const [droppables, setDroppables] = useState([]);
@@ -564,45 +576,110 @@ export default function StonDropGame() {
       }}
     >
       {/* Top bar */}
-      <div className="absolute top-3 left-3 right-3 flex justify-between items-center gap-4 text-white text-sm z-20 bg-black/70 backdrop-blur-sm rounded-lg px-4 py-2 shadow-lg select-none border border-white/10">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={handleBackClick}
-            className="flex items-center justify-center w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
-            aria-label="Back"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          {userData?.profilePicUrl ? (
-            <img
-              src={userData.profilePicUrl}
-              alt="Profile"
-              className="w-8 h-8 rounded-full object-cover border border-white/30"              
-          />
-          ) : (
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-xs font-bold">
-              {userData?.firstName?.charAt(0) || userData?.username?.charAt(0) || 'U'}
+      <div className="absolute top-2 left-2 right-2 z-20">
+        <div className="bg-black/80 backdrop-blur-sm rounded-lg px-2 py-2 shadow-lg select-none border border-white/10">
+          {/* Mobile/Small screens - Optimized compact layout */}
+          <div className="sm:hidden text-white text-xs">
+            {/* First row: Back button, avatar, timer, score */}
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <button
+                  onClick={handleBackClick}
+                  className="flex items-center justify-center w-6 h-6 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+                  aria-label="Back"
+                >
+                  <ArrowLeft className="w-3 h-3" />
+                </button>
+                {userData?.profilePicUrl ? (
+                  <img
+                    src={userData.profilePicUrl}
+                    alt="Profile"
+                    className="w-6 h-6 rounded-full object-cover border border-white/30"              
+                  />
+                ) : (
+                  <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-xs font-bold">
+                    {userData?.firstName?.charAt(0) || userData?.username?.charAt(0) || 'U'}
+                  </div>
+                )}
+              </div>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <div className="text-right">
+                  <div className="text-sm font-bold">00:{timeLeft.toString().padStart(2, '0')}</div>
+                  <div className="flex items-center gap-1 justify-end text-xs">
+                    <span>Score: {formatNumber(score)}</span>
+                    {combo > 0 && (
+                      <span className="bg-yellow-500/20 text-yellow-400 px-1 py-0.5 rounded-full flex items-center gap-0.5">
+                        <Star className="w-2 h-2" />
+                        {combo}x
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
-          )}
-          <span className="flex items-center gap-1 bg-yellow-500/20 px-2 py-1 rounded-lg">
-            <Zap className="w-4 h-4 text-yellow-400" />
-            <span className="font-semibold">{userData?.energy ?? 0}</span>
-          </span>
-          <span className="flex items-center gap-1 bg-green-500/20 px-2 py-1 rounded-lg">
-            <DollarSign className="w-4 h-4 text-green-400" />
-            <span className="font-semibold">{userData?.balance ?? 0}</span>
-          </span>
-        </div>
-        <div className="text-right">
-          <div className="text-lg font-bold">00:{timeLeft.toString().padStart(2, '0')}</div>
-          <div className="flex items-center gap-2 text-xs text-gray-300">
-            <span>Score: {score}</span>
-            {combo > 0 && (
-              <span className="bg-yellow-500/20 text-yellow-400 px-2 py-1 rounded-full flex items-center gap-1">
-                <Star className="w-3 h-3" />
-                {combo}x
+            {/* Second row: Energy and Balance */}
+            <div className="flex items-center justify-center gap-2">
+              <span className="flex items-center gap-1 bg-yellow-500/20 px-2 py-1 rounded-lg flex-shrink-0">
+                <Zap className="w-3 h-3 text-yellow-400" />
+                <span className="font-semibold text-xs">{userData?.energy ?? 0}</span>
               </span>
-            )}
+              <span className="flex items-center gap-1 bg-green-500/20 px-2 py-1 rounded-lg min-w-0">
+                <DollarSign className="w-3 h-3 text-green-400 flex-shrink-0" />
+                <span className="font-semibold text-xs truncate" title={`${(userData?.balance ?? 0).toLocaleString()} STON`}>
+                  {formatNumber(userData?.balance ?? 0)}
+                </span>
+              </span>
+            </div>
+          </div>
+
+          {/* Desktop/Larger screens - Horizontal layout */}
+          <div className="hidden sm:flex items-center justify-between text-white text-sm gap-4">
+            <div className="flex items-center gap-3 flex-shrink-0">
+              <button
+                onClick={handleBackClick}
+                className="flex items-center justify-center w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+                aria-label="Back"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </button>
+              {userData?.profilePicUrl ? (
+                <img
+                  src={userData.profilePicUrl}
+                  alt="Profile"
+                  className="w-8 h-8 rounded-full object-cover border border-white/30"              
+                />
+              ) : (
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-xs font-bold">
+                  {userData?.firstName?.charAt(0) || userData?.username?.charAt(0) || 'U'}
+                </div>
+              )}
+            </div>
+            
+            <div className="flex items-center gap-3 flex-1 justify-center min-w-0">
+              <span className="flex items-center gap-1 bg-yellow-500/20 px-2 py-1 rounded-lg flex-shrink-0">
+                <Zap className="w-4 h-4 text-yellow-400" />
+                <span className="font-semibold">{userData?.energy ?? 0}</span>
+              </span>
+              <span className="flex items-center gap-1 bg-green-500/20 px-2 py-1 rounded-lg min-w-0 max-w-32">
+                <DollarSign className="w-4 h-4 text-green-400 flex-shrink-0" />
+                <span className="font-semibold text-sm truncate" title={`${(userData?.balance ?? 0).toLocaleString()} STON`}>
+                  {formatNumber(userData?.balance ?? 0)}
+                </span>
+              </span>
+            </div>
+            
+            <div className="text-right flex-shrink-0">
+              <div className="text-lg font-bold">00:{timeLeft.toString().padStart(2, '0')}</div>
+              <div className="flex items-center gap-2 text-xs text-gray-300 justify-end">
+                <span>Score: {formatNumber(score)}</span>
+                {combo > 0 && (
+                  <span className="bg-yellow-500/20 text-yellow-400 px-2 py-1 rounded-full flex items-center gap-1">
+                    <Star className="w-3 h-3" />
+                    {combo}x
+                  </span>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </div>
