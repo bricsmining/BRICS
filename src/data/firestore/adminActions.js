@@ -225,10 +225,11 @@ export const getPendingWithdrawals = async () => {
   }
 };
 
-// Helper function to convert STON to TON
-const stonToTon = (ston) => {
+// Helper function to convert STON to TON (will use admin config rate)
+const stonToTon = (ston, adminConfig = null) => {
   const amount = parseFloat(ston) || 0;
-  return (amount / 10000000).toFixed(6);
+  const stonToTonRate = adminConfig?.stonToTonRate || 0.0000001; // Default: 10M STON = 1 TON
+  return (amount * stonToTonRate).toFixed(6);
 };
 
 // Approve a withdrawal request and initiate OxaPay payout
@@ -264,8 +265,12 @@ export const approveWithdrawal = async (withdrawalId, userId, amount) => {
     
     // Memo is now optional - no need to check for existence
 
+    // Get admin config for dynamic exchange rate
+    const { getServerAdminConfig } = await import('@/lib/serverFirebase');
+    const adminConfig = await getServerAdminConfig();
+    
     // Convert STON to TON for payout
-    const tonAmount = stonToTon(amount);
+    const tonAmount = stonToTon(amount, adminConfig);
     
     console.log(`Initiating OxaPay payout: ${tonAmount} TON to ${walletAddress}`);
 

@@ -38,7 +38,8 @@ const PendingWithdrawTab = ({ pendingWithdrawals = [], onApprove, onReject }) =>
 
   const stonToTon = (ston) => {
     const amount = parseFloat(ston) || 0;
-    return (amount / 10000000).toFixed(6);
+    const stonToTonRate = adminConfig?.stonToTonRate || 0.0000001; // Default: 10M STON = 1 TON
+    return (amount * stonToTonRate).toFixed(6);
   };
 
   const formatDate = (timestamp) => {

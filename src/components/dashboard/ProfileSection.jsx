@@ -1129,10 +1129,10 @@ const WithdrawDialog = ({ isOpen, onClose, user, onWithdraw, stonToTon, adminCon
                   {stonToTon(withdrawAmount)} TON
                 </p>
                 <p className="text-xs text-gray-400 mt-1 text-center">
-                  Rate: 10,000,000 STON = 1 TON
+                  Rate: {Math.round(1 / (adminConfig?.stonToTonRate || 0.0000001)).toLocaleString()} STON = 1 TON
                 </p>
                 <p className="text-xs text-yellow-400 mt-1 text-center">
-                  Minimum: {minWithdrawal.toLocaleString()} STON ({(minWithdrawal / 10000000).toFixed(1)} TON)
+                  Minimum: {minWithdrawal.toLocaleString()} STON ({(minWithdrawal * (adminConfig?.stonToTonRate || 0.0000001)).toFixed(1)} TON)
                 </p>
               </div>
             </div>

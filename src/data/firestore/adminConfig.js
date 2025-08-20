@@ -30,6 +30,7 @@ const defaultConfig = {
   minWithdrawalAmount: 100000000, // 10 TON in STON
   energyRewardAmount: 10, // Energy reward per ad watch
   boxRewardAmount: 1, // Box reward per ad watch
+  stonToTonRate: 0.0000001, // 1 STON = 0.0000001 TON (10,000,000 STON = 1 TON)
   
   // Feature Toggles (editable in admin panel)
   withdrawalEnabled: true,
@@ -42,7 +43,6 @@ const defaultConfig = {
   welcomeBonus: 50, // STON tokens awarded to referred user
   
   // Exchange & Rates (editable in admin panel)
-  stonToTonRate: 0.0000001, // 1 STON = 0.0000001 TON
   usdToTonRate: 5.50, // 1 USD = 5.50 TON (example)
   
   // Telegram Settings (editable in admin panel)

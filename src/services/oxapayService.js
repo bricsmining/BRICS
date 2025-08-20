@@ -345,16 +345,15 @@ export const verifyWebhookSignature = (payload, signature, secret) => {
 /**
  * Convert STON to crypto amount based on current rates
  */
-export const convertStonToCrypto = async (stonAmount, targetCurrency = 'TON') => {
-  // For now, using fixed conversion rate
-  // In production, you'd fetch real-time rates from Oxapay or external API
-  const STON_TO_TON_RATE = 10000000; // 10M STON = 1 TON
+export const convertStonToCrypto = async (stonAmount, targetCurrency = 'TON', adminConfig = null) => {
+  // Get dynamic exchange rate from admin config
+  const stonToTonRate = adminConfig?.stonToTonRate || 0.0000001; // Default: 10M STON = 1 TON
   
   const conversionRates = {
-    TON: stonAmount / STON_TO_TON_RATE,
-    USDT: (stonAmount / STON_TO_TON_RATE) * 2.5, // Assuming 1 TON = 2.5 USDT
-    BTC: (stonAmount / STON_TO_TON_RATE) * 0.000045, // Assuming 1 TON = 0.000045 BTC
-    ETH: (stonAmount / STON_TO_TON_RATE) * 0.0007 // Assuming 1 TON = 0.0007 ETH
+    TON: stonAmount * stonToTonRate,
+    USDT: (stonAmount * stonToTonRate) * 2.5, // Assuming 1 TON = 2.5 USDT
+    BTC: (stonAmount * stonToTonRate) * 0.000045, // Assuming 1 TON = 0.000045 BTC
+    ETH: (stonAmount * stonToTonRate) * 0.0007 // Assuming 1 TON = 0.0007 ETH
   };
 
   const cryptoAmount = conversionRates[targetCurrency];
@@ -384,14 +383,16 @@ export const convertStonToCrypto = async (stonAmount, targetCurrency = 'TON') =>
 /**
  * Convert crypto amount to STON
  */
-export const convertCryptoToSton = async (cryptoAmount, sourceCurrency = 'TON') => {
-  const STON_TO_TON_RATE = 10000000; // 10M STON = 1 TON
+export const convertCryptoToSton = async (cryptoAmount, sourceCurrency = 'TON', adminConfig = null) => {
+  // Get dynamic exchange rate from admin config
+  const stonToTonRate = adminConfig?.stonToTonRate || 0.0000001; // Default: 10M STON = 1 TON
+  const tonToStonRate = 1 / stonToTonRate;
   
   const conversionRates = {
-    TON: cryptoAmount * STON_TO_TON_RATE,
-    USDT: (cryptoAmount / 2.5) * STON_TO_TON_RATE,
-    BTC: (cryptoAmount / 0.000045) * STON_TO_TON_RATE,
-    ETH: (cryptoAmount / 0.0007) * STON_TO_TON_RATE
+    TON: cryptoAmount * tonToStonRate,
+    USDT: (cryptoAmount / 2.5) * tonToStonRate,
+    BTC: (cryptoAmount / 0.000045) * tonToStonRate,
+    ETH: (cryptoAmount / 0.0007) * tonToStonRate
   };
 
   const stonAmount = conversionRates[sourceCurrency];

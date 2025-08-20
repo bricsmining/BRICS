@@ -455,6 +455,23 @@ const AdminSettings = ({ adminData }) => {
               />
             </div>
             
+            <div>
+              <label className="text-sm font-medium text-gray-300 mb-2 block">
+                STON to TON Exchange Rate
+              </label>
+              <Input
+                type="number"
+                step="0.0000001"
+                value={config.stonToTonRate || 0.0000001}
+                onChange={(e) => updateConfigField('stonToTonRate', parseFloat(e.target.value))}
+                className="bg-input border-border focus:border-blue-500 focus:bg-input/80 text-white"
+                placeholder="0.0000001"
+              />
+              <p className="text-xs text-gray-400 mt-1">
+                1 STON = {config.stonToTonRate || 0.0000001} TON (Currently: {Math.round(1 / (config.stonToTonRate || 0.0000001)).toLocaleString()} STON = 1 TON)
+              </p>
+            </div>
+            
             <div className="border-t border-gray-600 pt-4">
               <h4 className="text-sm font-medium text-gray-300 mb-3">Ad Rewards</h4>
               <div className="grid grid-cols-2 gap-4">
@@ -529,38 +546,7 @@ const AdminSettings = ({ adminData }) => {
               </div>
             </div>
             
-            <div className="border-t border-gray-600 pt-4">
-              <h4 className="text-sm font-medium text-gray-300 mb-3">Exchange Rates</h4>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium text-gray-300 mb-2 block">
-                    STON to TON Rate
-                  </label>
-                  <Input
-                    type="number"
-                    step="0.0000001"
-                    value={config.stonToTonRate || 0.0000001}
-                    onChange={(e) => updateConfigField('stonToTonRate', parseFloat(e.target.value))}
-                    className="bg-input border-border focus:border-blue-500 focus:bg-input/80 text-white"
-                    placeholder="0.0000001"
-                  />
-                </div>
-                
-                <div>
-                  <label className="text-sm font-medium text-gray-300 mb-2 block">
-                    USD to TON Rate
-                  </label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    value={config.usdToTonRate || 5.50}
-                    onChange={(e) => updateConfigField('usdToTonRate', parseFloat(e.target.value))}
-                    className="bg-input border-border focus:border-blue-500 focus:bg-input/80 text-white"
-                    placeholder="5.50"
-                  />
-                </div>
-              </div>
-            </div>
+
             
             <div className="grid grid-cols-2 gap-4">
               <div className="flex items-center justify-between">
