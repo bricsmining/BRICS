@@ -199,16 +199,22 @@ export const completeTaskForUser = async (userId, taskId) => {
 
     // Check for pending referral rewards after task completion
     try {
-      console.log(`[TASK] Checking referral rewards for user ${userId} after task completion`);
+      console.log(`[TASK] ===== REFERRAL REWARDS CHECK START =====`);
+      console.log(`[TASK] Checking referral rewards for user ${userId} after completing task ${taskId}`);
+      
+      const requestBody = {
+        action: 'check_referral_rewards',
+        userId: userId
+      };
+      console.log(`[TASK] Request body:`, requestBody);
       
       const response = await fetch('/api/telegram-bot', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'check_referral_rewards',
-          userId: userId
-        })
+        body: JSON.stringify(requestBody)
       });
+      
+      console.log(`[TASK] Response status: ${response.status} ${response.statusText}`);
       
       if (response.ok) {
         const result = await response.json();
@@ -217,11 +223,15 @@ export const completeTaskForUser = async (userId, taskId) => {
         if (result.success && result.rewardsDistributed) {
           console.log(`[TASK] ✅ Referral rewards distributed for user ${userId}:`, result);
         } else if (result.tasksCompleted !== undefined) {
-          console.log(`[TASK] User ${userId} has completed ${result.tasksCompleted}/${result.tasksRequired} tasks`);
+          console.log(`[TASK] User ${userId} progress: ${result.tasksCompleted}/${result.tasksRequired} tasks`);
+        } else {
+          console.log(`[TASK] No pending referral rewards for user ${userId}`);
         }
       } else {
-        console.error(`[TASK] Failed to check referral rewards for user ${userId}:`, response.status, response.statusText);
+        const errorText = await response.text();
+        console.error(`[TASK] Failed to check referral rewards for user ${userId}:`, response.status, response.statusText, errorText);
       }
+      console.log(`[TASK] ===== REFERRAL REWARDS CHECK END =====`);
     } catch (error) {
       console.error('[TASK] Error checking referral rewards:', error);
     }

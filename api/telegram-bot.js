@@ -28,17 +28,25 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  // Verify webhook secret for security (if configured)
-  const providedSecret = req.headers['x-telegram-bot-api-secret-token'];
-  if (WEBHOOK_SECRET) {
-    if (providedSecret !== WEBHOOK_SECRET) {
-      console.error('Invalid webhook secret. Expected:', WEBHOOK_SECRET, 'Got:', providedSecret);
-      return res.status(401).json({ error: 'Unauthorized' });
+  // Check if this is a direct API call (has action parameter) - skip secret validation
+  const update = req.body;
+  const isDirectApiCall = update.action;
+  
+  // Verify webhook secret for security (only for actual Telegram webhooks, not API calls)
+  if (!isDirectApiCall) {
+    const providedSecret = req.headers['x-telegram-bot-api-secret-token'];
+    if (WEBHOOK_SECRET) {
+      if (providedSecret !== WEBHOOK_SECRET) {
+        console.error('Invalid webhook secret. Expected:', WEBHOOK_SECRET, 'Got:', providedSecret);
+        return res.status(401).json({ error: 'Unauthorized' });
+      } else {
+        console.log('[WEBHOOK] Secret token verified successfully');
+      }
     } else {
-      console.log('[WEBHOOK] Secret token verified successfully');
+      console.warn('[WEBHOOK] No webhook secret configured - allowing request without secret validation');
     }
   } else {
-    console.warn('[WEBHOOK] No webhook secret configured - allowing request without secret validation');
+    console.log('[API] Direct API call detected - skipping webhook secret validation');
   }
 
   if (!BOT_TOKEN) {
@@ -47,7 +55,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const update = req.body;
+    // update is already declared above
     
     // Check if this is a direct notification call (not a webhook update)
     if (update.action) {
@@ -817,10 +825,16 @@ async function processPendingReferralRewards(userId) {
     }
     
     // Count completed tasks
-    const completedTasks = Object.keys(userData.tasks || {}).filter(taskId => userData.tasks[taskId] === true);
+    const userTasks = userData.tasks || {};
+    const completedTasks = Object.keys(userTasks).filter(taskId => userTasks[taskId] === true);
     const tasksCompleted = completedTasks.length;
     
-    console.log(`[BOT] User ${userId} has completed ${tasksCompleted}/${pendingReward.tasksRequired} tasks`);
+    console.log(`[BOT] ===== TASK COUNTING DEBUG =====`);
+    console.log(`[BOT] User ${userId} task data:`, userTasks);
+    console.log(`[BOT] All task keys:`, Object.keys(userTasks));
+    console.log(`[BOT] Completed task keys:`, completedTasks);
+    console.log(`[BOT] Tasks completed count: ${tasksCompleted}/${pendingReward.tasksRequired}`);
+    console.log(`[BOT] ===== END TASK DEBUG =====`);
     
     if (tasksCompleted >= pendingReward.tasksRequired) {
       console.log(`[BOT] User ${userId} has completed enough tasks! Distributing rewards...`);
