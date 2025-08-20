@@ -17,6 +17,8 @@ import { AdTimerProvider, useAdTimer } from '@/contexts/AdTimerContext';
 import { initializeAppData } from '@/data';
 import { Loader2 } from 'lucide-react';
 import { initializeAdNetworks, showRewardedAd } from '@/ads/adsController';
+import { useAdminConfig } from '@/hooks/useAdminConfig';
+import MaintenanceMode from '@/components/MaintenanceMode';
 
 export const UserContext = React.createContext(null);
 
@@ -117,6 +119,7 @@ function App() {
   const [currentUser, setCurrentUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { config: adminConfig, loading: configLoading } = useAdminConfig();
 
 
   // --- AD TIMER LOGIC ---
@@ -217,13 +220,18 @@ function App() {
 
 
 
-  if (isLoading) {
+  if (isLoading || configLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#0f0f0f] text-white">
         <Loader2 className="h-12 w-12 animate-spin text-sky-400" />
         <p className="text-sm text-muted-foreground ml-3">Loading your dashboard...</p>
       </div>
     );
+  }
+
+  // Check for maintenance mode (unless user is admin)
+  if (adminConfig?.maintenanceMode && !isAdmin && !isAdminRoute) {
+    return <MaintenanceMode config={adminConfig} />;
   }
 
   // Show Telegram warning if user is not in Telegram context, but NOT on /admin
@@ -261,7 +269,7 @@ function App() {
   }
 
   return (
-    <UserContext.Provider value={{ user: currentUser, setUser: setCurrentUser }}>
+    <UserContext.Provider value={{ user: currentUser, setUser: setCurrentUser, adminConfig }}>
       <div 
         className="min-h-screen flex flex-col bg-[#0f0f0f] text-white"
         style={{

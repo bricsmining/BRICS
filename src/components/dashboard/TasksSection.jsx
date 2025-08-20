@@ -1,6 +1,8 @@
 
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import React, { useState, useCallback, useMemo, useEffect, useContext } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { UserContext } from '@/App';
+import DisabledFeature from '@/components/DisabledFeature';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, CheckCircle, CalendarCheck, HelpCircle, Clock, Gamepad2, ArrowRight, Zap, Gift, Sparkles, Coins } from 'lucide-react';
@@ -296,6 +298,7 @@ const FlyingReward = ({ type, amount, onComplete }) => {
 
 const TasksSection = ({ tasks = [], user = {}, refreshUserData, isLoading }) => {
   const { toast } = useToast();
+  const { adminConfig } = useContext(UserContext);
   const navigate = useNavigate();
   const location = useLocation();
   const [clickedTasks, setClickedTasks] = useState({});
@@ -845,6 +848,11 @@ const TasksSection = ({ tasks = [], user = {}, refreshUserData, isLoading }) => 
       setVerifying(v => ({ ...v, [task.id]: false }));
     }
   }, [user, refreshUserData, sendAdminNotification, toast, triggerFlyingReward]);
+
+  // Check if tasks are disabled by admin
+  if (adminConfig?.tasksEnabled === false) {
+    return <DisabledFeature featureName="Tasks" icon={CheckCircle} message="Tasks have been temporarily disabled by the administrator." />;
+  }
 
   return (
     <div

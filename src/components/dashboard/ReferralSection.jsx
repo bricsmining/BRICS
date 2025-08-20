@@ -6,8 +6,10 @@
 // - Enhanced reliability script is automatically injected with fallback servers
 // - Dedicated GigaPub network handler with proper error handling and debugging
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useContext } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { UserContext } from '@/App';
+import DisabledFeature from '@/components/DisabledFeature';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -883,6 +885,7 @@ const SpinModal = ({
 // Main ReferralSection Component - UPDATED
 const ReferralSection = ({ user, refreshUserData }) => {
 	const { toast } = useToast();
+	const { adminConfig } = useContext(UserContext);
 	const { pauseAdTimer, resumeAdTimer } = useAdTimer();
 	const [referredUsers, setReferredUsers] = useState([]);
 	const [referrerInfo, setReferrerInfo] = useState(null);
@@ -1053,6 +1056,11 @@ const ReferralSection = ({ user, refreshUserData }) => {
 		fetchReferredUsers();
 		fetchReferrerInfo();
 	}, [currentUser.referredUsers, currentUser.pendingReferrals, currentUser.invitedBy]);
+
+	// Check if referrals are disabled by admin
+	if (adminConfig?.referralEnabled === false) {
+		return <DisabledFeature featureName="Referrals" icon={Users} message="Referral system has been temporarily disabled by the administrator." />;
+	}
 
 	return (
 		<div

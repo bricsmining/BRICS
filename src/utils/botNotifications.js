@@ -100,67 +100,67 @@ function generateAdminMessage(type, data) {
   
   switch (type) {
     case 'new_user':
-      return `🎉 *New User Joined!*
+      return `🎉 <b>New User Joined!</b>
 
-👤 *User Info:*
-• ID: \`${data.userId}\`
+👤 <b>User Info:</b>
+• ID: <code>${data.userId}</code>
 • Name: ${data.name || 'Unknown'}
 • Username: @${data.username || 'None'}
 ${data.referrerId ? `• Referred by: \`${data.referrerId}\`` : ''}
 
-🕐 *Time:* ${timestamp}`;
+🕐 <b>Time:</b> ${timestamp}`;
 
     case 'task_completion':
-      return `✅ *Task Completed!*
+      return `✅ <b>Task Completed!</b>
 
-👤 *User:* \`${data.userId}\` (${data.userName || 'Unknown'})
-📝 *Task:* ${data.taskTitle || 'Unknown Task'}
-💰 *Reward:* ${data.reward || 0} STON
-📊 *Type:* ${data.taskType || 'Manual'}
+👤 <b>User:</b> <code>${data.userId}</code> (${data.userName || 'Unknown'})
+📝 <b>Task:</b> ${data.taskTitle || 'Unknown Task'}
+💰 <b>Reward:</b> ${data.reward || 0} STON
+📊 <b>Type:</b> ${data.taskType || 'Manual'}
 
-🕐 *Time:* ${timestamp}`;
+🕐 <b>Time:</b> ${timestamp}`;
 
     case 'energy_earning':
-      return `⚡ *Energy Earnings!*
+      return `⚡ <b>Energy Earnings!</b>
 
-👤 *User:* \`${data.userId}\` (${data.userName || 'Unknown'})
-⚡ *Energy Earned:* ${data.energy || 0}
-📺 *Source:* Ad Reward
-💰 *STON Equivalent:* ${data.stonEquivalent || 0}
+👤 <b>User:</b> <code>${data.userId}</code> (${data.userName || 'Unknown'})
+⚡ <b>Energy Earned:</b> ${data.energy || 0}
+📺 <b>Source:</b> Ad Reward
+💰 <b>STON Equivalent:</b> ${data.stonEquivalent || 0}
 
-🕐 *Time:* ${timestamp}`;
+🕐 <b>Time:</b> ${timestamp}`;
 
     case 'box_opening':
-      return `📦 *Box Opened!*
+      return `📦 <b>Box Opened!</b>
 
-👤 *User:* \`${data.userId}\` (${data.userName || 'Unknown'})
-📦 *Box Type:* ${data.boxType || 'Unknown'}
-🎁 *Reward:* ${data.reward || 0} STON
-📺 *Source:* ${data.source || 'Ad Reward'}
+👤 <b>User:</b> <code>${data.userId}</code> (${data.userName || 'Unknown'})
+📦 <b>Box Type:</b> ${data.boxType || 'Unknown'}
+🎁 <b>Reward:</b> ${data.reward || 0} STON
+📺 <b>Source:</b> ${data.source || 'Ad Reward'}
 
-🕐 *Time:* ${timestamp}`;
+🕐 <b>Time:</b> ${timestamp}`;
 
     case 'game_reward':
-      return `🎮 *Game Reward!*
+      return `🎮 <b>Game Reward!</b>
 
-👤 *User:* \`${data.userId}\` (${data.userName || 'Unknown'})
-🎯 *Game:* ${data.gameType || 'Unknown'}
-🎁 *Reward:* ${data.reward || 0} STON
-${data.multiplier ? `✨ *Multiplier:* ${data.multiplier}x` : ''}
+👤 <b>User:</b> <code>${data.userId}</code> (${data.userName || 'Unknown'})
+🎯 <b>Game:</b> ${data.gameType || 'Unknown'}
+🎁 <b>Reward:</b> ${data.reward || 0} STON
+${data.multiplier ? `✨ <b>Multiplier:</b> ${data.multiplier}x` : ''}
 
-🕐 *Time:* ${timestamp}`;
+🕐 <b>Time:</b> ${timestamp}`;
 
     case 'withdrawal_request':
-      return `💸 *Withdrawal Request!*
+      return `💸 <b>Withdrawal Request!</b>
 
-👤 *User:* \`${data.userId}\` (${data.userName || 'Unknown'})
-💰 *Amount:* ${data.amount || 0} STON
-💳 *Method:* ${data.method || 'Unknown'}
-📍 *Address:* \`${data.address || 'Not provided'}\`
+👤 <b>User:</b> <code>${data.userId}</code> (${data.userName || 'Unknown'})
+💰 <b>Amount:</b> ${data.amount || 0} STON
+💳 <b>Method:</b> ${data.method || 'Unknown'}
+📍 <b>Address:</b> \`${data.address || 'Not provided'}\`
 
-*Action Required: Process withdrawal*
+<b>Action Required: Process withdrawal</b>
 
-🕐 *Time:* ${timestamp}`;
+🕐 <b>Time:</b> ${timestamp}`;
 
     default:
       return null;

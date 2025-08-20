@@ -1,6 +1,8 @@
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback, useMemo, useContext } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import { UserContext } from '@/App';
+import DisabledFeature from '@/components/DisabledFeature';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -1176,6 +1178,7 @@ const WithdrawDialog = ({ isOpen, onClose, user, onWithdraw, stonToTon, adminCon
 };
 
 const ProfileSection = ({ user, refreshUserData }) => {
+  const { adminConfig: globalAdminConfig } = useContext(UserContext);
   const [showWalletDialog, setShowWalletDialog] = useState(false);
   const [showWithdrawDialog, setShowWithdrawDialog] = useState(false);
   const [showHistoryDialog, setShowHistoryDialog] = useState(false);
@@ -2572,8 +2575,9 @@ const ProfileSection = ({ user, refreshUserData }) => {
               whileTap={{ scale: 0.98 }}
           >
             <Button
-                className="w-full h-10 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold rounded-2xl border-0 shadow-lg hover:shadow-xl transition-all duration-300 relative overflow-hidden group"
+                className="w-full h-10 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold rounded-2xl border-0 shadow-lg hover:shadow-xl transition-all duration-300 relative overflow-hidden group disabled:opacity-50 disabled:cursor-not-allowed"
               onClick={() => setShowWithdrawDialog(true)}
+              disabled={globalAdminConfig?.withdrawalEnabled === false}
             >
                 <motion.div
                   className="absolute inset-0 bg-gradient-to-r from-green-400/20 to-emerald-400/20"

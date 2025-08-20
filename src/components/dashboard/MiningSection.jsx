@@ -1,6 +1,8 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useContext } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSearchParams } from 'react-router-dom';
+import { UserContext } from '@/App';
+import DisabledFeature from '@/components/DisabledFeature';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -131,6 +133,7 @@ const calculateCountdown = (expirationDate) => {
 
 const MiningSection = ({ user, refreshUserData }) => {
   const { toast } = useToast();
+  const { adminConfig: globalAdminConfig } = useContext(UserContext);
   const [searchParams, setSearchParams] = useSearchParams();
   const [currentUser, setCurrentUser] = useState(user);
   const [miningProgress, setMiningProgress] = useState(0);
@@ -975,6 +978,11 @@ const MiningSection = ({ user, refreshUserData }) => {
 
 
   const hasStartedMining = currentUser?.miningData?.miningStartTime !== null && currentUser?.miningData?.miningStartTime !== undefined;
+
+  // Check if mining is disabled by admin
+  if (globalAdminConfig?.miningEnabled === false) {
+    return <DisabledFeature featureName="Mining" icon={Database} message="Mining has been temporarily disabled by the administrator." />;
+  }
 
   return (
     <div
