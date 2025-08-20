@@ -714,7 +714,7 @@ const SpinModal = ({
 				initial={{ scale: 0.8, opacity: 0 }}
 				animate={{ scale: 1, opacity: 1 }}
 				exit={{ scale: 0.8, opacity: 0 }}
-				className='bg-gradient-to-br from-gray-900 to-gray-800 border border-gray-600/50 text-white w-full max-w-sm p-3 rounded-3xl shadow-2xl'
+				className='bg-gradient-to-br from-gray-900 to-gray-800 border border-gray-600/50 text-white w-full max-w-sm p-2 rounded-3xl shadow-2xl relative'
 				style={{ 
 					margin: '1rem',
 					maxHeight: 'calc(100vh - 2rem)',
@@ -723,11 +723,11 @@ const SpinModal = ({
 			>
 				{/* Close Button */}
 				<button
-					className='absolute top-4 right-4 text-gray-400 hover:text-white transition-colors z-10'
+					className='absolute top-3 right-3 text-gray-400 hover:text-white transition-colors z-10'
 					onClick={handleClose}
 					disabled={isSpinning || isLoadingAd}
 				>
-					<X className='w-6 h-6' />
+					<X className='w-5 h-5' />
 				</button>
 
 				{/* Header */}
@@ -805,6 +805,13 @@ const SpinModal = ({
 						exit={{ opacity: 0, scale: 0.8, y: -20 }}
 						transition={{ duration: 0.5, ease: 'easeOut' }}
 						className='text-center mb-6'
+						style={{
+							touchAction: 'none',
+							userSelect: 'none',
+							WebkitUserSelect: 'none',
+							WebkitTouchCallout: 'none',
+							pointerEvents: 'none'
+						}}
 					>
 						<div className='bg-gradient-to-r from-blue-600/30 to-indigo-600/30 border-2 border-blue-500/60 rounded-2xl p-3 shadow-xl'>
 							<div className='flex items-center justify-center gap-2 mb-2'>
