@@ -805,13 +805,6 @@ const SpinModal = ({
 						exit={{ opacity: 0, scale: 0.8, y: -20 }}
 						transition={{ duration: 0.5, ease: 'easeOut' }}
 						className='text-center mb-6'
-						style={{
-							touchAction: 'none',
-							userSelect: 'none',
-							WebkitUserSelect: 'none',
-							WebkitTouchCallout: 'none',
-							pointerEvents: 'none'
-						}}
 					>
 						<div className='bg-gradient-to-r from-blue-600/30 to-indigo-600/30 border-2 border-blue-500/60 rounded-2xl p-3 shadow-xl'>
 							<div className='flex items-center justify-center gap-2 mb-2'>

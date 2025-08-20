@@ -262,7 +262,15 @@ function App() {
 
   return (
     <UserContext.Provider value={{ user: currentUser, setUser: setCurrentUser }}>
-      <div className="min-h-screen flex flex-col bg-[#0f0f0f] text-white">
+      <div 
+        className="min-h-screen flex flex-col bg-[#0f0f0f] text-white"
+        style={{
+          touchAction: 'manipulation',
+          userSelect: 'none',
+          WebkitUserSelect: 'none',
+          WebkitTouchCallout: 'none'
+        }}
+      >
         <main className="flex-grow overflow-x-hidden">
           <AppContent
             isAdmin={isAdmin}
