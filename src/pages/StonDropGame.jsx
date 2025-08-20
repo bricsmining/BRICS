@@ -62,6 +62,8 @@ export default function StonDropGame() {
   const [showCombo, setShowCombo] = useState(false);
   const [catchEffects, setCatchEffects] = useState([]);
   const [doubledAmount, setDoubledAmount] = useState(0);
+  const [showGameOverAnimation, setShowGameOverAnimation] = useState(false);
+  const [gameOverAnimationComplete, setGameOverAnimationComplete] = useState(false);
   
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -113,7 +115,14 @@ export default function StonDropGame() {
         if (currentTime <= 0) {
           clearInterval(gameTimer.current);
           clearInterval(dropInterval.current);
-          setIsGameOver(true);
+          // Trigger game over animation sequence
+          setShowGameOverAnimation(true);
+          // After 2 seconds, show the actual game over popup
+          setTimeout(() => {
+            setShowGameOverAnimation(false);
+            setGameOverAnimationComplete(true);
+            setIsGameOver(true);
+          }, 2000);
           return 0;
         }
         return currentTime;
@@ -369,7 +378,7 @@ export default function StonDropGame() {
   }, [catchEffects]);
 
   const handleDropClick = useCallback((drop, event) => {
-    if (isPaused) return;
+    if (isPaused || showGameOverAnimation || isGameOver) return;
     
     setDroppables(prev => prev.filter(d => d.id !== drop.id));
     
@@ -445,7 +454,7 @@ export default function StonDropGame() {
         }]);
       }
     }
-  }, [isPaused, score, combo]);
+  }, [isPaused, score, combo, showGameOverAnimation, isGameOver]);
 
   useEffect(() => {
     if (!isGameOver || !userId) return;
@@ -498,6 +507,8 @@ export default function StonDropGame() {
     setShowCombo(false);
     setCatchEffects([]);
     setDoubledAmount(0);
+    setShowGameOverAnimation(false);
+    setGameOverAnimationComplete(false);
     
     // Deduct energy for new game
     if (userId && userData) {
@@ -867,6 +878,85 @@ export default function StonDropGame() {
           exit={{ opacity: 0 }}
           className="absolute inset-0 bg-red-600 z-30 pointer-events-none"
         />
+      )}
+
+      {/* Game Over Animation */}
+      {showGameOverAnimation && (
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="absolute inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center pointer-events-none"
+        >
+          <motion.div
+            initial={{ scale: 0, rotate: -180 }}
+            animate={{ 
+              scale: [0, 1.2, 1],
+              rotate: [0, 360, 0]
+            }}
+            transition={{ 
+              duration: 1.5,
+              times: [0, 0.6, 1],
+              ease: "easeOut"
+            }}
+            className="text-center"
+          >
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.5, duration: 0.5 }}
+              className="text-6xl md:text-8xl font-extrabold mb-4"
+            >
+              <span className="bg-gradient-to-r from-red-500 via-yellow-500 to-red-500 bg-clip-text text-transparent">
+                GAME OVER!
+              </span>
+            </motion.div>
+            
+            <motion.div
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 1, duration: 0.5 }}
+              className="text-2xl md:text-3xl text-white font-bold"
+            >
+              🎯 Final Score: {formatNumber(score)} STON
+            </motion.div>
+            
+            {/* Animated particles */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.8, duration: 0.7 }}
+              className="absolute inset-0 pointer-events-none"
+            >
+              {[...Array(12)].map((_, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ 
+                    scale: 0,
+                    x: 0,
+                    y: 0,
+                    rotate: 0
+                  }}
+                  animate={{
+                    scale: [0, 1, 0],
+                    x: Math.cos(i * 30 * Math.PI / 180) * 100,
+                    y: Math.sin(i * 30 * Math.PI / 180) * 100,
+                    rotate: 360
+                  }}
+                  transition={{
+                    delay: 0.8 + i * 0.05,
+                    duration: 1.2,
+                    ease: "easeOut"
+                  }}
+                  className={`absolute top-1/2 left-1/2 w-4 h-4 rounded-full ${
+                    i % 3 === 0 ? 'bg-yellow-400' : 
+                    i % 3 === 1 ? 'bg-red-400' : 'bg-blue-400'
+                  }`}
+                />
+              ))}
+            </motion.div>
+          </motion.div>
+        </motion.div>
       )}
 
       {/* Game over screen */}
