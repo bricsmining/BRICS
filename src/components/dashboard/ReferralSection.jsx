@@ -23,6 +23,8 @@ import {
 	RotateCcw,
 	Sparkles,
 	Star,
+	CheckCircle,
+	Clock,
 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { generateReferralLink, updateUserBalance, updateUserBalanceByType } from '@/data';
@@ -1241,11 +1243,13 @@ const ReferralSection = ({ user, refreshUserData }) => {
 												<div className='flex items-center gap-2'>
 													{u.status === 'completed' ? (
 														<>
-															<span className='text-xs font-medium text-green-400'>✅ Completed</span>
+															<CheckCircle className='h-4 w-4 text-green-400' />
+															<span className='text-xs font-medium text-green-400'>Completed</span>
 														</>
 													) : (
 														<>
-															<span className='text-xs font-medium text-orange-400'>⏳ Pending</span>
+															<Clock className='h-4 w-4 text-orange-400' />
+															<span className='text-xs font-medium text-orange-400'>Pending</span>
 														</>
 													)}
 												</div>

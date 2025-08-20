@@ -229,21 +229,19 @@ async function handleStartWithReferral(chatId, userId, referrerId, userInfo) {
       const channelLink = adminConfig?.telegramChannelLink || '@xSkyTON';
       const channelUsername = channelLink.replace('@', '');
       
-      await sendMessage(chatId, `
-🎉 *Welcome to SkyTON!*
+      await sendMessage(chatId, `🎉 <b>Welcome to SkyTON!</b>
 
 You've been invited by a friend! 
 
-🎁 *Pending Referral Rewards:*
+🎁 <b>Pending Referral Rewards:</b>
 ⏳ ${referralResult.welcomeBonus} STON bonus for you (after completing 3 tasks)
 ⏳ ${referralResult.referrerReward} STON reward for your referrer (after you complete 3 tasks)
 ⏳ Free spin reward for referrer (after you complete 3 tasks)
 
-✅ *Complete 3 tasks to unlock all rewards!*
+✅ <b>Complete 3 tasks to unlock all rewards!</b>
 
-Start mining and completing tasks now! 🚀
-      `, {
-        parse_mode: 'Markdown',
+Start mining and completing tasks now! 🚀`, {
+        parse_mode: 'HTML',
         reply_markup: {
           inline_keyboard: [
             [{ text: "🚀 Open SkyTON Mining App", web_app: { url: webAppUrl } }],
@@ -257,22 +255,22 @@ Start mining and completing tasks now! 🚀
       });
       
       // Notify referrer about PENDING referral (not immediate reward)
-      await sendMessage(referrerId, `👥 *New Referral Joined!*
+      await sendMessage(referrerId, `👥 <b>New Referral Joined!</b>
 
 Someone joined SkyTON through your referral link!
 
-👤 *New Member:* ${userInfo.first_name || 'Friend'}
-⏳ *Status:* Pending (needs to complete 3 tasks)
+👤 <b>New Member:</b> ${userInfo.first_name || 'Friend'}
+⏳ <b>Status:</b> Pending (needs to complete 3 tasks)
 
-🎁 *Rewards when they complete 3 tasks:*
+🎁 <b>Rewards when they complete 3 tasks:</b>
 • ${referralResult.referrerReward} STON for you
 • 1 Free Spin for you  
 • ${referralResult.welcomeBonus} STON welcome bonus for them
 
 Keep sharing to get more referrals! 🚀
 
-*Share your link:* https://t.me/${getBotUsername()}?start=refID${referrerId}`, {
-        parse_mode: 'Markdown'
+<b>Share your link:</b> https://t.me/${getBotUsername()}?start=refID${referrerId}`, {
+        parse_mode: 'HTML'
       });
       
     } else {
@@ -923,6 +921,26 @@ Keep sharing your referral link to earn more rewards! 🚀`, {
         'pendingReferralReward.tasksCompleted': tasksCompleted
       });
       
+      // Also update the referrer's pending referrals list with task count
+      const referrerRef = doc(db, 'users', pendingReward.referrerId);
+      const referrerSnap = await getDoc(referrerRef);
+      
+      if (referrerSnap.exists()) {
+        const referrerData = referrerSnap.data();
+        const pendingReferrals = referrerData.pendingReferrals || [];
+        const updatedPendingReferrals = pendingReferrals.map(pending => 
+          pending.userId === userId.toString() 
+            ? { ...pending, tasksCompleted: tasksCompleted }
+            : pending
+        );
+        
+        await updateDoc(referrerRef, {
+          pendingReferrals: updatedPendingReferrals
+        });
+        
+        console.log(`[BOT] Updated task count for user ${userId} in referrer ${pendingReward.referrerId}'s pending list: ${tasksCompleted}/${pendingReward.tasksRequired}`);
+      }
+      
       console.log(`[BOT] User ${userId} needs ${pendingReward.tasksRequired - tasksCompleted} more tasks for referral rewards`);
       return {
         success: false,
@@ -1331,14 +1349,14 @@ function generateAdminMessage(type, data) {
 🕐 *Time:* ${timestamp}`;
 
     case 'task_completion':
-      return `✅ *Task Completed!*
+      return `✅ <b>Task Completed!</b>
 
-👤 *User Details:*
-• ID: \`${data.userId}\`
+👤 <b>User Details:</b>
+• ID: <code>${data.userId}</code>
 • Name: ${data.userName || 'Unknown'}
 • Username: @${data.username || 'None'}
 
-📝 *Task Details:*
+📝 <b>Task Details:</b>
 • Title: ${data.taskTitle || 'Unknown Task'}
 • Type: ${data.taskType || 'Auto Task'}
 • Reward: ${data.reward || 0} STON
@@ -1346,7 +1364,7 @@ function generateAdminMessage(type, data) {
 
 🎉 User has successfully completed a task and earned rewards!
 
-🕐 *Time:* ${timestamp}`;
+🕐 <b>Time:</b> ${timestamp}`;
 
     case 'payout_created':
       return `💸 *Payout Created*
