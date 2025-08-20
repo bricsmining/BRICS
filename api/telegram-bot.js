@@ -829,12 +829,7 @@ async function processPendingReferralRewards(userId) {
     const completedTasks = Object.keys(userTasks).filter(taskId => userTasks[taskId] === true);
     const tasksCompleted = completedTasks.length;
     
-    console.log(`[BOT] ===== TASK COUNTING DEBUG =====`);
-    console.log(`[BOT] User ${userId} task data:`, userTasks);
-    console.log(`[BOT] All task keys:`, Object.keys(userTasks));
-    console.log(`[BOT] Completed task keys:`, completedTasks);
-    console.log(`[BOT] Tasks completed count: ${tasksCompleted}/${pendingReward.tasksRequired}`);
-    console.log(`[BOT] ===== END TASK DEBUG =====`);
+    console.log(`[BOT] User ${userId} has completed ${tasksCompleted}/${pendingReward.tasksRequired} tasks`);
     
     if (tasksCompleted >= pendingReward.tasksRequired) {
       console.log(`[BOT] User ${userId} has completed enough tasks! Distributing rewards...`);

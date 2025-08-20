@@ -199,22 +199,16 @@ export const completeTaskForUser = async (userId, taskId) => {
 
     // Check for pending referral rewards after task completion
     try {
-      console.log(`[TASK] ===== REFERRAL REWARDS CHECK START =====`);
       console.log(`[TASK] Checking referral rewards for user ${userId} after completing task ${taskId}`);
-      
-      const requestBody = {
-        action: 'check_referral_rewards',
-        userId: userId
-      };
-      console.log(`[TASK] Request body:`, requestBody);
       
       const response = await fetch('/api/telegram-bot', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(requestBody)
+        body: JSON.stringify({
+          action: 'check_referral_rewards',
+          userId: userId
+        })
       });
-      
-      console.log(`[TASK] Response status: ${response.status} ${response.statusText}`);
       
       if (response.ok) {
         const result = await response.json();
@@ -224,14 +218,10 @@ export const completeTaskForUser = async (userId, taskId) => {
           console.log(`[TASK] ✅ Referral rewards distributed for user ${userId}:`, result);
         } else if (result.tasksCompleted !== undefined) {
           console.log(`[TASK] User ${userId} progress: ${result.tasksCompleted}/${result.tasksRequired} tasks`);
-        } else {
-          console.log(`[TASK] No pending referral rewards for user ${userId}`);
         }
       } else {
-        const errorText = await response.text();
-        console.error(`[TASK] Failed to check referral rewards for user ${userId}:`, response.status, response.statusText, errorText);
+        console.error(`[TASK] Failed to check referral rewards for user ${userId}:`, response.status, response.statusText);
       }
-      console.log(`[TASK] ===== REFERRAL REWARDS CHECK END =====`);
     } catch (error) {
       console.error('[TASK] Error checking referral rewards:', error);
     }
@@ -322,6 +312,28 @@ export const performCheckInForUser = async (userId) => {
         lastCheckIn: serverTimestamp(),
         [`tasks.${checkInTaskId}`]: true
       });
+
+      // Check for pending referral rewards after check-in
+      try {
+        console.log(`[CHECKIN] Checking referral rewards for user ${userId} after daily check-in`);
+        
+        const response = await fetch('/api/telegram-bot', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'check_referral_rewards',
+            userId: userId
+          })
+        });
+        
+        if (response.ok) {
+          const result = await response.json();
+          console.log(`[CHECKIN] Referral rewards check result:`, result);
+        }
+      } catch (error) {
+        console.error('[CHECKIN] Error checking referral rewards:', error);
+      }
+
       return { success: true, reward };
     } else {
       return { success: false, message: 'Already checked in today.' };

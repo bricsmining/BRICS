@@ -71,7 +71,9 @@ export const getServerAdminConfig = async () => {
         withdrawalEnabled: true,
         miningEnabled: true,
         tasksEnabled: true,
-        referralEnabled: true
+        referralEnabled: true,
+        referralReward: 100,
+        welcomeBonus: 50
       };
     }
   } catch (error) {
@@ -90,7 +92,9 @@ export const getServerAdminConfig = async () => {
       withdrawalEnabled: true,
       miningEnabled: true,
       tasksEnabled: true,
-      referralEnabled: true
+      referralEnabled: true,
+      referralReward: 100,
+      welcomeBonus: 50
     };
   }
 };
