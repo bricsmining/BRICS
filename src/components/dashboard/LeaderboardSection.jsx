@@ -6,6 +6,31 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
+// Number formatting function for leaderboard
+const formatLeaderboardNumber = (num) => {
+  if (!num || num === 0) return '0';
+  
+  // Show full numbers up to 9,999
+  if (num < 10000) {
+    return num.toLocaleString();
+  }
+  
+  // Use shortened format for 10K and above
+  if (num >= 1000000000) {
+    return (num / 1000000000).toFixed(1).replace(/\.0$/, '') + 'B';
+  }
+  
+  if (num >= 1000000) {
+    return (num / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
+  }
+  
+  if (num >= 10000) {
+    return (num / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
+  }
+  
+  return num.toLocaleString();
+};
+
 const LeaderboardSection = ({ currentUserTelegramId }) => {
   const [leaderboard, setLeaderboard] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -283,7 +308,7 @@ const LeaderboardSection = ({ currentUserTelegramId }) => {
                           </div>
                           <div className="text-center">
                             <p className="text-sm font-semibold text-yellow-400">
-                              {(user.balance || 0).toLocaleString()}
+                              {formatLeaderboardNumber(user.balance || 0)}
                             </p>
                             <p className="text-xs text-gray-400">STON</p>
                           </div>
