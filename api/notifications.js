@@ -102,8 +102,12 @@ async function handleAdminNotification(req, res) {
       });
     }
 
+    // Determine notification routing
+    const routing = getNotificationTarget(type, adminConfig);
+    console.log(`[NOTIFICATIONS] Routing for type '${type}':`, routing);
+    
     // Generate notification message based on type
-    const messageData = generateAdminMessage(type, data);
+    const messageData = generateNotificationMessage(type, data);
     
     if (!messageData) {
       console.error('[NOTIFICATIONS] Invalid notification type:', type);
@@ -113,14 +117,14 @@ async function handleAdminNotification(req, res) {
     console.log(`[NOTIFICATIONS] Sending notification - Type: ${type}`);
     
     // Handle both old string format and new object format with keyboards
-    let messageText, options = {};
+    let messageText, options = { parse_mode: 'HTML' }; // Always use HTML parse mode
     if (typeof messageData === 'string') {
       messageText = messageData;
       console.log(`[NOTIFICATIONS] Message preview: ${messageText.substring(0, 100)}...`);
       console.log(`[NOTIFICATIONS] Message length: ${messageText.length} characters`);
     } else {
       messageText = messageData.text;
-      options = messageData.keyboard ? { reply_markup: { inline_keyboard: messageData.keyboard } } : {};
+      options.reply_markup = messageData.keyboard ? { inline_keyboard: messageData.keyboard } : undefined;
       console.log(`[NOTIFICATIONS] Message preview: ${messageText.substring(0, 100)}...`);
       console.log(`[NOTIFICATIONS] Message length: ${messageText.length} characters`);
       console.log(`[NOTIFICATIONS] Keyboard buttons: ${messageData.keyboard ? messageData.keyboard.length : 0} rows`);
@@ -138,20 +142,50 @@ async function handleAdminNotification(req, res) {
       }
     }
 
-    // Send notification to admin
-    console.log(`[NOTIFICATIONS] About to send message to admin: ${adminChatId}`);
-    const success = await sendTelegramMessage(adminChatId, messageText, options);
+    // Send notifications based on routing
+    let channelSuccess = false;
+    let adminSuccess = false;
     
-    if (success) {
-      console.log('[NOTIFICATIONS] Admin notification sent successfully');
-      return res.status(200).json({ success: true, message: 'Admin notification sent successfully.' });
+    // Send to channel if configured
+    if (routing.target !== 'admin') {
+      console.log(`[NOTIFICATIONS] Sending to channel: ${routing.target}`);
+      channelSuccess = await sendTelegramMessage(routing.target, messageText, options);
+      console.log(`[NOTIFICATIONS] Channel notification result: ${channelSuccess}`);
+    }
+    
+    // Send to admin if required
+    if (routing.sendToAdmin) {
+      console.log(`[NOTIFICATIONS] Sending to admin: ${adminChatId}`);
+      adminSuccess = await sendTelegramMessage(adminChatId, messageText, options);
+      console.log(`[NOTIFICATIONS] Admin notification result: ${adminSuccess}`);
+    }
+    
+    // Determine overall success
+    const overallSuccess = routing.target === 'admin' ? adminSuccess : 
+                          (routing.sendToAdmin ? (channelSuccess && adminSuccess) : channelSuccess);
+    
+    if (overallSuccess) {
+      console.log('[NOTIFICATIONS] Notification(s) sent successfully');
+      return res.status(200).json({ 
+        success: true, 
+        message: 'Notification sent successfully.',
+        details: {
+          sentToChannel: routing.target !== 'admin' ? routing.target : null,
+          sentToAdmin: routing.sendToAdmin,
+          channelSuccess: routing.target !== 'admin' ? channelSuccess : null,
+          adminSuccess: routing.sendToAdmin ? adminSuccess : null
+        }
+      });
     } else {
-      console.error('[NOTIFICATIONS] Failed to send admin notification via Telegram API');
+      console.error('[NOTIFICATIONS] Failed to send notification');
       return res.status(500).json({ 
         success: false, 
-        message: 'Failed to send admin notification. Check Telegram API logs for details.',
+        message: 'Failed to send notification. Check Telegram API logs for details.',
         details: {
-          chatId: adminChatId,
+          target: routing.target,
+          sendToAdmin: routing.sendToAdmin,
+          channelSuccess: routing.target !== 'admin' ? channelSuccess : null,
+          adminSuccess: routing.sendToAdmin ? adminSuccess : null,
           messageLength: messageText.length,
           hasKeyboard: !!options.reply_markup
         }
@@ -212,8 +246,42 @@ async function handleUserNotification(req, res) {
   }
 }
 
-// Generate admin notification messages
-function generateAdminMessage(type, data) {
+// Determine notification routing
+function getNotificationTarget(type, adminConfig) {
+  // Define notification categories
+  const generalNotifications = [
+    'new_user', 'referral', 'referral_pending', 'referral_completed', 
+    'energy_earned', 'mystery_box_earned', 'mystery_box_opened', 
+    'task_completion', 'task_submission'
+  ];
+  
+  const withdrawalNotifications = [
+    'withdrawal_request', 'withdrawal_approved', 'withdrawal_rejected'
+  ];
+  
+  const paymentNotifications = [
+    'card_purchase', 'payment_confirmed', 'payment_failed'
+  ];
+  
+  // Route to appropriate channel or admin
+  if (generalNotifications.includes(type) && adminConfig?.generalNotificationChannel) {
+    return { target: adminConfig.generalNotificationChannel, sendToAdmin: false };
+  } else if (withdrawalNotifications.includes(type)) {
+    if (adminConfig?.withdrawalNotificationChannel) {
+      return { target: adminConfig.withdrawalNotificationChannel, sendToAdmin: true }; // Also send to admin for important notifications
+    }
+  } else if (paymentNotifications.includes(type)) {
+    if (adminConfig?.paymentNotificationChannel) {
+      return { target: adminConfig.paymentNotificationChannel, sendToAdmin: true }; // Also send to admin for important notifications
+    }
+  }
+  
+  // Default to admin if no channel configured
+  return { target: 'admin', sendToAdmin: true };
+}
+
+// Generate notification messages (using HTML parse mode consistently)
+function generateNotificationMessage(type, data) {
   const timestamp = new Date().toLocaleString();
   
   switch (type) {
@@ -225,6 +293,7 @@ function generateAdminMessage(type, data) {
 • Name: ${data.name || 'Unknown'}
 • Username: @${data.username || 'None'}
 ${data.referrerId ? `• Referred by: <code>${data.referrerId}</code>` : ''}
+${data.totalUsers ? `• Total Users: <b>${data.totalUsers.toLocaleString()}</b>` : ''}
 
 🕐 <b>Time:</b> ${timestamp}`;
 
@@ -235,6 +304,62 @@ ${data.referrerId ? `• Referred by: <code>${data.referrerId}</code>` : ''}
 • Referrer: <code>${data.referrerId}</code> (${data.referrerName || 'Unknown'})
 • New User: <code>${data.newUserId}</code> (${data.newUserName || 'Unknown'})
 • Reward: ${data.reward || 0} STON + 1 Free Spin
+
+🕐 <b>Time:</b> ${timestamp}`;
+
+    case 'referral_pending':
+      return `⏳ <b>Referral Pending!</b>
+
+👥 <b>Referral Info:</b>
+• Referrer: <code>${data.referrerId}</code> (${data.referrerName || 'Unknown'})
+• New User: <code>${data.newUserId}</code> (${data.newUserName || 'Unknown'})
+• Status: <b>Pending</b> (${data.tasksCompleted || 0}/${data.tasksRequired || 3} tasks completed)
+• Potential Reward: ${data.userReward || 0} + ${data.referrerReward || 0} STON
+
+🕐 <b>Time:</b> ${timestamp}`;
+
+    case 'referral_completed':
+      return `✅ <b>Referral Completed!</b>
+
+👥 <b>Referral Info:</b>
+• Referrer: <code>${data.referrerId}</code> (${data.referrerName || 'Unknown'})
+• User: <code>${data.userId}</code> (${data.userName || 'Unknown'})
+• Tasks Completed: <b>${data.tasksCompleted}/${data.tasksRequired}</b>
+• Rewards Distributed: ${data.userReward || 0} + ${data.referrerReward || 0} STON
+
+🕐 <b>Time:</b> ${timestamp}`;
+
+    case 'energy_earned':
+      return `⚡ <b>Energy Earned!</b>
+
+👤 <b>User:</b> <code>${data.userId}</code> (${data.userName || 'Unknown'})
+• Energy Gained: <b>+${data.energyGained || 0}</b>
+• New Energy: <b>${data.newEnergy || 0}</b>
+• Source: ${data.source || 'Ad Reward'}
+• Daily Usage: ${data.dailyUsed || 0}/${data.dailyLimit || 10}
+• Hourly Usage: ${data.hourlyUsed || 0}/${data.hourlyLimit || 3}
+
+🕐 <b>Time:</b> ${timestamp}`;
+
+    case 'mystery_box_earned':
+      return `🎁 <b>Mystery Box Earned!</b>
+
+👤 <b>User:</b> <code>${data.userId}</code> (${data.userName || 'Unknown'})
+• Boxes Gained: <b>+${data.boxesGained || 0}</b>
+• Total Boxes: <b>${data.newBoxCount || 0}</b>
+• Source: ${data.source || 'Ad Reward'}
+• Daily Usage: ${data.dailyUsed || 0}/${data.dailyLimit || 10}
+• Hourly Usage: ${data.hourlyUsed || 0}/${data.hourlyLimit || 3}
+
+🕐 <b>Time:</b> ${timestamp}`;
+
+    case 'mystery_box_opened':
+      return `🎉 <b>Mystery Box Opened!</b>
+
+👤 <b>User:</b> <code>${data.userId}</code> (${data.userName || 'Unknown'})
+• Reward: <b>+${data.reward || 0} STON</b>
+• Balance Type: ${data.balanceType || 'Box (Withdrawal Only)'}
+• Boxes Remaining: <b>${data.boxesRemaining || 0}</b>
 
 🕐 <b>Time:</b> ${timestamp}`;
 
@@ -312,44 +437,44 @@ ${data.referrerId ? `• Referred by: <code>${data.referrerId}</code>` : ''}
       };
 
     case 'task_completion':
-      return `✅ *Task Completed!*
+      return `✅ <b>Task Completed!</b>
 
-👤 *User:* \`${data.userId}\` (${data.userName || 'Unknown'})
-📝 *Task:* ${data.taskTitle || 'Unknown Task'}
-💰 *Reward:* ${data.reward || 0} STON
-📊 *Type:* ${data.taskType || 'Manual'}
+👤 <b>User:</b> <code>${data.userId}</code> (${data.userName || 'Unknown'})
+📝 <b>Task:</b> ${data.taskTitle || 'Unknown Task'}
+💰 <b>Reward:</b> ${data.reward || 0} STON
+📊 <b>Type:</b> ${data.taskType || 'Manual'}
 
-🕐 *Time:* ${timestamp}`;
+🕐 <b>Time:</b> ${timestamp}`;
 
     case 'energy_earning':
-      return `⚡ *Energy Earnings!*
+      return `⚡ <b>Energy Earnings!</b>
 
-👤 *User:* \`${data.userId}\` (${data.userName || 'Unknown'})
-⚡ *Energy Earned:* ${data.energy || 0}
+👤 <b>User:</b> <code>${data.userId}</code> (${data.userName || 'Unknown'})
+⚡ <b>Energy Earned:</b> ${data.energy || 0}
 📺 *Source:* Ad Reward
-💰 *STON Equivalent:* ${data.stonEquivalent || 0}
+💰 <b>STON Equivalent:</b> ${data.stonEquivalent || 0}
 
-🕐 *Time:* ${timestamp}`;
+🕐 <b>Time:</b> ${timestamp}`;
 
     case 'box_opening':
-      return `📦 *Box Opened!*
+      return `📦 <b>Box Opened!</b>
 
-👤 *User:* \`${data.userId}\` (${data.userName || 'Unknown'})
-📦 *Box Type:* ${data.boxType || 'Unknown'}
-🎁 *Reward:* ${data.reward || 0} STON
-📺 *Source:* ${data.source || 'Ad Reward'}
+👤 <b>User:</b> <code>${data.userId}</code> (${data.userName || 'Unknown'})
+📦 <b>Box Type:</b> ${data.boxType || 'Unknown'}
+🎁 <b>Reward:</b> ${data.reward || 0} STON
+📺 <b>Source:</b> ${data.source || 'Ad Reward'}
 
-🕐 *Time:* ${timestamp}`;
+🕐 <b>Time:</b> ${timestamp}`;
 
     case 'user_level_achieve':
       return `🆙 *User Level Achievement!*
 
-👤 *User Details:*
-• ID: \`${data.userId}\`
+👤 <b>User Details:</b>
+• ID: <code>${data.userId}</code>
 • Name: ${data.userName || 'Unknown'}
 • Username: @${data.username || 'None'}
 
-🎉 *Achievement Details:*
+🎉 <b>Achievement Details:</b>
 • New Level: ${data.newLevel || 1}
 • Previous Level: ${data.previousLevel || 0}
 • Total STON Earned: ${data.totalEarned || 0}
@@ -357,7 +482,7 @@ ${data.referrerId ? `• Referred by: <code>${data.referrerId}</code>` : ''}
 
 🎊 User has leveled up and earned bonus rewards!
 
-🕐 *Time:* ${timestamp}`;
+🕐 <b>Time:</b> ${timestamp}`;
 
     case 'wallet_connect':
       return `🔗 *Wallet Connected!*

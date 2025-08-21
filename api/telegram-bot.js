@@ -220,12 +220,18 @@ async function handleStartWithReferral(chatId, userId, referrerId, userInfo) {
       console.log('[BOT] NEW USER - Referral relationship established with pending rewards');
       
       // Send admin notification about new referral (pending rewards)
+      // Get total user count
+      const usersCollection = collection(db, 'users');
+      const userSnapshot = await getDocs(usersCollection);
+      const totalUsers = userSnapshot.size;
+      
       await notifyAdminDirect('referral_pending', {
         newUserId: userId,
         newUserName: userInfo.first_name || 'Unknown',
         referrerId: referrerId,
         referrerReward: referralResult.referrerReward,
         welcomeBonus: referralResult.welcomeBonus,
+        totalUsers: totalUsers,
         reward: referralResult.referrerReward
       });
       
@@ -327,10 +333,16 @@ async function handleStart(chatId, userId, userInfo, customMessage = null) {
 
   // Send new user notification to admin only for new users (non-referral)
   if (userInfo && isNewUser) {
+    // Get total user count
+    const usersCollection = collection(db, 'users');
+    const userSnapshot = await getDocs(usersCollection);
+    const totalUsers = userSnapshot.size;
+    
     await notifyAdminDirect('new_user', {
       userId: userId,
       name: userInfo.first_name || 'Unknown',
-      username: userInfo.username || null
+      username: userInfo.username || null,
+      totalUsers: totalUsers
     });
 
     // Mark user as welcomed in database to prevent duplicate messages

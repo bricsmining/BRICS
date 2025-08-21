@@ -32,6 +32,11 @@ const defaultConfig = {
   boxRewardAmount: 1, // Box reward per ad watch
   stonToTonRate: 0.0000001, // 1 STON = 0.0000001 TON (10,000,000 STON = 1 TON)
   
+  // Notification Channels
+  generalNotificationChannel: '', // Channel for general notifications (user joins, referrals, energy/box earnings, etc.)
+  withdrawalNotificationChannel: '', // Channel for withdrawal notifications
+  paymentNotificationChannel: '', // Channel for payment notifications (card purchases, etc.)
+  
   // Feature Toggles (editable in admin panel)
   withdrawalEnabled: true,
   miningEnabled: true,

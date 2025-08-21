@@ -546,6 +546,58 @@ const AdminSettings = ({ adminData }) => {
               </div>
             </div>
             
+            <div className="border-t border-gray-600 pt-4">
+              <h4 className="text-sm font-medium text-gray-300 mb-3">Notification Channels</h4>
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium text-gray-300 mb-2 block">
+                    General Notifications Channel
+                  </label>
+                  <Input
+                    type="text"
+                    value={config.generalNotificationChannel || ''}
+                    onChange={(e) => updateConfigField('generalNotificationChannel', e.target.value)}
+                    className="bg-input border-border focus:border-blue-500 focus:bg-input/80 text-white"
+                    placeholder="@your_general_channel or -1001234567890"
+                  />
+                  <p className="text-xs text-gray-400 mt-1">
+                    Channel for user joins, referrals, energy/box earnings, task completions, etc.
+                  </p>
+                </div>
+                
+                <div>
+                  <label className="text-sm font-medium text-gray-300 mb-2 block">
+                    Withdrawal Notifications Channel
+                  </label>
+                  <Input
+                    type="text"
+                    value={config.withdrawalNotificationChannel || ''}
+                    onChange={(e) => updateConfigField('withdrawalNotificationChannel', e.target.value)}
+                    className="bg-input border-border focus:border-blue-500 focus:bg-input/80 text-white"
+                    placeholder="@your_withdrawal_channel or -1001234567890"
+                  />
+                  <p className="text-xs text-gray-400 mt-1">
+                    Channel for withdrawal requests, approvals, and related notifications
+                  </p>
+                </div>
+                
+                <div>
+                  <label className="text-sm font-medium text-gray-300 mb-2 block">
+                  Payment Notifications Channel
+                  </label>
+                  <Input
+                    type="text"
+                    value={config.paymentNotificationChannel || ''}
+                    onChange={(e) => updateConfigField('paymentNotificationChannel', e.target.value)}
+                    className="bg-input border-border focus:border-blue-500 focus:bg-input/80 text-white"
+                    placeholder="@your_payment_channel or -1001234567890"
+                  />
+                  <p className="text-xs text-gray-400 mt-1">
+                    Channel for mining card purchases, payment confirmations, and related notifications
+                  </p>
+                </div>
+              </div>
+            </div>
 
             
             <div className="grid grid-cols-2 gap-4">
