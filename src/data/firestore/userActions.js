@@ -191,27 +191,8 @@ export const completeTaskForUser = async (userId, taskId) => {
       pendingVerificationTasks: arrayRemove(taskId)
     });
 
-    // Send task completion notification to admin via backend API
-    try {
-      const userName = userData.firstName || userData.username || `User ${userId}`;
-      await fetch('/api/notifications?action=admin', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          api: import.meta.env.VITE_ADMIN_API_KEY,
-          type: 'task_completion',
-          data: {
-            userId: userId,
-            userName: userName,
-            taskTitle: task.title,
-            reward: task.reward,
-            taskType: 'Auto'
-          }
-        })
-      });
-    } catch (error) {
-      console.error('Error sending task completion notification:', error);
-    }
+    // Note: Task completion notification is sent by the frontend (TasksSection.jsx)
+    // to avoid duplicate notifications and provide accurate task type information
 
     // Check for pending referral rewards after task completion
     try {
