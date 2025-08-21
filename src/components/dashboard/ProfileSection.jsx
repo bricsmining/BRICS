@@ -372,6 +372,21 @@ const MysteryBoxSection = ({ user, refreshUserData, navigate }) => {
         // Add reward to user balance (box type - withdrawal only)
         await updateUserBalanceByType(user.id, reward, 'box');
 
+        // Send admin notification for box opening
+        try {
+          await sendAdminNotification('mystery_box_opened', {
+            userId: user.id,
+            userName: user.username || user.first_name || user.last_name || 'Unknown',
+            username: user.username || 'None',
+            boxType: 'Mystery Box',
+            reward: reward,
+            balanceType: 'Box (Withdrawal Only)',
+            boxesRemaining: mysteryBoxCount - 1
+          });
+        } catch (notifError) {
+          console.error('Failed to send admin notification for box opening:', notifError);
+        }
+
         // Show reward animation after box opening animation
         setTimeout(() => {
           setShowReward(true);
@@ -2813,6 +2828,21 @@ const MysteryBoxModal = ({ isOpen, onClose, user, refreshUserData, navigate }) =
 
         // Add reward to user balance (box type - withdrawal only)
         await updateUserBalanceByType(user.id, reward, 'box');
+
+        // Send admin notification for box opening
+        try {
+          await sendAdminNotification('mystery_box_opened', {
+            userId: user.id,
+            userName: user.username || user.first_name || user.last_name || 'Unknown',
+            username: user.username || 'None',
+            boxType: 'Mystery Box',
+            reward: reward,
+            balanceType: 'Box (Withdrawal Only)',
+            boxesRemaining: mysteryBoxCount - 1
+          });
+        } catch (notifError) {
+          console.error('Failed to send admin notification for box opening:', notifError);
+        }
 
         // Show reward animation after box opening animation
         setTimeout(() => {

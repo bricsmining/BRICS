@@ -657,12 +657,13 @@ const TasksSection = ({ tasks = [], user = {}, refreshUserData, isLoading }) => 
             
             // Notify admin via bot
             try {
-              const { notifyAdmin } = await import('@/utils/botNotifications');
-              await notifyAdmin('box_opening', {
+              await sendAdminNotification('mystery_box_earned', {
                 userId: user.id,
-                userName: user.firstName || user.username || `User ${user.id}`,
+                userName: user.username || user.first_name || user.last_name || 'Unknown',
+                username: user.username || 'None',
                 boxType: 'Mystery Box',
-                reward: result.boxesGained,
+                boxesGained: result.boxesGained,
+                newBoxCount: result.newBoxCount,
                 source: 'Ad Reward',
                 dailyUsed: result.dailyUsed,
                 hourlyUsed: result.hourlyUsed
