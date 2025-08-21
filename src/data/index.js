@@ -670,6 +670,7 @@ export const checkEnergyAdAvailability = async (userId) => {
     const MAX_ENERGY = adminConfig?.maxEnergy || DEFAULT_MAX_ENERGY;
     const DAILY_ENERGY_AD_LIMIT = adminConfig?.dailyEnergyAdLimit || DEFAULT_DAILY_ENERGY_AD_LIMIT;
     const HOURLY_ENERGY_AD_LIMIT = adminConfig?.hourlyEnergyAdLimit || DEFAULT_HOURLY_ENERGY_AD_LIMIT;
+    const ENERGY_REWARD_AMOUNT = adminConfig?.energyRewardAmount || DEFAULT_ENERGY_REWARD_AMOUNT;
 
     const userRef = doc(db, 'users', userId);
     const userDoc = await getDoc(userRef);
@@ -851,6 +852,7 @@ export const checkBoxAdAvailability = async (userId) => {
     const adminConfig = await getAdminConfig();
     const DAILY_BOX_AD_LIMIT = adminConfig?.dailyBoxAdLimit || DEFAULT_DAILY_BOX_AD_LIMIT;
     const HOURLY_BOX_AD_LIMIT = adminConfig?.hourlyBoxAdLimit || DEFAULT_HOURLY_BOX_AD_LIMIT;
+    const BOX_REWARD_AMOUNT = adminConfig?.boxRewardAmount || DEFAULT_BOX_REWARD_AMOUNT;
 
     const userRef = doc(db, 'users', userId);
     const userDoc = await getDoc(userRef);
