@@ -1042,7 +1042,7 @@ const WithdrawDialog = ({ isOpen, onClose, user, onWithdraw, stonToTon, adminCon
   if (!isOpen) return null;
 
   const amount = parseFloat(withdrawAmount) || 0;
-  const minWithdrawal = adminConfig?.minWithdrawalAmount || 100000000;
+  const minWithdrawal = adminConfig?.minWithdrawalAmount || 10000000;
   const isValidAmount = amount >= minWithdrawal && amount <= (user.balance || 0);
 
   return (
@@ -1558,12 +1558,13 @@ const ProfileSection = ({ user, refreshUserData }) => {
     if (!user?.id || !withdrawAmount) return;
 
     const amount = parseFloat(withdrawAmount);
-    const minWithdrawal = globalAdminConfig?.minWithdrawalAmount || 100000000;
+    const minWithdrawal = globalAdminConfig?.minWithdrawalAmount || 10000000;
 
     if (amount < minWithdrawal || amount > (user.balance || 0)) {
+      const tonEquivalent = ((minWithdrawal * (globalAdminConfig?.stonToTonRate || 0.0000001)) || 0).toFixed(6);
       toast({
         title: "Invalid Amount",
-        description: `Minimum withdrawal is ${minWithdrawal.toLocaleString()} STON (1 TON) and must be within your balance.`,
+        description: `Minimum withdrawal is ${minWithdrawal.toLocaleString()} STON (${tonEquivalent} TON) and must be within your balance.`,
         variant: "destructive",
         className: "bg-[#1a1a1a] text-white",
       });

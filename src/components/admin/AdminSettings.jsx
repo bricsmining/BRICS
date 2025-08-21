@@ -449,7 +449,7 @@ const AdminSettings = ({ adminData }) => {
               </label>
               <Input
                 type="number"
-                value={config.minWithdrawalAmount || 100000000}
+                value={config.minWithdrawalAmount || 10000000}
                 onChange={(e) => updateConfigField('minWithdrawalAmount', parseInt(e.target.value))}
                 className="bg-input border-border focus:border-blue-500 focus:bg-input/80 text-white"
               />

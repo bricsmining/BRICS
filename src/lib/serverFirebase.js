@@ -67,7 +67,7 @@ export const getServerAdminConfig = async () => {
         hourlyEnergyAdLimit: 3,
         dailyBoxAdLimit: 10,
         hourlyBoxAdLimit: 3,
-        minWithdrawalAmount: 100000000,
+        minWithdrawalAmount: 10000000,
         energyRewardAmount: 10,
         boxRewardAmount: 1,
         stonToTonRate: 0.0000001,
