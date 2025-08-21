@@ -451,7 +451,7 @@ ${data.totalUsers ? `• Total Users: <b>${data.totalUsers.toLocaleString()}</b>
 
 👤 <b>User:</b> <code>${data.userId}</code> (${data.userName || 'Unknown'})
 ⚡ <b>Energy Earned:</b> ${data.energy || 0}
-📺 *Source:* Ad Reward
+📺 <b>Source:</b> Ad Reward
 💰 <b>STON Equivalent:</b> ${data.stonEquivalent || 0}
 
 🕐 <b>Time:</b> ${timestamp}`;
@@ -467,7 +467,7 @@ ${data.totalUsers ? `• Total Users: <b>${data.totalUsers.toLocaleString()}</b>
 🕐 <b>Time:</b> ${timestamp}`;
 
     case 'user_level_achieve':
-      return `🆙 *User Level Achievement!*
+      return `🆙 <b>User Level Achievement!</b>
 
 👤 <b>User Details:</b>
 • ID: <code>${data.userId}</code>
@@ -485,21 +485,21 @@ ${data.totalUsers ? `• Total Users: <b>${data.totalUsers.toLocaleString()}</b>
 🕐 <b>Time:</b> ${timestamp}`;
 
     case 'wallet_connect':
-      return `🔗 *Wallet Connected!*
+      return `🔗 <b>Wallet Connected!</b>
 
-👤 *User Details:*
-• ID: \`${data.userId}\`
+👤 <b>User Details:</b>
+• ID: <code>${data.userId}</code>
 • Name: ${data.userName || 'Unknown'}
 • Username: @${data.username || 'None'}
 
-💳 *Wallet Details:*
-• Wallet Address: \`${data.walletAddress || 'Not provided'}\`
+💳 <b>Wallet Details:</b>
+• Wallet Address: <code>${data.walletAddress || 'Not provided'}</code>
 • Wallet Type: ${data.walletType || 'TON Wallet'}
 • Connection Method: ${data.connectionMethod || 'Manual'}
 
 🔐 User has successfully connected their wallet for withdrawals!
 
-🕐 *Time:* ${timestamp}`;
+🕐 <b>Time:</b> ${timestamp}`;
 
     default:
       return null;
@@ -511,60 +511,60 @@ ${data.totalUsers ? `• Total Users: <b>${data.totalUsers.toLocaleString()}</b>
 function generateUserMessage(type, data) {
   switch (type) {
     case 'task_approved':
-      return `✅ *Task Approved!*
+      return `✅ <b>Task Approved!</b>
 
 Your task submission has been approved!
 
-📝 *Task:* ${data.taskTitle || 'Unknown Task'}
-💰 *Reward:* ${data.reward || 0} STON added to your balance
-🎉 *Status:* Completed
+📝 <b>Task:</b> ${data.taskTitle || 'Unknown Task'}
+💰 <b>Reward:</b> ${data.reward || 0} STON added to your balance
+🎉 <b>Status:</b> Completed
 
 Keep completing tasks to earn more STON! 🚀`;
 
     case 'task_rejected':
-      return `❌ *Task Rejected*
+      return `❌ <b>Task Rejected</b>
 
 Your task submission has been rejected.
 
-📝 *Task:* ${data.taskTitle || 'Unknown Task'}
-📝 *Reason:* ${data.reason || 'Requirements not met'}
+📝 <b>Task:</b> ${data.taskTitle || 'Unknown Task'}
+📝 <b>Reason:</b> ${data.reason || 'Requirements not met'}
 
 Please try again following the task requirements. 🔄`;
 
     case 'withdrawal_approved':
-      return `✅ *Withdrawal Approved!*
+      return `✅ <b>Withdrawal Approved!</b>
 
 Your withdrawal request has been approved!
 
-💰 *Amount:* ${data.amount || 0} STON
-💳 *Method:* ${data.method || 'Unknown'}
-📍 *Address:* \`${data.address || 'Not provided'}\`
-⏱️ *Processing Time:* 24-48 hours
+💰 <b>Amount:</b> ${data.amount || 0} STON
+💳 <b>Method:</b> ${data.method || 'Unknown'}
+📍 <b>Address:</b> <code>${data.address || 'Not provided'}</code>
+⏱️ <b>Processing Time:</b> 24-48 hours
 
 Your tokens will be transferred soon! 🚀`;
 
     case 'withdrawal_rejected':
-      return `❌ *Withdrawal Rejected*
+      return `❌ <b>Withdrawal Rejected</b>
 
 Your withdrawal request has been rejected.
 
-💰 *Amount:* ${data.amount || 0} STON
-📝 *Reason:* ${data.reason || 'Invalid request'}
+💰 <b>Amount:</b> ${data.amount || 0} STON
+📝 <b>Reason:</b> ${data.reason || 'Invalid request'}
 
 Your STON balance has been restored. Please try again. 🔄`;
 
     case 'successful_referral':
-      return `🎉 *Successful Referral!*
+      return `🎉 <b>Successful Referral!</b>
 
 Your friend joined SkyTON through your referral link!
 
-👥 *New Member:* ${data.newUserName || 'Friend'}
-💰 *Your Reward:* ${data.reward || 0} STON
-🎰 *Bonus:* 1 Free Spin added
+👥 <b>New Member:</b> ${data.newUserName || 'Friend'}
+💰 <b>Your Reward:</b> ${data.reward || 0} STON
+🎰 <b>Bonus:</b> 1 Free Spin added
 
 Keep sharing to earn more rewards! 🚀
 
-*Share your link:* https://t.me/${process.env.BOT_USERNAME || 'xSkyTON_Bot'}?start=refID${data.referrerId}`;
+<b>Share your link:</b> https://t.me/${process.env.BOT_USERNAME || 'xSkyTON_Bot'}?start=refID${data.referrerId}`;
 
     default:
       return null;
