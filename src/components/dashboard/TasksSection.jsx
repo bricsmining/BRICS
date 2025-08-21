@@ -22,9 +22,7 @@ import {
 } from '@/data';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { showRewardedAd } from '@/ads/adsController';
-
-const ENERGY_REWARD_AMOUNT = 10; // Set how much energy to grant per ad
-const BOX_REWARD_AMOUNT = 1; // Set how many boxes to grant per ad
+import { getAdminConfig } from '@/data/firestore/adminConfig';
 
 // Number formatting utility
 const formatNumber = (num) => {
@@ -305,6 +303,7 @@ const TasksSection = ({ tasks = [], user = {}, refreshUserData, isLoading }) => 
   const [verifying, setVerifying] = useState({});
   const [isEnergyAdLoading, setIsEnergyAdLoading] = useState(false);
   const [isBoxAdLoading, setIsBoxAdLoading] = useState(false);
+  const [currentAdminConfig, setCurrentAdminConfig] = useState(null);
   
   // Animation states
   const [flyingRewards, setFlyingRewards] = useState([]);
@@ -313,6 +312,29 @@ const TasksSection = ({ tasks = [], user = {}, refreshUserData, isLoading }) => 
     balance: 0,
     boxes: 0
   });
+
+  // Load admin config for reward amounts
+  useEffect(() => {
+    const loadAdminConfig = async () => {
+      try {
+        const config = await getAdminConfig();
+        setCurrentAdminConfig(config);
+      } catch (error) {
+        console.error('Error loading admin config in TasksSection:', error);
+        // Use fallback values if config fails to load
+        setCurrentAdminConfig({
+          energyRewardAmount: 10,
+          boxRewardAmount: 1
+        });
+      }
+    };
+    
+    loadAdminConfig();
+  }, []);
+
+  // Get reward amounts from admin config with fallbacks
+  const ENERGY_REWARD_AMOUNT = currentAdminConfig?.energyRewardAmount || 10;
+  const BOX_REWARD_AMOUNT = currentAdminConfig?.boxRewardAmount || 1;
 
   // Admin chat ID is now fetched from database via API
 
@@ -529,7 +551,7 @@ const TasksSection = ({ tasks = [], user = {}, refreshUserData, isLoading }) => 
 
             toast({
               title: `⚡ Energy Earned!`,
-              description: `+${result.energyGained} energy added! (${result.newEnergy}/500)\nDaily: ${result.dailyUsed}/10 | Hourly: ${result.hourlyUsed}/3`,
+              description: `+${result.energyGained} energy added! (${result.newEnergy}/${currentAdminConfig?.maxEnergy || 500})\nDaily: ${result.dailyUsed}/${currentAdminConfig?.dailyEnergyAdLimit || 10} | Hourly: ${result.hourlyUsed}/${currentAdminConfig?.hourlyEnergyAdLimit || 3}`,
               variant: 'success',
               className: "bg-[#1a1a1a] text-white"
             });
@@ -651,7 +673,7 @@ const TasksSection = ({ tasks = [], user = {}, refreshUserData, isLoading }) => 
 
             toast({
               title: `🎁 Mystery Box Earned!`,
-              description: `+${result.boxesGained} mystery box added! (Total: ${result.newBoxCount})\nDaily: ${result.dailyUsed}/10 | Hourly: ${result.hourlyUsed}/3`,
+              description: `+${result.boxesGained} mystery box added! (Total: ${result.newBoxCount})\nDaily: ${result.dailyUsed}/${currentAdminConfig?.dailyBoxAdLimit || 10} | Hourly: ${result.hourlyUsed}/${currentAdminConfig?.hourlyBoxAdLimit || 3}`,
               variant: 'success',
               className: "bg-[#1a1a1a] text-white"
             });

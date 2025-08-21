@@ -557,24 +557,10 @@ export const addEnergyFromAd = async (userId) => {
   try {
     // Get admin config for dynamic limits
     const adminConfig = await getAdminConfig();
-    console.log('[ENERGY AD] Admin config loaded:', {
-      maxEnergy: adminConfig?.maxEnergy,
-      dailyEnergyAdLimit: adminConfig?.dailyEnergyAdLimit,
-      hourlyEnergyAdLimit: adminConfig?.hourlyEnergyAdLimit,
-      energyRewardAmount: adminConfig?.energyRewardAmount
-    });
-    
     const MAX_ENERGY = adminConfig?.maxEnergy || DEFAULT_MAX_ENERGY;
     const DAILY_ENERGY_AD_LIMIT = adminConfig?.dailyEnergyAdLimit || DEFAULT_DAILY_ENERGY_AD_LIMIT;
     const HOURLY_ENERGY_AD_LIMIT = adminConfig?.hourlyEnergyAdLimit || DEFAULT_HOURLY_ENERGY_AD_LIMIT;
     const ENERGY_REWARD_AMOUNT = adminConfig?.energyRewardAmount || DEFAULT_ENERGY_REWARD_AMOUNT;
-    
-    console.log('[ENERGY AD] Using values:', {
-      MAX_ENERGY,
-      DAILY_ENERGY_AD_LIMIT,
-      HOURLY_ENERGY_AD_LIMIT,
-      ENERGY_REWARD_AMOUNT
-    });
 
     const userRef = doc(db, 'users', userId);
     
@@ -681,13 +667,6 @@ export const checkEnergyAdAvailability = async (userId) => {
   try {
     // Get admin config for dynamic limits
     const adminConfig = await getAdminConfig();
-    console.log('[CHECK ENERGY] Admin config loaded:', {
-      maxEnergy: adminConfig?.maxEnergy,
-      dailyEnergyAdLimit: adminConfig?.dailyEnergyAdLimit,
-      hourlyEnergyAdLimit: adminConfig?.hourlyEnergyAdLimit,
-      energyRewardAmount: adminConfig?.energyRewardAmount
-    });
-    
     const MAX_ENERGY = adminConfig?.maxEnergy || DEFAULT_MAX_ENERGY;
     const DAILY_ENERGY_AD_LIMIT = adminConfig?.dailyEnergyAdLimit || DEFAULT_DAILY_ENERGY_AD_LIMIT;
     const HOURLY_ENERGY_AD_LIMIT = adminConfig?.hourlyEnergyAdLimit || DEFAULT_HOURLY_ENERGY_AD_LIMIT;
@@ -774,21 +753,9 @@ export const addBoxFromAd = async (userId) => {
   try {
     // Get admin config for dynamic limits
     const adminConfig = await getAdminConfig();
-    console.log('[BOX AD] Admin config loaded:', {
-      dailyBoxAdLimit: adminConfig?.dailyBoxAdLimit,
-      hourlyBoxAdLimit: adminConfig?.hourlyBoxAdLimit,
-      boxRewardAmount: adminConfig?.boxRewardAmount
-    });
-    
     const DAILY_BOX_AD_LIMIT = adminConfig?.dailyBoxAdLimit || DEFAULT_DAILY_BOX_AD_LIMIT;
     const HOURLY_BOX_AD_LIMIT = adminConfig?.hourlyBoxAdLimit || DEFAULT_HOURLY_BOX_AD_LIMIT;
     const BOX_REWARD_AMOUNT = adminConfig?.boxRewardAmount || DEFAULT_BOX_REWARD_AMOUNT;
-    
-    console.log('[BOX AD] Using values:', {
-      DAILY_BOX_AD_LIMIT,
-      HOURLY_BOX_AD_LIMIT,
-      BOX_REWARD_AMOUNT
-    });
 
     const userRef = doc(db, 'users', userId);
     

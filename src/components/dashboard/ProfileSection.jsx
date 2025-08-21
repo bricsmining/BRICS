@@ -1302,7 +1302,7 @@ const ProfileSection = ({ user, refreshUserData }) => {
   }, [user.tasks, user.referrals, user.balance]);
 
   // Energy bar color calculation
-  const getEnergyBarColor = useCallback((energy, maxEnergy = 500) => {
+  const getEnergyBarColor = useCallback((energy, maxEnergy) => {
     const percentage = (energy / maxEnergy) * 100;
     if (percentage >= 70) return { from: 'from-green-400', to: 'to-emerald-500', glow: 'shadow-green-400/50' };
     if (percentage >= 40) return { from: 'from-yellow-400', to: 'to-orange-500', glow: 'shadow-yellow-400/50' };
@@ -2303,7 +2303,7 @@ const ProfileSection = ({ user, refreshUserData }) => {
                   </motion.div>
                   <span className="text-gray-300 font-medium text-xs">Energy</span>
               </div>
-                <p className="text-lg font-bold text-white">{user.energy || 0}/500</p>
+                <p className="text-lg font-bold text-white">{user.energy || 0}/{globalAdminConfig?.maxEnergy || 500}</p>
                 
                 {/* Enhanced Energy Progress Bar */}
                 <motion.div
@@ -2313,11 +2313,12 @@ const ProfileSection = ({ user, refreshUserData }) => {
                   className="w-full bg-gray-700/50 rounded-full h-2 my-2 overflow-hidden relative"
                 >
                   {(() => {
-                    const energyColors = getEnergyBarColor(user.energy || 0, 500);
+                    const maxEnergy = globalAdminConfig?.maxEnergy || 500;
+                    const energyColors = getEnergyBarColor(user.energy || 0, maxEnergy);
                     return (
                       <motion.div
                         initial={{ width: "0%" }}
-                        animate={{ width: `${Math.min(((user.energy || 0) / 500) * 100, 100)}%` }}
+                        animate={{ width: `${Math.min(((user.energy || 0) / maxEnergy) * 100, 100)}%` }}
                         transition={{ delay: 0.7, duration: 1, ease: "easeOut" }}
                         className={`h-full bg-gradient-to-r ${energyColors.from} ${energyColors.to} rounded-full relative`}
                       >
