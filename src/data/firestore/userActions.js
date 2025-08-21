@@ -16,7 +16,7 @@ import {
 import { defaultFirestoreUser } from '@/data/defaults';
 import { generateReferralLink, processReferralInfo } from '@/data/telegramUtils';
 import { getTask } from '@/data/firestore/taskActions';
-import { notifyAdmin } from '@/utils/botNotifications';
+// Removed botNotifications import - using backend API endpoints instead
 
 // Create or return existing user
 export const getOrCreateUser = async (telegramUserData, referrerId = null) => {
@@ -94,14 +94,22 @@ export const getOrCreateUser = async (telegramUserData, referrerId = null) => {
       // Process any pending referral info for new user
       processReferralInfo(userId);
       
-      // Send new user notification to admin
+      // Send new user notification to admin via backend API
       try {
-        await notifyAdmin('new_user', {
-      userId: telegramUserData.id,
-      name: telegramUserData.firstName || 'Unknown',
-      username: telegramUserData.username,
-      referrerId: referrerId
-    });
+        await fetch('/api/notifications?action=admin', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            api: import.meta.env.VITE_ADMIN_API_KEY,
+            type: 'new_user',
+            data: {
+              userId: telegramUserData.id,
+              name: telegramUserData.firstName || 'Unknown',
+              username: telegramUserData.username,
+              referrerId: referrerId
+            }
+          })
+        });
       } catch (error) {
         console.error('Error sending new user notification:', error);
       }
@@ -183,15 +191,23 @@ export const completeTaskForUser = async (userId, taskId) => {
       pendingVerificationTasks: arrayRemove(taskId)
     });
 
-    // Send task completion notification to admin
+    // Send task completion notification to admin via backend API
     try {
       const userName = userData.firstName || userData.username || `User ${userId}`;
-      await notifyAdmin('task_completion', {
-        userId: userId,
-        userName: userName,
-        taskTitle: task.title,
-        reward: task.reward,
-        taskType: 'Auto'
+      await fetch('/api/notifications?action=admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          api: import.meta.env.VITE_ADMIN_API_KEY,
+          type: 'task_completion',
+          data: {
+            userId: userId,
+            userName: userName,
+            taskTitle: task.title,
+            reward: task.reward,
+            taskType: 'Auto'
+          }
+        })
       });
     } catch (error) {
       console.error('Error sending task completion notification:', error);

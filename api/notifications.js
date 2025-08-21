@@ -252,7 +252,7 @@ function getNotificationTarget(type, adminConfig) {
   const generalNotifications = [
     'new_user', 'referral', 'referral_pending', 'referral_completed', 
     'energy_earned', 'mystery_box_earned', 'mystery_box_opened', 
-    'task_completion', 'task_submission'
+    'task_completion', 'task_submission', 'game_reward'
   ];
   
   const withdrawalNotifications = [
@@ -481,6 +481,16 @@ ${data.totalUsers ? `• Total Users: <b>${data.totalUsers.toLocaleString()}</b>
 • Level Bonus: ${data.levelBonus || 0} STON
 
 🎊 User has leveled up and earned bonus rewards!
+
+🕐 <b>Time:</b> ${timestamp}`;
+
+    case 'game_reward':
+      return `🎮 <b>Game Reward!</b>
+
+👤 <b>User:</b> <code>${data.userId}</code> (${data.userName || 'Unknown'})
+🎯 <b>Game:</b> ${data.gameType || 'Unknown'}
+🎁 <b>Reward:</b> ${data.reward || 0} STON
+${data.multiplier ? `✨ <b>Multiplier:</b> ${data.multiplier}` : ''}
 
 🕐 <b>Time:</b> ${timestamp}`;
 

@@ -244,15 +244,22 @@ export default function StonDropGame() {
             setDoubledAmount(doubledScore);
             setHasDoubled(true);
             
-            // Notify admin via bot
+            // Notify admin via backend API
             try {
-              const { notifyAdmin } = await import('@/utils/botNotifications');
-              await notifyAdmin('game_reward', {
-                userId: userId,
-                userName: `User ${userId}`,
-                gameType: 'STON Drop',
-                reward: doubledScore,
-                multiplier: '2x'
+              await fetch('/api/notifications?action=admin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  api: import.meta.env.VITE_ADMIN_API_KEY,
+                  type: 'game_reward',
+                  data: {
+                    userId: userId,
+                    userName: `User ${userId}`,
+                    gameType: 'STON Drop',
+                    reward: doubledScore,
+                    multiplier: '2x'
+                  }
+                })
               });
             } catch (notifError) {
               console.error('Failed to send admin notification:', notifError);

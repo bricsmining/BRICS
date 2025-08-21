@@ -18,7 +18,7 @@ import {
   completeTaskForUser,
   rejectManualVerificationForUser
 } from '@/data/firestore/userActions';
-import { notifyUser, notifyAdmin } from '@/utils/botNotifications';
+// Removed botNotifications import - using backend API endpoints instead
 
 // Fetch all users, ordered by join date
 export const getAllUsers = async () => {
@@ -106,10 +106,24 @@ export const approveTask = async (userId, taskId) => {
         const task = taskSnap.data();
         const user = userSnap.data();
         
-        await notifyUser(userId, 'task_approved', {
-          taskTitle: task.title,
-          reward: task.reward
-        });
+        // Send user notification via backend API
+        try {
+          await fetch('/api/notifications?action=user', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              api: import.meta.env.VITE_ADMIN_API_KEY,
+              userId: userId,
+              type: 'task_approved',
+              data: {
+                taskTitle: task.title,
+                reward: task.reward
+              }
+            })
+          });
+        } catch (notifError) {
+          console.error('Failed to send user notification:', notifError);
+        }
         
         // Check for pending referral rewards after manual task approval
         try {
@@ -152,10 +166,24 @@ export const rejectTask = async (userId, taskId, reason = 'Requirements not met'
       
       if (taskSnap.exists()) {
         const task = taskSnap.data();
-        await notifyUser(userId, 'task_rejected', {
-          taskTitle: task.title,
-          reason: reason
-        });
+        // Send user notification via backend API
+        try {
+          await fetch('/api/notifications?action=user', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              api: import.meta.env.VITE_ADMIN_API_KEY,
+              userId: userId,
+              type: 'task_rejected',
+              data: {
+                taskTitle: task.title,
+                reason: reason
+              }
+            })
+          });
+        } catch (notifError) {
+          console.error('Failed to send user notification:', notifError);
+        }
       }
     } catch (error) {
       console.error('Error sending task rejection notification:', error);
@@ -457,9 +485,19 @@ export const rejectWithdrawal = async (withdrawalId) => {
       const withdrawalDoc = await getDoc(withdrawalRef);
       const withdrawalData = withdrawalDoc.data();
       
-      await notifyUser(withdrawalData.userId, 'withdrawal_rejected', {
-        amount: withdrawalData.amount,
-        reason: 'Administrative decision'
+      // Send user notification via backend API
+      await fetch('/api/notifications?action=user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          api: import.meta.env.VITE_ADMIN_API_KEY,
+          userId: withdrawalData.userId,
+          type: 'withdrawal_rejected',
+          data: {
+            amount: withdrawalData.amount,
+            reason: 'Administrative decision'
+          }
+        })
       });
     } catch (notificationError) {
       console.error('Failed to send rejection notification to user:', notificationError);

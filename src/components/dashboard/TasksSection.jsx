@@ -534,14 +534,15 @@ const TasksSection = ({ tasks = [], user = {}, refreshUserData, isLoading }) => 
             const updatedUser = await getCurrentUser(user.id);
             if (updatedUser) refreshUserData(updatedUser);
             
-            // Notify admin via bot
+            // Notify admin via backend API
             try {
-              const { notifyAdmin } = await import('@/utils/botNotifications');
-              await notifyAdmin('energy_earning', {
+              await sendAdminNotification('energy_earned', {
                 userId: user.id,
-                userName: user.firstName || user.username || `User ${user.id}`,
-                energy: result.energyGained,
-                stonEquivalent: Math.floor(result.energyGained * 0.5), // Rough conversion
+                userName: user.username || user.first_name || user.last_name || 'Unknown',
+                username: user.username || 'None',
+                energyGained: result.energyGained,
+                newEnergy: result.newEnergy,
+                source: 'Ad Reward',
                 dailyUsed: result.dailyUsed,
                 hourlyUsed: result.hourlyUsed
               });
