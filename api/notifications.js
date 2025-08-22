@@ -146,17 +146,18 @@ async function handleAdminNotification(req, res) {
     let channelSuccess = false;
     let adminSuccess = false;
     
-    // Send to channel if configured
+    // Send to channel if configured (channels don't support web app buttons)
     if (routing.target !== 'admin') {
       console.log(`[NOTIFICATIONS] Sending to channel: ${routing.target}`);
-      channelSuccess = await sendTelegramMessage(routing.target, messageText, options);
+      const channelOptions = { parse_mode: 'HTML' }; // No buttons for channels
+      channelSuccess = await sendTelegramMessage(routing.target, messageText, channelOptions);
       console.log(`[NOTIFICATIONS] Channel notification result: ${channelSuccess}`);
     }
     
-    // Send to admin if required
+    // Send to admin if required (admin can have buttons)
     if (routing.sendToAdmin) {
       console.log(`[NOTIFICATIONS] Sending to admin: ${adminChatId}`);
-      adminSuccess = await sendTelegramMessage(adminChatId, messageText, options);
+      adminSuccess = await sendTelegramMessage(adminChatId, messageText, options); // Full options with buttons
       console.log(`[NOTIFICATIONS] Admin notification result: ${adminSuccess}`);
     }
     
