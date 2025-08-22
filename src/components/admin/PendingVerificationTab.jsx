@@ -55,12 +55,12 @@ const PendingVerificationTab = ({ pendingItems = [], tasks = [], onApprove, onRe
     try {
       // Use server-side API for admin notifications
       const apiBaseUrl = window.location.hostname === 'localhost' ? 'https://skyton.vercel.app' : '';
-      await fetch(`${apiBaseUrl}/api/notifications`, {
+      await fetch(`${apiBaseUrl}/api/notifications?action=admin`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          type: 'admin',
-          notificationType: 'task_verification_log',
+          api: import.meta.env.VITE_ADMIN_API_KEY,
+          type: 'task_verification_log',
           data: { message: message }
         })
       });

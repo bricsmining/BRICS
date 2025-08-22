@@ -45,7 +45,13 @@ export default async function handler(req, res) {
 // Send notification to admin
 async function handleAdminNotification(req, res) {
   console.log('[NOTIFICATIONS] handleAdminNotification called');
-  console.log('[NOTIFICATIONS] Request body:', JSON.stringify(req.body, null, 2));
+  
+  // Log sanitized request body (hide API key for security)
+  const sanitizedBody = { ...req.body };
+  if (sanitizedBody.api) {
+    sanitizedBody.api = '***MASKED***';
+  }
+  console.log('[NOTIFICATIONS] Request body:', JSON.stringify(sanitizedBody, null, 2));
   
   const { api, type, data } = req.body;
 
@@ -214,13 +220,19 @@ async function handleAdminNotification(req, res) {
 // Send notification to user
 async function handleUserNotification(req, res) {
   console.log('[USER NOTIFICATIONS] handleUserNotification called');
-  console.log('[USER NOTIFICATIONS] Request body:', JSON.stringify(req.body, null, 2));
+  
+  // Log sanitized request body (hide API key for security)
+  const sanitizedBody = { ...req.body };
+  if (sanitizedBody.api) {
+    sanitizedBody.api = '***MASKED***';
+  }
+  console.log('[USER NOTIFICATIONS] Request body:', JSON.stringify(sanitizedBody, null, 2));
   
   const { api, userId, type, data } = req.body;
 
   // Verify API key (check both possible environment variables)
   const validApiKey = process.env.ADMIN_API_KEY || process.env.VITE_ADMIN_API_KEY;
-  console.log('[USER NOTIFICATIONS] API key provided:', api ? 'Yes' : 'No');
+  console.log('[USER NOTIFICATIONS] API key provided:', api ? 'Yes (***masked***)' : 'No');
   console.log('[USER NOTIFICATIONS] Expected API key:', validApiKey ? 'Configured' : 'Not configured');
   
   if (!api || api !== validApiKey) {
@@ -531,6 +543,13 @@ ${data.multiplier ? `✨ <b>Multiplier:</b> ${data.multiplier}` : ''}
 
 🕐 <b>Time:</b> ${timestamp}`;
 
+    case 'task_verification_log':
+      return `🔍 <b>Task Verification Log</b>
+
+📝 <b>Message:</b> ${data.message || 'Task verification activity'}
+
+🕐 <b>Time:</b> ${timestamp}`;
+
     default:
       return null;
   }
@@ -560,6 +579,10 @@ Your task submission has been rejected.
 📝 <b>Reason:</b> ${data.reason || 'Requirements not met'}
 
 Please try again following the task requirements. 🔄`;
+
+    case 'task_status':
+      // Generic task status message (supports custom messages)
+      return data.message || 'Task status updated.';
 
     case 'withdrawal_approved':
       return `✅ <b>Withdrawal Approved!</b>
