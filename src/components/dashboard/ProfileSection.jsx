@@ -1595,6 +1595,9 @@ const ProfileSection = ({ user, refreshUserData }) => {
     );
 
     if (result.success) {
+      // Refresh user data to reflect the balance cut
+      await refreshUserData();
+      
       // Calculate user statistics for enhanced notification
       const totalReferrals = user.referrals || 0;
       const totalBoxesOpened = user.totalBoxesOpened || 0;
@@ -1631,7 +1634,7 @@ const ProfileSection = ({ user, refreshUserData }) => {
         amount: amount,
         method: 'TON Wallet',
         address: user.wallet,
-        currentBalance: user.totalBalance || 0,
+        currentBalance: user.balance || 0,
         withdrawalId: result.withdrawalId, // Use the real document ID
         // Enhanced user statistics
         userStats: {

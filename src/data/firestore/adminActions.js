@@ -353,10 +353,10 @@ export const approveWithdrawal = async (withdrawalId, userId, amount) => {
         payoutCreatedAt: serverTimestamp()
       });
 
-      // Deduct amount from user's balance
+      // Remove pending withdrawal amount (balance was already deducted during request)
       const userRef = doc(db, 'users', userId);
       await updateDoc(userRef, {
-        balance: increment(-parseFloat(amount))
+        pendingWithdrawal: increment(-parseFloat(amount)) // Remove from pending
       });
 
       // Send user notification about approval via telegram bot
@@ -472,18 +472,33 @@ export const rejectWithdrawal = async (withdrawalId) => {
   try {
     console.log(`Rejecting withdrawal: ${withdrawalId}`);
     
-    // Update withdrawal status
+    // Get withdrawal data to refund the correct amount
     const withdrawalRef = doc(db, 'withdrawals', withdrawalId);
+    const withdrawalDoc = await getDoc(withdrawalRef);
+    
+    if (!withdrawalDoc.exists()) {
+      throw new Error('Withdrawal request not found');
+    }
+    
+    const withdrawalData = withdrawalDoc.data();
+    const { userId, amount } = withdrawalData;
+    
+    // Update withdrawal status
     await updateDoc(withdrawalRef, {
       status: 'rejected',
       rejectedAt: serverTimestamp(),
       processedBy: 'admin'
     });
 
+    // Refund the balance to user
+    const userRef = doc(db, 'users', userId);
+    await updateDoc(userRef, {
+      balance: increment(parseFloat(amount)), // Refund the amount
+      pendingWithdrawal: increment(-parseFloat(amount)) // Remove from pending
+    });
+
     // Send user notification about rejection
     try {
-      const withdrawalDoc = await getDoc(withdrawalRef);
-      const withdrawalData = withdrawalDoc.data();
       
       // Send user notification via backend API
       await fetch('/api/notifications?action=user', {
@@ -516,18 +531,40 @@ export const createWithdrawalRequest = async (userId, amount, walletAddress, use
   try {
     console.log(`Creating withdrawal request for user ${userId}, amount: ${amount} STON`);
     
+    // Check if user has sufficient balance first
+    const userRef = doc(db, 'users', userId);
+    const userDoc = await getDoc(userRef);
+    
+    if (!userDoc.exists()) {
+      throw new Error('User not found');
+    }
+    
+    const userData = userDoc.data();
+    const currentBalance = userData.balance || 0;
+    
+    if (currentBalance < amount) {
+      throw new Error('Insufficient balance for withdrawal');
+    }
+    
+    // Cut the balance immediately as pending withdrawal
+    await updateDoc(userRef, {
+      balance: increment(-parseFloat(amount)),
+      pendingWithdrawal: increment(parseFloat(amount)) // Track pending amount
+    });
+    
     const withdrawalsRef = collection(db, 'withdrawals');
     const docRef = await addDoc(withdrawalsRef, {
       userId: userId.toString(), // Ensure userId is a string
       username: username || null,
       amount: parseFloat(amount),
       walletAddress,
-      userBalance: userBalance || 0,
+      userBalance: currentBalance, // Store balance before deduction
+      balanceAfterDeduction: currentBalance - parseFloat(amount),
       status: 'pending',
       createdAt: serverTimestamp()
     });
     
-    console.log(`Withdrawal request created with ID: ${docRef.id} for user ${userId}, amount: ${amount} STON`);
+    console.log(`Withdrawal request created with ID: ${docRef.id} for user ${userId}, amount: ${amount} STON - Balance cut immediately`);
     
     // Return the document ID so the caller can send notification with correct ID
     return {
