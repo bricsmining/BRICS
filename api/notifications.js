@@ -160,12 +160,24 @@ async function handleAdminNotification(req, res) {
       console.log(`[NOTIFICATIONS] Admin notification result: ${adminSuccess}`);
     }
     
-    // Determine overall success
+    // Determine overall success - for dual notifications, succeed if at least one works
     const overallSuccess = routing.target === 'admin' ? adminSuccess : 
-                          (routing.sendToAdmin ? (channelSuccess && adminSuccess) : channelSuccess);
+                          (routing.sendToAdmin ? (channelSuccess || adminSuccess) : channelSuccess);
     
     if (overallSuccess) {
       console.log('[NOTIFICATIONS] Notification(s) sent successfully');
+      
+      // Log details about partial success
+      if (routing.sendToAdmin && routing.target !== 'admin') {
+        if (channelSuccess && adminSuccess) {
+          console.log('[NOTIFICATIONS] ✅ Both channel and admin notifications succeeded');
+        } else if (channelSuccess && !adminSuccess) {
+          console.log('[NOTIFICATIONS] ⚠️ Channel succeeded but admin failed');
+        } else if (!channelSuccess && adminSuccess) {
+          console.log('[NOTIFICATIONS] ⚠️ Admin succeeded but channel failed');
+        }
+      }
+      
       return res.status(200).json({ 
         success: true, 
         message: 'Notification sent successfully.',
@@ -177,7 +189,7 @@ async function handleAdminNotification(req, res) {
         }
       });
     } else {
-      console.error('[NOTIFICATIONS] Failed to send notification');
+      console.error('[NOTIFICATIONS] Failed to send notification - all destinations failed');
       return res.status(500).json({ 
         success: false, 
         message: 'Failed to send notification. Check Telegram API logs for details.',
@@ -252,7 +264,12 @@ function getNotificationTarget(type, adminConfig) {
   const generalNotifications = [
     'new_user', 'referral', 'referral_pending', 'referral_completed', 
     'energy_earned', 'mystery_box_earned', 'mystery_box_opened', 
-    'task_completion', 'task_submission', 'game_reward'
+    'task_completion', 'game_reward'
+  ];
+  
+  // Important notifications that should go to BOTH admin and their respective channels
+  const importantGeneralNotifications = [
+    'task_submission' // Task submissions need admin attention + channel logging
   ];
   
   const withdrawalNotifications = [
@@ -266,6 +283,8 @@ function getNotificationTarget(type, adminConfig) {
   // Route to appropriate channel or admin
   if (generalNotifications.includes(type) && adminConfig?.generalNotificationChannel) {
     return { target: adminConfig.generalNotificationChannel, sendToAdmin: false };
+  } else if (importantGeneralNotifications.includes(type) && adminConfig?.generalNotificationChannel) {
+    return { target: adminConfig.generalNotificationChannel, sendToAdmin: true }; // Send to both channel and admin
   } else if (withdrawalNotifications.includes(type)) {
     if (adminConfig?.withdrawalNotificationChannel) {
       return { target: adminConfig.withdrawalNotificationChannel, sendToAdmin: true }; // Also send to admin for important notifications
