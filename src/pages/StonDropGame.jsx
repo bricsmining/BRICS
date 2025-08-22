@@ -211,7 +211,8 @@ export default function StonDropGame() {
                 userId: userId,
                 userName: `User ${userId}`,
                 gameType: 'STON Drop',
-                reward: score
+                reward: score,
+                rewardType: 'early_quit'
               }
             })
           });
@@ -270,7 +271,7 @@ export default function StonDropGame() {
             setDoubledAmount(doubledScore);
             setHasDoubled(true);
             
-            // Notify admin via backend API
+            // Notify admin via backend API with detailed 2x breakdown
             try {
               await fetch('/api/notifications?action=admin', {
                 method: 'POST',
@@ -283,7 +284,11 @@ export default function StonDropGame() {
                     userName: `User ${userId}`,
                     gameType: 'STON Drop',
                     reward: doubledScore,
-                    multiplier: '2x'
+                    multiplier: '2x',
+                    originalReward: score,
+                    adBonus: doubledScore,
+                    totalReward: score + doubledScore,
+                    rewardType: '2x_ad_bonus'
                   }
                 })
               });
@@ -516,7 +521,8 @@ export default function StonDropGame() {
                 userId: userId,
                 userName: `User ${userId}`,
                 gameType: 'STON Drop',
-                reward: score
+                reward: score,
+                rewardType: 'normal_completion'
               }
             })
           });

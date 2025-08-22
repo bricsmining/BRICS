@@ -600,14 +600,44 @@ ${data.memo ? `• Memo: <code>${data.memo}</code>` : ''}
 🕐 <b>Time:</b> ${timestamp}`;
 
     case 'game_reward':
-      return `🎮 <b>Game Reward!</b>
+      let gameMessage = `🎮 <b>Game Reward!</b>
 
 👤 <b>User:</b> <code>${data.userId}</code> (${data.userName || 'Unknown'})
-🎯 <b>Game:</b> ${data.gameType || 'Unknown'}
-🎁 <b>Reward:</b> ${data.reward || 0} STON
-${data.multiplier ? `✨ <b>Multiplier:</b> ${data.multiplier}` : ''}
+🎯 <b>Game:</b> ${data.gameType || 'Unknown'}`;
+
+      // Handle different reward types
+      if (data.rewardType === '2x_ad_bonus') {
+        gameMessage += `
+🎁 <b>Reward Breakdown:</b>
+• Original Reward: ${data.originalReward || 0} STON
+• Ad Bonus: +${data.adBonus || 0} STON
+• <b>Total Earned: ${data.totalReward || 0} STON (2x)</b>
+
+📱 <b>Method:</b> User watched ad to double rewards!
+✨ <b>Multiplier:</b> ${data.multiplier || '2x'}`;
+      } else {
+        gameMessage += `
+🎁 <b>Reward:</b> ${data.reward || 0} STON`;
+        
+        if (data.rewardType === 'early_quit') {
+          gameMessage += `
+📤 <b>Status:</b> Game ended early`;
+        } else if (data.rewardType === 'normal_completion') {
+          gameMessage += `
+🏁 <b>Status:</b> Game completed`;
+        }
+        
+        if (data.multiplier && data.rewardType !== '2x_ad_bonus') {
+          gameMessage += `
+✨ <b>Multiplier:</b> ${data.multiplier}`;
+        }
+      }
+
+      gameMessage += `
 
 🕐 <b>Time:</b> ${timestamp}`;
+
+      return gameMessage;
 
     case 'wallet_connect':
       return `🔗 <b>Wallet Connected!</b>
