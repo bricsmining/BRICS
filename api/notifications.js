@@ -478,25 +478,9 @@ ${data.totalUsers ? `• Total Users: <b>${data.totalUsers.toLocaleString()}</b>
 
 🕐 <b>Time:</b> ${timestamp}`;
 
-    case 'energy_earning':
-      return `⚡ <b>Energy Earnings!</b>
-
-👤 <b>User:</b> <code>${data.userId}</code> (${data.userName || 'Unknown'})
-⚡ <b>Energy Earned:</b> ${data.energy || 0}
-📺 <b>Source:</b> Ad Reward
-💰 <b>STON Equivalent:</b> ${data.stonEquivalent || 0}
-
-🕐 <b>Time:</b> ${timestamp}`;
-
-    case 'box_opening':
-      return `📦 <b>Box Opened!</b>
-
-👤 <b>User:</b> <code>${data.userId}</code> (${data.userName || 'Unknown'})
-📦 <b>Box Type:</b> ${data.boxType || 'Unknown'}
-🎁 <b>Reward:</b> ${data.reward || 0} STON
-📺 <b>Source:</b> ${data.source || 'Ad Reward'}
-
-🕐 <b>Time:</b> ${timestamp}`;
+    // Removed duplicate/unused notification types:
+    // energy_earning (use energy_earned instead)
+    // box_opening (use mystery_box_opened instead)
 
     case 'user_level_achieve':
       return `🆙 <b>User Level Achievement!</b>

@@ -1226,148 +1226,13 @@ function generateAdminMessage(type, data) {
 
 🕐 <b>Time:</b> ${timestamp}`;
 
-    case 'user_level_achieve':
-      return `🆙 <b>User Level Achievement!</b>
+    // These notification types are handled by api/notifications.js
+    // Removed to avoid duplication: user_level_achieve, wallet_connect,
+    // energy_earned, mystery_box_earned
 
-👤 <b>User Details:</b>
-• ID: <code>${data.userId}</code>
-• Name: ${data.userName || 'Unknown'}
-• Username: @${data.username || 'None'}
-
-🎉 <b>Achievement Details:</b>
-• New Level: ${data.newLevel || 1}
-• Previous Level: ${data.previousLevel || 0}
-• Total STON Earned: ${data.totalEarned || 0}
-• Level Bonus: ${data.levelBonus || 0} STON
-
-🎊 User has leveled up and earned bonus rewards!
-
-🕐 <b>Time:</b> ${timestamp}`;
-
-    case 'wallet_connect':
-      return `🔗 <b>Wallet Connected!</b>
-
-👤 <b>User Details:</b>
-• ID: <code>${data.userId}</code>
-• Name: ${data.userName || 'Unknown'}
-• Username: @${data.username || 'None'}
-
-💳 <b>Wallet Details:</b>
-• Wallet Address: <code>${data.walletAddress || 'Not provided'}</code>
-• Wallet Type: ${data.walletType || 'TON Wallet'}
-• Connection Method: ${data.connectionMethod || 'Manual'}
-
-🔐 User has successfully connected their wallet for withdrawals!
-
-🕐 <b>Time:</b> ${timestamp}`;
-
-    case 'energy_earning':
-      return `⚡ <b>Energy Earned from Ad!</b>
-
-👤 <b>User Details:</b>
-• ID: <code>${data.userId}</code>
-• Name: ${data.userName || 'Unknown'}
-• Username: @${data.username || 'None'}
-
-⚡ <b>Energy Details:</b>
-• Energy Earned: ${data.energyEarned || 0}
-• STON Equivalent: ${data.stonEquivalent || 0}
-• Ad Network: ${data.adNetwork || 'Unknown'}
-• Campaign: ${data.campaign || 'N/A'}
-
-📺 User successfully watched an ad and earned energy!
-
-🕐 <b>Time:</b> ${timestamp}`;
-
-    case 'box_earning':
-      return `📦 <b>Box Earned from Ad!</b>
-
-👤 <b>User Details:</b>
-• ID: <code>${data.userId}</code>
-• Name: ${data.userName || 'Unknown'}
-• Username: @${data.username || 'None'}
-
-📦 <b>Box Details:</b>
-• Box Type: ${data.boxType || 'Unknown Box'}
-• Box Number: ${data.boxNumber || 1}
-• Reward: ${data.reward || 0} STON
-• Ad Network: ${data.adNetwork || 'Unknown'}
-
-🎁 User successfully watched an ad and earned a box!
-
-🕐 <b>Time:</b> ${timestamp}`;
-
-    case 'task_completion':
-      return `✅ <b>Task Completed!</b>
-
-👤 <b>User Details:</b>
-• ID: <code>${data.userId}</code>
-• Name: ${data.userName || 'Unknown'}
-• Username: @${data.username || 'None'}
-
-📝 <b>Task Details:</b>
-• Title: ${data.taskTitle || 'Unknown Task'}
-• Type: ${data.taskType || 'Auto Task'}
-• Reward: ${data.reward || 0} STON
-• Completion Method: ${data.completionMethod || 'Auto'}
-
-🎉 User has successfully completed a task and earned rewards!
-
-🕐 <b>Time:</b> ${timestamp}`;
-
-    case 'payout_created':
-      return `💸 <b>Payout Created</b>
-
-🏦 <b>Withdrawal Details:</b>
-• User: <code>${data.userId}</code>
-• Withdrawal ID: <code>${data.withdrawalId}</code>
-• Track ID: <code>${data.trackId}</code>
-• Address: <code>${data.address}</code>
-• Amount: ${data.amount} ${data.currency}
-• Status: ${data.status}
-
-💰 Payout has been submitted to OxaPay for processing.
-
-🕐 <b>Time:</b> ${timestamp}`;
-
-    case 'withdrawal_approval_failed':
-      return `❌ <b>Withdrawal Approval Failed</b>
-
-🏦 <b>Details:</b>
-• User: <code>${data.userId}</code> (@${data.username})
-• Amount: ${data.amount} STON (${data.tonAmount} TON)
-• Wallet: <code>${data.address}</code>
-• Error: ${data.error}
-
-⚠️ User balance was NOT deducted.
-
-🕐 <b>Time:</b> ${timestamp}`;
-
-    case 'task_verification_log':
-      return `🔍 <b>Task Verification Log</b>
-
-${data.message}
-
-🕐 <b>Time:</b> ${timestamp}`;
-
-    case 'payout_success':
-      return `✅ <b>Payout Successful!</b>
-
-👤 <b>User Details:</b>
-• ID: <code>${data.userId}</code>
-• Name: ${data.username || 'Unknown'}
-
-💰 <b>Payout Details:</b>
-• Amount: ${data.amount} STON (${data.tonAmount} TON)
-• Address: <code>${data.address}</code>
-${data.memo ? `• Memo: <code>${data.memo}</code>` : ''}
-• Track ID: <code>${data.trackId}</code>
-• Status: ${data.status}
-• Withdrawal ID: <code>${data.withdrawalId}</code>
-
-🎉 Payout has been successfully processed through OxaPay!
-
-🕐 <b>Time:</b> ${timestamp}`;
+    // Admin notification types handled by api/notifications.js
+    // Removed to avoid duplication: task_completion, payout_created, 
+    // withdrawal_approval_failed, task_verification_log, payout_success
 
     case 'payout_failed':
       let failedMessage = `❌ <b>Payout Failed!</b>
@@ -1424,81 +1289,10 @@ ${data.memo ? `• Memo: <code>${data.memo}</code>` : ''}
 // Generate user notification messages
 function generateUserMessage(type, data) {
   switch (type) {
-    case 'task_approved':
-      return `✅ <b>Task Approved!</b>
-
-Your task submission has been approved!
-
-📝 <b>Task:</b> ${data.taskTitle || 'Unknown Task'}
-💰 <b>Reward:</b> ${data.reward || 0} STON added to your balance
-🎉 <b>Status:</b> Completed
-
-Keep completing tasks to earn more STON! 🚀`;
-
-    case 'task_rejected':
-      return `❌ <b>Task Rejected</b>
-
-Your task submission has been rejected.
-
-📝 <b>Task:</b> ${data.taskTitle || 'Unknown Task'}
-📝 <b>Reason:</b> ${data.reason || 'Requirements not met'}
-
-Please try again following the task requirements. 🔄`;
-
-    case 'withdrawal_approved':
-      return `✅ <b>Withdrawal Approved!</b>
-
-Your withdrawal request has been approved!
-
-💰 <b>Amount:</b> ${data.amount || 0} STON
-💳 <b>Method:</b> ${data.method || 'Unknown'}
-📍 <b>Address:</b> <code>${data.address || 'Not provided'}</code>
-⏱️ <b>Processing Time:</b> 24-48 hours
-
-Your tokens will be transferred soon! 🚀`;
-
-    case 'withdrawal_rejected':
-      return `❌ <b>Withdrawal Rejected</b>
-
-Your withdrawal request has been rejected.
-
-💰 <b>Amount:</b> ${data.amount || 0} STON
-📝 <b>Reason:</b> ${data.reason || 'Invalid request'}
-
-Your STON balance has been restored. Please try again. 🔄`;
-
-    case 'successful_referral':
-      return `🎉 <b>Successful Referral!</b>
-
-Your friend joined SkyTON through your referral link!
-
-👥 <b>New Member:</b> ${data.newUserName || 'Friend'}
-💰 <b>Your Reward:</b> ${data.reward || 0} STON
-🎰 <b>Bonus:</b> 1 Free Spin added
-🎁 <b>Their Welcome:</b> ${data.welcomeBonus || 0} STON bonus
-
-Keep sharing to earn more rewards! 🚀
-
-<b>Share your link:</b> https://t.me/${getBotUsername()}?start=refID${data.referrerId}`;
-
-    case 'task_status':
-      return data.message || 'Task status update';
-
-    case 'broadcast':
-      return data.message || 'Broadcast message';
-
-    case 'new_referral':
-      return `🎉 <b>New Referral!</b>
-
-Congratulations! Someone joined SkyTON using your referral link!
-
-👥 <b>New Member:</b> ${data.newUserName || 'Friend'}
-💰 <b>Your Reward:</b> ${data.reward || 0} STON
-🎰 <b>Bonus:</b> 1 Free Spin added
-
-Keep sharing to earn more rewards! 🚀
-
-<b>Share your link:</b> https://t.me/${getBotUsername()}?start=refID${data.referrerId}`;
+    // User notification types are handled by api/notifications.js
+    // These cases have been removed to avoid duplication:
+    // task_approved, task_rejected, withdrawal_approved, withdrawal_rejected,
+    // successful_referral, task_status, broadcast, new_referral
 
     default:
       return null;
