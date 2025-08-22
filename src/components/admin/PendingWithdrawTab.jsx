@@ -9,6 +9,7 @@ import { useToast } from '@/components/ui/use-toast';
 import * as XLSX from 'xlsx';
 // Add this import for getting all withdrawal history
 import { getAllWithdrawalHistory } from '@/data/firestore/adminActions';
+import { getAdminConfig } from '@/data/firestore/adminConfig';
 
 const PendingWithdrawTab = ({ pendingWithdrawals = [], onApprove, onReject }) => {
   const [processing, setProcessing] = useState({});
@@ -16,7 +17,21 @@ const PendingWithdrawTab = ({ pendingWithdrawals = [], onApprove, onReject }) =>
   const [withdrawalHistory, setWithdrawalHistory] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [historyFilter, setHistoryFilter] = useState('all'); // 'all', 'approved', 'rejected', 'pending'
+  const [adminConfig, setAdminConfig] = useState({});
   const { toast } = useToast();
+
+  // Load admin config on component mount
+  useEffect(() => {
+    const loadAdminConfig = async () => {
+      try {
+        const config = await getAdminConfig();
+        setAdminConfig(config);
+      } catch (error) {
+        console.error('Error loading admin config:', error);
+      }
+    };
+    loadAdminConfig();
+  }, []);
 
   const copyToClipboard = async (text) => {
     try {
