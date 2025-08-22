@@ -273,8 +273,8 @@ async function handleUserNotification(req, res) {
 
 // Determine notification routing
 function getNotificationTarget(type, adminConfig) {
-  // ADMIN INBOX ONLY - Only these 4 notification types go to admin
-  const adminOnlyNotifications = [
+  // ADMIN INBOX - Only these 4 critical notification types
+  const adminCriticalNotifications = [
     'task_submission',           // 1. Task Submission
     'withdrawal_request',        // 2. Withdraw request
     'withdrawal_approved',       // 2. Withdraw success 
@@ -288,35 +288,39 @@ function getNotificationTarget(type, adminConfig) {
     'new_user'                   // 4. New user join
   ];
   
-  // CHANNEL ONLY - All other notifications go to channels only
+  // GENERAL CHANNEL notifications
   const generalChannelNotifications = [
-    'referral', 'referral_pending', 'referral_completed', 
+    'new_user', 'referral', 'referral_pending', 'referral_completed', 
     'energy_earned', 'mystery_box_earned', 'mystery_box_opened', 
     'task_completion', 'game_reward', 'user_level_achieve', 
-    'wallet_connect'
+    'wallet_connect', 'task_submission'
   ];
   
+  // WITHDRAWAL CHANNEL notifications
   const withdrawalChannelNotifications = [
-    // Withdrawal notifications go to admin (handled above)
+    'withdrawal_request', 'withdrawal_approved', 'withdrawal_rejected'
   ];
   
+  // PAYMENT CHANNEL notifications
   const paymentChannelNotifications = [
+    'payment_created', 'payment_completed', 'payment_failed', 
+    'payment_pending', 'payment_status_update', 'payment_webhook_unknown',
     'card_purchase', 'payment_confirmed'
   ];
   
-  // Route admin-only notifications to admin inbox only
-  if (adminOnlyNotifications.includes(type)) {
-    return { target: 'admin', sendToAdmin: true };
-  }
+  // Determine if admin should receive this notification
+  const sendToAdmin = adminCriticalNotifications.includes(type);
   
-  // Route other notifications to channels only (no admin)
+  // Route to appropriate channel + admin (if critical)
   if (generalChannelNotifications.includes(type) && adminConfig?.generalNotificationChannel) {
-    return { target: adminConfig.generalNotificationChannel, sendToAdmin: false };
+    return { target: adminConfig.generalNotificationChannel, sendToAdmin: sendToAdmin };
+  } else if (withdrawalChannelNotifications.includes(type) && adminConfig?.withdrawalNotificationChannel) {
+    return { target: adminConfig.withdrawalNotificationChannel, sendToAdmin: sendToAdmin };
   } else if (paymentChannelNotifications.includes(type) && adminConfig?.paymentNotificationChannel) {
-    return { target: adminConfig.paymentNotificationChannel, sendToAdmin: false };
+    return { target: adminConfig.paymentNotificationChannel, sendToAdmin: sendToAdmin };
   }
   
-  // Default to admin if no channel configured or unknown notification type
+  // Default to admin if no channel configured
   return { target: 'admin', sendToAdmin: true };
 }
 
