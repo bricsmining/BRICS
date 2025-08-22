@@ -367,8 +367,8 @@ async function handleCreatePayment(req, res) {
       currency: currency,
       orderId: orderId,
       description: `Card ${cardNumber} Purchase`,
-      callbackUrl: `${req.headers.origin || 'https://skyton.vercel.app'}/api/oxapay?action=webhook`,
-      returnUrl: `${req.headers.origin || 'https://skyton.vercel.app'}/mining?payment=return`,
+      callbackUrl: `${req.headers.origin || process.env.VITE_WEB_APP_URL || process.env.NEXTAUTH_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://skyton.vercel.app')}/api/oxapay?action=webhook`,
+      returnUrl: `${req.headers.origin || process.env.VITE_WEB_APP_URL || process.env.NEXTAUTH_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://skyton.vercel.app')}/mining?payment=return`,
       userId: userId,
       userEmail: `user${userId}@skyton.app`
     });
@@ -699,7 +699,7 @@ async function handleCreatePayout(req, res) {
       currency: currency,
       network: network,
       description: description || `SkyTON withdrawal payout`,
-      callbackUrl: `${req.headers.origin || 'https://skyton.vercel.app'}/api/oxapay?action=webhook`,
+      callbackUrl: `${req.headers.origin || process.env.VITE_WEB_APP_URL || process.env.NEXTAUTH_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://skyton.vercel.app')}/api/oxapay?action=webhook`,
     });
 
     if (!payoutResult.success) {

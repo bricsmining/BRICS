@@ -20,6 +20,32 @@ const BOT_TOKEN = process.env.TG_BOT_TOKEN || process.env.VITE_TG_BOT_TOKEN;
 const WEB_APP_URL = process.env.VITE_WEB_APP_URL || 'https://skyton.vercel.app';
 const WEBHOOK_SECRET = process.env.TELEGRAM_WEBHOOK_SECRET || 'skyton-webhook-secret';
 
+// Utility function to get API base URL
+function getApiBaseUrl(req) {
+  return process.env.VITE_WEB_APP_URL || 
+         req?.headers?.origin || 
+         process.env.NEXTAUTH_URL || 
+         (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 
+         'https://skyton.vercel.app');
+}
+
+// Utility function to get webapp URL from admin config
+async function getWebAppUrl() {
+  try {
+    const adminConfigRef = doc(db, 'admin', 'config');
+    const adminConfigSnap = await getDoc(adminConfigRef);
+    
+    if (adminConfigSnap.exists()) {
+      const adminConfig = adminConfigSnap.data();
+      return adminConfig.telegramWebAppUrl || WEB_APP_URL;
+    }
+    return WEB_APP_URL;
+  } catch (error) {
+    console.error('[BOT] Error getting webapp URL from admin config:', error);
+    return WEB_APP_URL;
+  }
+}
+
 export default async function handler(req, res) {
   console.log(`[WEBHOOK] ${req.method} request received`);
   
@@ -34,11 +60,11 @@ export default async function handler(req, res) {
   
   // Verify webhook secret for security (only for actual Telegram webhooks, not API calls)
   if (!isDirectApiCall) {
-    const providedSecret = req.headers['x-telegram-bot-api-secret-token'];
+  const providedSecret = req.headers['x-telegram-bot-api-secret-token'];
     if (WEBHOOK_SECRET) {
       if (providedSecret !== WEBHOOK_SECRET) {
-        console.error('Invalid webhook secret. Expected:', WEBHOOK_SECRET, 'Got:', providedSecret);
-        return res.status(401).json({ error: 'Unauthorized' });
+    console.error('Invalid webhook secret. Expected:', WEBHOOK_SECRET, 'Got:', providedSecret);
+    return res.status(401).json({ error: 'Unauthorized' });
       } else {
         console.log('[WEBHOOK] Secret token verified successfully');
       }
@@ -225,18 +251,31 @@ async function handleStartWithReferral(chatId, userId, referrerId, userInfo) {
       const userSnapshot = await getDocs(usersCollection);
       const totalUsers = userSnapshot.size;
       
-      await notifyAdminDirect('referral_pending', {
+      // Send admin notification via API routing system
+      try {
+        await fetch(`${getApiBaseUrl(req)}/api/notifications?action=admin`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            api: process.env.ADMIN_API_KEY,
+            type: 'referral_pending',
+            data: {
         newUserId: userId,
         newUserName: userInfo.first_name || 'Unknown',
         referrerId: referrerId,
-        referrerReward: referralResult.referrerReward,
-        welcomeBonus: referralResult.welcomeBonus,
-        totalUsers: totalUsers,
-        reward: referralResult.referrerReward
-      });
+              referrerReward: referralResult.referrerReward,
+              welcomeBonus: referralResult.welcomeBonus,
+              totalUsers: totalUsers,
+              reward: referralResult.referrerReward
+            }
+          })
+        });
+      } catch (error) {
+        console.error('Failed to send referral_pending notification:', error);
+      }
       
       // Send welcome message with referral bonus (NO URL PARAMETERS FOR WELCOME)
-      const webAppUrl = WEB_APP_URL; // Clean URL without parameters
+      const webAppUrl = await getWebAppUrl(); // Get admin-configured webapp URL
       
       // Get admin configuration for dynamic buttons
       const adminConfig = await getAdminConfig();
@@ -292,11 +331,19 @@ Keep sharing to get more referrals! 🚀
       
       // Send error notification to admin
       try {
-        await notifyAdminDirect('referral_error', {
-          newUserId: userId,
-          referrerId: referrerId,
-          error: `Referral processing failed: ${referralResult.message}`,
-          stack: 'No stack trace - logic error'
+        await fetch(`${getApiBaseUrl(req)}/api/notifications?action=admin`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            api: process.env.ADMIN_API_KEY,
+            type: 'referral_error',
+            data: {
+              newUserId: userId,
+              referrerId: referrerId,
+              error: `Referral processing failed: ${referralResult.message}`,
+              stack: 'No stack trace - logic error'
+            }
+          })
         });
       } catch (notifError) {
         console.error('[BOT] Failed to send error notification:', notifError);
@@ -310,11 +357,19 @@ Keep sharing to get more referrals! 🚀
     
     // Send error notification to admin
     try {
-      await notifyAdminDirect('referral_error', {
-        newUserId: userId,
-        referrerId: referrerId,
-        error: error.message,
-        stack: error.stack
+      await fetch(`${getApiBaseUrl(req)}/api/notifications?action=admin`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          api: process.env.ADMIN_API_KEY,
+          type: 'referral_error',
+          data: {
+            newUserId: userId,
+            referrerId: referrerId,
+            error: error.message,
+            stack: error.stack
+          }
+        })
       });
     } catch (notifError) {
       console.error('[BOT] Failed to send error notification:', notifError);
@@ -338,12 +393,25 @@ async function handleStart(chatId, userId, userInfo, customMessage = null) {
     const userSnapshot = await getDocs(usersCollection);
     const totalUsers = userSnapshot.size;
     
-    await notifyAdminDirect('new_user', {
+    // Send new user notification via API routing system
+    try {
+      await fetch(`${getApiBaseUrl(req)}/api/notifications?action=admin`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          api: process.env.ADMIN_API_KEY,
+          type: 'new_user',
+          data: {
       userId: userId,
       name: userInfo.first_name || 'Unknown',
-      username: userInfo.username || null,
-      totalUsers: totalUsers
-    });
+            username: userInfo.username || null,
+            totalUsers: totalUsers
+          }
+        })
+      });
+    } catch (error) {
+      console.error('Failed to send new_user notification:', error);
+    }
 
     // Mark user as welcomed in database to prevent duplicate messages
     if (isNewUser) {
@@ -461,7 +529,7 @@ The more friends you invite, the more you earn! 🚀
     reply_markup: {
       inline_keyboard: [
         [{ text: "📱 Share Link", url: `https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${encodeURIComponent('Join me on SkyTON and start mining STON tokens! 🚀')}` }],
-        [{ text: "🚀 Open App", web_app: { url: WEB_APP_URL } }]
+        [{ text: "🚀 Open App", web_app: { url: await getWebAppUrl() } }]
       ]
     }
   });
@@ -490,7 +558,7 @@ Join now to never miss out! 🚀
     reply_markup: {
       inline_keyboard: [
         [{ text: "📢 Join Channel", url: `https://t.me/${channelUsername}` }],
-        [{ text: "🚀 Open App", web_app: { url: WEB_APP_URL } }]
+        [{ text: "🚀 Open App", web_app: { url: await getWebAppUrl() } }]
       ]
     }
   });
@@ -522,7 +590,7 @@ Ready to start mining? Use the button below! 🚀
     parse_mode: 'Markdown',
     reply_markup: {
       inline_keyboard: [[
-        { text: "🚀 Open App", web_app: { url: WEB_APP_URL } }
+        { text: "🚀 Open App", web_app: { url: await getWebAppUrl() } }
       ]]
     }
   });
@@ -563,9 +631,10 @@ async function buildInlineKeyboard(adminConfig, isNewUser = false, userId = null
   const channelUsername = channelLink.replace('@', '');
   
   // Build webapp URL with welcome parameters for new users
-  let webAppUrl = WEB_APP_URL;
+  const baseWebAppUrl = await getWebAppUrl();
+  let webAppUrl = baseWebAppUrl;
   if (isNewUser && userId) {
-    webAppUrl = `${WEB_APP_URL}?welcome=true&firstTime=true&userId=${encodeURIComponent(userId)}`;
+    webAppUrl = `${baseWebAppUrl}?welcome=true&firstTime=true&userId=${encodeURIComponent(userId)}`;
   }
   
   // Build keyboard layout: Open webapp, Join channel, Invite, Help
@@ -798,11 +867,19 @@ async function processReferralDirect(newUserId, referrerId, userInfo) {
 
     // Send error notification to admin
     try {
-      await notifyAdminDirect('referral_error', {
-        newUserId: newUserId,
-        referrerId: referrerId,
-        error: error.message,
-        stack: error.stack
+      await fetch(`${getApiBaseUrl(req)}/api/notifications?action=admin`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          api: process.env.ADMIN_API_KEY,
+          type: 'referral_error',
+          data: {
+            newUserId: newUserId,
+            referrerId: referrerId,
+            error: error.message,
+            stack: error.stack
+          }
+        })
       });
     } catch (notifError) {
       console.error('[BOT] Failed to send error notification:', notifError);
@@ -893,14 +970,26 @@ async function processPendingReferralRewards(userId) {
         
         console.log(`[BOT] Rewards distributed! User: +${pendingReward.userReward} STON, Referrer: +${pendingReward.referrerReward} STON + 1 spin`);
         
-        // Send notifications
-        await notifyAdminDirect('referral_completed', {
-          userId: userId,
-          referrerId: pendingReward.referrerId,
-          userReward: pendingReward.userReward,
-          referrerReward: pendingReward.referrerReward,
-          tasksCompleted: tasksCompleted
-        });
+        // Send notifications via API routing system
+        try {
+          await fetch(`${getApiBaseUrl(req)}/api/notifications?action=admin`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              api: process.env.ADMIN_API_KEY,
+              type: 'referral_completed',
+              data: {
+                userId: userId,
+                referrerId: pendingReward.referrerId,
+                userReward: pendingReward.userReward,
+                referrerReward: pendingReward.referrerReward,
+                tasksCompleted: tasksCompleted
+              }
+            })
+          });
+        } catch (error) {
+          console.error('Failed to send referral_completed notification:', error);
+        }
         
         // Notify the referrer about the reward
         try {

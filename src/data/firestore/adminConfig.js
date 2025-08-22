@@ -53,6 +53,7 @@ const defaultConfig = {
   // Telegram Settings (editable in admin panel)
   telegramJoinRequired: true,
   telegramChannelLink: '@skyton_official',
+  telegramWebAppUrl: 'https://skyton.vercel.app', // Telegram webapp link for buttons (editable)
   adminChatId: '', // Admin chat ID for notifications (editable)
   adminTgUsername: '', // Admin Telegram username (editable)
   

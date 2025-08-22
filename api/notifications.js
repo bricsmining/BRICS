@@ -12,6 +12,21 @@ import {
 
 const BOT_TOKEN = process.env.TG_BOT_TOKEN;
 
+// Utility function to get API base URL
+function getApiBaseUrl(req) {
+  // Priority order:
+  // 1. VITE_WEB_APP_URL environment variable
+  // 2. Request origin header
+  // 3. NEXTAUTH_URL environment variable  
+  // 4. Vercel URL
+  // 5. Fallback to default
+  return process.env.VITE_WEB_APP_URL || 
+         req?.headers?.origin || 
+         process.env.NEXTAUTH_URL || 
+         (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 
+         'https://skyton.vercel.app');
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -285,12 +300,13 @@ function getNotificationTarget(type, adminConfig) {
     'payment_pending',           // 3. Payment pending
     'payment_status_update',     // 3. Payment status update
     'payment_webhook_unknown',   // 3. Payment error
-    'new_user'                   // 4. New user join
+    'new_user',                  // 4. New user join
+    'payout_failed'              // 4. Payout failure (detailed error)
   ];
   
   // GENERAL CHANNEL notifications
   const generalChannelNotifications = [
-    'new_user', 'referral', 'referral_pending', 'referral_completed', 
+    'new_user', 'referral', 'referral_pending', 'referral_completed', 'referral_error',
     'energy_earned', 'mystery_box_earned', 'mystery_box_opened', 
     'task_completion', 'game_reward', 'user_level_achieve', 
     'wallet_connect', 'task_submission'
@@ -298,7 +314,7 @@ function getNotificationTarget(type, adminConfig) {
   
   // WITHDRAWAL CHANNEL notifications
   const withdrawalChannelNotifications = [
-    'withdrawal_request', 'withdrawal_approved', 'withdrawal_rejected'
+    'withdrawal_request', 'withdrawal_approved', 'withdrawal_rejected', 'payout_failed'
   ];
   
   // PAYMENT CHANNEL notifications
@@ -373,6 +389,20 @@ ${data.totalUsers ? `• Total Users: <b>${data.totalUsers.toLocaleString()}</b>
 
 🕐 <b>Time:</b> ${timestamp}`;
 
+    case 'referral_error':
+      return `⚠️ <b>Referral Processing Error!</b>
+
+👥 <b>Referral Info:</b>
+• Referrer: <code>${data.referrerId || 'Unknown'}</code>
+• New User: <code>${data.newUserId || 'Unknown'}</code>
+
+❗ <b>Error Details:</b>
+• Error: ${data.error || 'Unknown error occurred'}
+
+🔧 Manual intervention may be required to resolve this issue.
+
+🕐 <b>Time:</b> ${timestamp}`;
+
     case 'energy_earned':
       return `⚡ <b>Energy Earned!</b>
 
@@ -430,7 +460,7 @@ ${data.totalUsers ? `• Total Users: <b>${data.totalUsers.toLocaleString()}</b>
           [
             {
               text: '🎛️ Open Admin Panel',
-              web_app: { url: `${process.env.NEXTAUTH_URL || 'https://skyton.vercel.app'}/admin` }
+              web_app: { url: `${getApiBaseUrl()}/admin` }
             }
           ]
         ]
@@ -474,7 +504,64 @@ ${data.totalUsers ? `• Total Users: <b>${data.totalUsers.toLocaleString()}</b>
           [
             {
               text: '🎛️ Open Admin Panel',
-              web_app: { url: `${process.env.NEXTAUTH_URL || 'https://skyton.vercel.app'}/admin` }
+              web_app: { url: `${getApiBaseUrl()}/admin` }
+            }
+          ]
+        ]
+      };
+
+    case 'payout_failed':
+      let failedMessage = `❌ <b>Payout Failed!</b>
+
+👤 <b>User Details:</b>
+• ID: <code>${data.userId}</code>
+• Name: ${data.username || 'Unknown'}
+
+💰 <b>Payout Details:</b>
+• Amount: ${data.amount} STON (${data.tonAmount} TON)
+• Address: <code>${data.address}</code>
+${data.memo ? `• Memo: <code>${data.memo}</code>` : ''}
+• Withdrawal ID: <code>${data.withdrawalId}</code>
+
+❗ <b>Error Details:</b>
+• Error: ${data.error}
+• Details: ${data.errorDetails}`;
+
+      // Add detailed OxaPay error information if available
+      if (data.oxapayDetails?.error) {
+        const oxError = data.oxapayDetails.error;
+        failedMessage += `
+
+🚨 <b>OxaPay API Error:</b>
+• Type: <code>${oxError.type || 'Unknown'}</code>
+• Key: <code>${oxError.key || 'Unknown'}</code>
+• Message: ${oxError.message || 'No message'}`;
+
+        if (oxError.key === 'amount_exceeds_balance') {
+          failedMessage += `
+💡 <b>Solution:</b> Check OxaPay wallet balance and fund if necessary.`;
+        } else if (oxError.key === 'invalid_address') {
+          failedMessage += `
+💡 <b>Solution:</b> Verify the recipient wallet address format.`;
+        } else if (oxError.key === 'invalid_amount') {
+          failedMessage += `
+💡 <b>Solution:</b> Check the withdrawal amount and limits.`;
+        }
+      }
+
+      failedMessage += `
+
+⚠️ User's balance was NOT deducted. Manual intervention may be required.
+
+🕐 <b>Time:</b> ${timestamp}`;
+
+      return {
+        text: failedMessage,
+        keyboard: [
+          [
+            {
+              text: '🎛️ Open Admin Panel',
+              web_app: { url: `${getApiBaseUrl()}/admin` }
             }
           ]
         ]
