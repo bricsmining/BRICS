@@ -194,7 +194,10 @@ export default function StonDropGame() {
     if (gameStarted && !isGameOver && userId && score > 0) {
       try {
         const docRef = doc(db, 'users', userId);
-        await updateDoc(docRef, { balance: increment(score) });
+        await updateDoc(docRef, { 
+          balance: increment(score),
+          'balanceBreakdown.task': increment(score) // Categorize as task earnings
+        });
         
         // Also restore energy if game was very short (less than 5 seconds)
         const gameTime = gameStartTime ? (Date.now() - gameStartTime) / 1000 : 0;
@@ -233,7 +236,10 @@ export default function StonDropGame() {
           if (userId && !hasDoubled) {
             const doubledScore = score; // Amount to double
             const docRef = doc(db, 'users', userId);
-            await updateDoc(docRef, { balance: increment(doubledScore) });
+            await updateDoc(docRef, { 
+              balance: increment(doubledScore),
+              'balanceBreakdown.task': increment(doubledScore) // Categorize 2x reward as task earnings
+            });
             
             // Update final balance for display
             const updatedSnap = await getDoc(docRef);
@@ -469,7 +475,10 @@ export default function StonDropGame() {
     const finalizeGame = async () => {
       try {
         const docRef = doc(db, 'users', userId);
-        await updateDoc(docRef, { balance: increment(score) });
+        await updateDoc(docRef, { 
+          balance: increment(score),
+          'balanceBreakdown.task': increment(score) // Categorize as task earnings
+        });
         const updatedSnap = await getDoc(docRef);
         const updatedData = updatedSnap.data();
         setFinalEnergy(updatedData.energy);
