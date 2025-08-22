@@ -1136,179 +1136,105 @@ function generateAdminMessage(type, data) {
 
 🕐 <b>Time:</b> ${timestamp}`;
 
-    case 'task_submission':
-      return {
-        text: `📋 *Task Submission!*
-
-👤 *User Details:*
-• ID: \`${data.userId}\`
-• Name: ${data.userName || 'Unknown'}
-• Username: @${data.username || 'None'}
-
-📝 *Task Details:*
-• Title: ${data.taskTitle || 'Unknown Task'}
-• Type: ${data.taskType || 'Manual Task'}
-• Reward: ${data.reward || 0} STON
-• Target: ${data.target || 'N/A'}
-• Submission: ${data.submission || 'No submission provided'}
-
-🔍 *Action Required: Review and Process*
-
-🕐 *Time:* ${timestamp}`,
-        keyboard: [
-          [
-            {
-              text: '✅ Approve',
-              callback_data: `approve_task_${data.taskId || data.userId}_${Date.now()}`
-            },
-            {
-              text: '❌ Reject',
-              callback_data: `reject_task_${data.taskId || data.userId}_${Date.now()}`
-            }
-          ],
-          [
-            {
-              text: '📋 View Submission',
-              callback_data: `view_task_${data.taskId || data.userId}`
-            }
-          ]
-        ]
-      };
-
-    case 'withdrawal_request':
-      return {
-        text: `💸 *Withdrawal Request!*
-
-👤 *User Details:*
-• ID: \`${data.userId}\`
-• Name: ${data.userName || 'Unknown'}
-• Username: @${data.username || 'None'}
-
-💰 *Withdrawal Details:*
-• Amount: ${data.amount || 0} STON
-• Method: ${data.method || 'Unknown'}
-• Address: \`${data.address || 'Not provided'}\`
-• Current Balance: ${data.currentBalance || 0} STON
-
-🔍 *Action Required: Review and Process*
-
-🕐 *Time:* ${timestamp}`,
-        keyboard: [
-          [
-            {
-              text: '✅ Approve',
-              callback_data: `approve_withdrawal_${data.withdrawalId || data.userId}_${Date.now()}`
-            },
-            {
-              text: '❌ Reject',
-              callback_data: `reject_withdrawal_${data.withdrawalId || data.userId}_${Date.now()}`
-            }
-          ],
-          [
-            {
-              text: '📋 View Details',
-              callback_data: `view_withdrawal_${data.withdrawalId || data.userId}`
-            }
-          ]
-        ]
-      };
+    // task_submission and withdrawal_request are handled by api/notifications.js
+    // These cases have been removed to avoid duplication
 
     case 'payment_created':
-      return `🧾 *Payment Invoice Created*
+      return `🧾 <b>Payment Invoice Created</b>
 
-👤 *User Details:*
-• User: \`${data.userId}\` (@${data.username})
+👤 <b>User Details:</b>
+• User: <code>${data.userId}</code> (@${data.username})
 • Card: ${data.cardType}
 • Amount: ${data.amount} ${data.currency}
 
-🔗 *Payment Details:*
-• Order ID: \`${data.orderId}\`
-• Payment ID: \`${data.paymentId}\`
-• Payment URL: [Click to pay](${data.paymentUrl})
+🔗 <b>Payment Details:</b>
+• Order ID: <code>${data.orderId}</code>
+• Payment ID: <code>${data.paymentId}</code>
+• Payment URL: <a href="${data.paymentUrl}">Click to pay</a>
 
 💰 Payment gateway invoice has been generated successfully!
 
-🕐 *Time:* ${timestamp}`;
+🕐 <b>Time:</b> ${timestamp}`;
 
     case 'payment_completed':
-      return `✅ *Payment Completed!*
+      return `✅ <b>Payment Completed!</b>
 
-💳 *Purchase Details:*
-• User: \`${data.userId}\` (@${data.username})
+💳 <b>Purchase Details:</b>
+• User: <code>${data.userId}</code> (@${data.username})
 • Card: ${data.cardType}
 • Amount: ${data.amount} ${data.currency}
-• Order ID: \`${data.orderId}\`
-• Payment ID: \`${data.paymentId}\`
+• Order ID: <code>${data.orderId}</code>
+• Payment ID: <code>${data.paymentId}</code>
 
 🎉 Mining card has been activated for the user!
 
-🕐 *Time:* ${timestamp}`;
+🕐 <b>Time:</b> ${timestamp}`;
 
     case 'payment_failed':
-      return `❌ *Payment Failed!*
+      return `❌ <b>Payment Failed!</b>
 
-💳 *Purchase Details:*
-• User: \`${data.userId}\` (@${data.username})
+💳 <b>Purchase Details:</b>
+• User: <code>${data.userId}</code> (@${data.username})
 • Card: ${data.cardType}
 • Amount: ${data.amount} ${data.currency}
-• Order ID: \`${data.orderId}\`
-• Payment ID: \`${data.paymentId}\`
+• Order ID: <code>${data.orderId}</code>
+• Payment ID: <code>${data.paymentId}</code>
 • Reason: ${data.reason}
 
 ⚠️ No mining card was activated.
 
-🕐 *Time:* ${timestamp}`;
+🕐 <b>Time:</b> ${timestamp}`;
 
     case 'payment_pending':
-      return `⏳ *Payment In Progress*
+      return `⏳ <b>Payment In Progress</b>
 
-💳 *Purchase Details:*
-• User: \`${data.userId}\` (@${data.username})
+💳 <b>Purchase Details:</b>
+• User: <code>${data.userId}</code> (@${data.username})
 • Card: ${data.cardType}
 • Amount: ${data.amount} ${data.currency}
-• Order ID: \`${data.orderId}\`
-• Payment ID: \`${data.paymentId}\`
+• Order ID: <code>${data.orderId}</code>
+• Payment ID: <code>${data.paymentId}</code>
 • Status: ${data.status}
 
 ⏱️ Waiting for payment confirmation...
 
-🕐 *Time:* ${timestamp}`;
+🕐 <b>Time:</b> ${timestamp}`;
 
     case 'payment_status_update':
-      return `🔄 *Payment Status Update*
+      return `🔄 <b>Payment Status Update</b>
 
-💳 *Purchase Details:*
-• User: \`${data.userId}\` (@${data.username})
+💳 <b>Purchase Details:</b>
+• User: <code>${data.userId}</code> (@${data.username})
 • Card: ${data.cardType}
 • Amount: ${data.amount} ${data.currency}
-• Order ID: \`${data.orderId}\`
-• Payment ID: \`${data.paymentId}\`
+• Order ID: <code>${data.orderId}</code>
+• Payment ID: <code>${data.paymentId}</code>
 • New Status: ${data.status}
 
-🕐 *Time:* ${timestamp}`;
+🕐 <b>Time:</b> ${timestamp}`;
 
     case 'payment_webhook_unknown':
-      return `⚠️ *Unknown Payment Webhook*
+      return `⚠️ <b>Unknown Payment Webhook</b>
 
-💳 *Payment Details:*
-• Order ID: \`${data.orderId}\`
-• Payment ID: \`${data.paymentId}\`
+💳 <b>Payment Details:</b>
+• Order ID: <code>${data.orderId}</code>
+• Payment ID: <code>${data.paymentId}</code>
 • Amount: ${data.amount} ${data.currency}
 • Status: ${data.status}
 
 🔍 Purchase record not found in database.
 
-🕐 *Time:* ${timestamp}`;
+🕐 <b>Time:</b> ${timestamp}`;
 
     case 'user_level_achieve':
-      return `🆙 *User Level Achievement!*
+      return `🆙 <b>User Level Achievement!</b>
 
-👤 *User Details:*
-• ID: \`${data.userId}\`
+👤 <b>User Details:</b>
+• ID: <code>${data.userId}</code>
 • Name: ${data.userName || 'Unknown'}
 • Username: @${data.username || 'None'}
 
-🎉 *Achievement Details:*
+🎉 <b>Achievement Details:</b>
 • New Level: ${data.newLevel || 1}
 • Previous Level: ${data.previousLevel || 0}
 • Total STON Earned: ${data.totalEarned || 0}
@@ -1316,34 +1242,34 @@ function generateAdminMessage(type, data) {
 
 🎊 User has leveled up and earned bonus rewards!
 
-🕐 *Time:* ${timestamp}`;
+🕐 <b>Time:</b> ${timestamp}`;
 
     case 'wallet_connect':
-      return `🔗 *Wallet Connected!*
+      return `🔗 <b>Wallet Connected!</b>
 
-👤 *User Details:*
-• ID: \`${data.userId}\`
+👤 <b>User Details:</b>
+• ID: <code>${data.userId}</code>
 • Name: ${data.userName || 'Unknown'}
 • Username: @${data.username || 'None'}
 
-💳 *Wallet Details:*
-• Wallet Address: \`${data.walletAddress || 'Not provided'}\`
+💳 <b>Wallet Details:</b>
+• Wallet Address: <code>${data.walletAddress || 'Not provided'}</code>
 • Wallet Type: ${data.walletType || 'TON Wallet'}
 • Connection Method: ${data.connectionMethod || 'Manual'}
 
 🔐 User has successfully connected their wallet for withdrawals!
 
-🕐 *Time:* ${timestamp}`;
+🕐 <b>Time:</b> ${timestamp}`;
 
     case 'energy_earning':
-      return `⚡ *Energy Earned from Ad!*
+      return `⚡ <b>Energy Earned from Ad!</b>
 
-👤 *User Details:*
-• ID: \`${data.userId}\`
+👤 <b>User Details:</b>
+• ID: <code>${data.userId}</code>
 • Name: ${data.userName || 'Unknown'}
 • Username: @${data.username || 'None'}
 
-⚡ *Energy Details:*
+⚡ <b>Energy Details:</b>
 • Energy Earned: ${data.energyEarned || 0}
 • STON Equivalent: ${data.stonEquivalent || 0}
 • Ad Network: ${data.adNetwork || 'Unknown'}
@@ -1351,17 +1277,17 @@ function generateAdminMessage(type, data) {
 
 📺 User successfully watched an ad and earned energy!
 
-🕐 *Time:* ${timestamp}`;
+🕐 <b>Time:</b> ${timestamp}`;
 
     case 'box_earning':
-      return `📦 *Box Earned from Ad!*
+      return `📦 <b>Box Earned from Ad!</b>
 
-👤 *User Details:*
-• ID: \`${data.userId}\`
+👤 <b>User Details:</b>
+• ID: <code>${data.userId}</code>
 • Name: ${data.userName || 'Unknown'}
 • Username: @${data.username || 'None'}
 
-📦 *Box Details:*
+📦 <b>Box Details:</b>
 • Box Type: ${data.boxType || 'Unknown Box'}
 • Box Number: ${data.boxNumber || 1}
 • Reward: ${data.reward || 0} STON
@@ -1369,7 +1295,7 @@ function generateAdminMessage(type, data) {
 
 🎁 User successfully watched an ad and earned a box!
 
-🕐 *Time:* ${timestamp}`;
+🕐 <b>Time:</b> ${timestamp}`;
 
     case 'task_completion':
       return `✅ <b>Task Completed!</b>
@@ -1390,58 +1316,58 @@ function generateAdminMessage(type, data) {
 🕐 <b>Time:</b> ${timestamp}`;
 
     case 'payout_created':
-      return `💸 *Payout Created*
+      return `💸 <b>Payout Created</b>
 
-🏦 *Withdrawal Details:*
-• User: \`${data.userId}\`
-• Withdrawal ID: \`${data.withdrawalId}\`
-• Track ID: \`${data.trackId}\`
-• Address: \`${data.address}\`
+🏦 <b>Withdrawal Details:</b>
+• User: <code>${data.userId}</code>
+• Withdrawal ID: <code>${data.withdrawalId}</code>
+• Track ID: <code>${data.trackId}</code>
+• Address: <code>${data.address}</code>
 • Amount: ${data.amount} ${data.currency}
 • Status: ${data.status}
 
 💰 Payout has been submitted to OxaPay for processing.
 
-🕐 *Time:* ${timestamp}`;
+🕐 <b>Time:</b> ${timestamp}`;
 
     case 'withdrawal_approval_failed':
-      return `❌ *Withdrawal Approval Failed*
+      return `❌ <b>Withdrawal Approval Failed</b>
 
-🏦 *Details:*
-• User: \`${data.userId}\` (@${data.username})
+🏦 <b>Details:</b>
+• User: <code>${data.userId}</code> (@${data.username})
 • Amount: ${data.amount} STON (${data.tonAmount} TON)
-• Wallet: \`${data.address}\`
+• Wallet: <code>${data.address}</code>
 • Error: ${data.error}
 
 ⚠️ User balance was NOT deducted.
 
-🕐 *Time:* ${timestamp}`;
+🕐 <b>Time:</b> ${timestamp}`;
 
     case 'task_verification_log':
-      return `🔍 *Task Verification Log*
+      return `🔍 <b>Task Verification Log</b>
 
 ${data.message}
 
-🕐 *Time:* ${timestamp}`;
+🕐 <b>Time:</b> ${timestamp}`;
 
     case 'payout_success':
-      return `✅ *Payout Successful!*
+      return `✅ <b>Payout Successful!</b>
 
-👤 *User Details:*
-• ID: \`${data.userId}\`
+👤 <b>User Details:</b>
+• ID: <code>${data.userId}</code>
 • Name: ${data.username || 'Unknown'}
 
-💰 *Payout Details:*
+💰 <b>Payout Details:</b>
 • Amount: ${data.amount} STON (${data.tonAmount} TON)
-• Address: \`${data.address}\`
-${data.memo ? `• Memo: \`${data.memo}\`` : ''}
-• Track ID: \`${data.trackId}\`
+• Address: <code>${data.address}</code>
+${data.memo ? `• Memo: <code>${data.memo}</code>` : ''}
+• Track ID: <code>${data.trackId}</code>
 • Status: ${data.status}
-• Withdrawal ID: \`${data.withdrawalId}\`
+• Withdrawal ID: <code>${data.withdrawalId}</code>
 
 🎉 Payout has been successfully processed through OxaPay!
 
-🕐 *Time:* ${timestamp}`;
+🕐 <b>Time:</b> ${timestamp}`;
 
     case 'payout_failed':
       let failedMessage = `❌ <b>Payout Failed!</b>
