@@ -199,6 +199,26 @@ export default function StonDropGame() {
           'balanceBreakdown.task': increment(score) // Categorize as task earnings
         });
         
+        // Send admin notification for game quit with score
+        try {
+          await fetch('/api/notifications?action=admin', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              api: import.meta.env.VITE_ADMIN_API_KEY,
+              type: 'game_reward',
+              data: {
+                userId: userId,
+                userName: `User ${userId}`,
+                gameType: 'STON Drop',
+                reward: score
+              }
+            })
+          });
+        } catch (notifError) {
+          console.error('Failed to send admin notification:', notifError);
+        }
+        
         // Also restore energy if game was very short (less than 5 seconds)
         const gameTime = gameStartTime ? (Date.now() - gameStartTime) / 1000 : 0;
         if (gameTime < 5) {
@@ -246,7 +266,7 @@ export default function StonDropGame() {
             const updatedData = updatedSnap.data();
             setFinalBalance(updatedData.balance);
             
-            setScore(prev => prev + doubledScore);
+            // Don't add to score display - just track doubled amount for UI
             setDoubledAmount(doubledScore);
             setHasDoubled(true);
             
@@ -483,6 +503,26 @@ export default function StonDropGame() {
         const updatedData = updatedSnap.data();
         setFinalEnergy(updatedData.energy);
         setFinalBalance(updatedData.balance);
+        
+        // Send admin notification for game completion (no multiplier)
+        try {
+          await fetch('/api/notifications?action=admin', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              api: import.meta.env.VITE_ADMIN_API_KEY,
+              type: 'game_reward',
+              data: {
+                userId: userId,
+                userName: `User ${userId}`,
+                gameType: 'STON Drop',
+                reward: score
+              }
+            })
+          });
+        } catch (notifError) {
+          console.error('Failed to send admin notification:', notifError);
+        }
         
         toast({ 
           title: `Game Over! You earned ${score} STON`,
