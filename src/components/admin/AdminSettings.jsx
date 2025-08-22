@@ -251,6 +251,22 @@ const AdminSettings = ({ adminData }) => {
                 placeholder="@channel_name"
               />
             </div>
+
+            <div>
+              <label className="text-sm font-medium text-gray-300 mb-2 block">
+                <Globe className="w-4 h-4 inline mr-1" />
+                Telegram WebApp URL
+              </label>
+              <Input
+                value={config.telegramWebAppUrl || ''}
+                onChange={(e) => updateConfigField('telegramWebAppUrl', e.target.value)}
+                className="bg-input border-border focus:border-blue-500 focus:bg-input/80 text-white"
+                placeholder="https://your-domain.com"
+              />
+              <p className="text-xs text-gray-400 mt-1">
+                URL for "Open App" buttons in Telegram. Leave empty to use environment default.
+              </p>
+            </div>
             
             <div className="border-t border-gray-600 pt-4 space-y-4">
               <h4 className="text-sm font-medium text-gray-300 mb-3 flex items-center gap-2">
