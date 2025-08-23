@@ -558,6 +558,9 @@ ${data.memo ? `• Memo: <code>${data.memo}</code>` : ''}
         } else if (oxError.key === 'invalid_amount') {
           failedMessage += `
 💡 <b>Solution:</b> Check the withdrawal amount and limits.`;
+        } else if (oxError.key === 'amount_transaction_limit') {
+          failedMessage += `
+💡 <b>Solution:</b> The withdrawal amount (${data.tonAmount} TON) exceeds OxaPay's per-transaction limit. Consider splitting into smaller amounts or check OxaPay account limits.`;
         }
       }
 

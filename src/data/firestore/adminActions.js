@@ -293,20 +293,52 @@ export const approveWithdrawal = async (withdrawalId, userId, amount) => {
     
     // Memo is now optional - no need to check for existence
 
-    // Get admin config for dynamic exchange rate with fallback
+    // Get admin config for dynamic exchange rate - CRITICAL: No defaults for financial operations
     let adminConfig;
     try {
       const { getServerAdminConfig } = await import('@/lib/serverFirebase');
       adminConfig = await getServerAdminConfig();
+      
+      // Validate that we have the critical financial configuration
+      if (!adminConfig || !adminConfig.stonToTonRate || adminConfig.stonToTonRate <= 0) {
+        throw new Error('Critical admin configuration missing or invalid: stonToTonRate');
+      }
+      
+      console.log(`[ADMIN CONFIG] Using stonToTonRate: ${adminConfig.stonToTonRate}`);
     } catch (configError) {
-      console.error('Failed to get admin config, using default:', configError);
-      // Use default admin config if server config fails
-      adminConfig = {
-        stonToTonRate: 0.0000001, // Default: 10M STON = 1 TON
-        minWithdrawalAmount: 10000000,
-        maxWithdrawalAmount: 1000000000,
-        withdrawalEnabled: true
-      };
+      console.error('CRITICAL: Failed to get admin config for financial operation:', configError);
+      
+      // Send immediate error notification about config failure
+      try {
+        await fetch('/api/notifications?action=admin', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            api: import.meta.env.VITE_ADMIN_API_KEY,
+            type: 'payout_failed',
+            data: {
+              userId: userId,
+              userName: 'Unknown',
+              userTelegramUsername: null,
+              username: userId,
+              amount: parseFloat(amount),
+              tonAmount: 0,
+              address: 'Unknown',
+              memo: null,
+              withdrawalId: withdrawalId,
+              error: 'Admin configuration unavailable',
+              errorDetails: `Critical system error: ${configError.message}. Cannot process financial operations without proper admin configuration.`,
+              oxapayDetails: null,
+              fullResponse: null
+            }
+          })
+        });
+      } catch (notificationError) {
+        console.error('Failed to send config error notification:', notificationError);
+      }
+      
+      // FAIL the operation - never use defaults for money calculations
+      throw new Error(`Cannot process withdrawal: Admin configuration unavailable (${configError.message})`);
     }
     
     // Convert STON to TON for payout
@@ -438,7 +470,7 @@ export const approveWithdrawal = async (withdrawalId, userId, amount) => {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            api: process.env.ADMIN_API_KEY,
+            api: import.meta.env.VITE_ADMIN_API_KEY,
             type: 'payout_failed',
             data: {
               userId: userId,
@@ -479,7 +511,7 @@ export const approveWithdrawal = async (withdrawalId, userId, amount) => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          api: process.env.ADMIN_API_KEY,
+          api: import.meta.env.VITE_ADMIN_API_KEY,
           type: 'payout_failed',
           data: {
             userId: userId,

@@ -86,31 +86,10 @@ export const getServerAdminConfig = async () => {
       };
     }
   } catch (error) {
-    console.error('[ServerFirebase] Error getting server admin config:', error);
-    console.log('[ServerFirebase] Using fallback configuration due to connection issues');
-    // Return fallback values (no env vars for these)
-    return {
-      adminChatId: '', // Must be set in admin panel
-      adminTgUsername: '', // Must be set in admin panel
-      stonToTonRate: 0.0000001,
-      maxEnergy: 500,
-      dailyEnergyAdLimit: 10,
-      hourlyEnergyAdLimit: 3,
-      dailyBoxAdLimit: 10,
-      hourlyBoxAdLimit: 3,
-      minWithdrawalAmount: 100000000,
-      energyRewardAmount: 10,
-      boxRewardAmount: 1,
-      stonToTonRate: 0.0000001,
-      generalNotificationChannel: '',
-      withdrawalNotificationChannel: '',
-      paymentNotificationChannel: '',
-      withdrawalEnabled: true,
-      miningEnabled: true,
-      tasksEnabled: true,
-      referralEnabled: true,
-      referralReward: 100,
-      welcomeBonus: 50
-    };
+    console.error('[ServerFirebase] CRITICAL: Error getting server admin config:', error);
+    console.error('[ServerFirebase] Cannot provide default configuration for financial operations');
+    
+    // Re-throw the error instead of returning defaults for financial operations
+    throw new Error(`Failed to retrieve admin configuration: ${error.message}. Cannot proceed with financial operations without valid configuration.`);
   }
 };
