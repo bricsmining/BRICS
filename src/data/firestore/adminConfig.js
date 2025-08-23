@@ -148,9 +148,11 @@ export const broadcastMessage = async (message, adminEmail) => {
         const apiBaseUrl = window.location.hostname === 'localhost' ? 'https://skyton.vercel.app' : '';
         const promise = fetch(`${apiBaseUrl}/api/notifications?action=user`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'x-api-key': import.meta.env.VITE_ADMIN_API_KEY
+          },
           body: JSON.stringify({
-            api: import.meta.env.VITE_ADMIN_API_KEY,
             type: 'broadcast',
             data: { message: message }
           })

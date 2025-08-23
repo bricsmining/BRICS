@@ -36,9 +36,11 @@ const PendingVerificationTab = ({ pendingItems = [], tasks = [], onApprove, onRe
       const apiBaseUrl = window.location.hostname === 'localhost' ? 'https://skyton.vercel.app' : '';
       await fetch(`${apiBaseUrl}/api/notifications?action=user`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-api-key': import.meta.env.VITE_ADMIN_API_KEY
+        },
         body: JSON.stringify({
-          api: import.meta.env.VITE_ADMIN_API_KEY,
           userId: chatId,
           type: 'task_status',
           data: { message: message }
@@ -57,9 +59,11 @@ const PendingVerificationTab = ({ pendingItems = [], tasks = [], onApprove, onRe
       const apiBaseUrl = window.location.hostname === 'localhost' ? 'https://skyton.vercel.app' : '';
       await fetch(`${apiBaseUrl}/api/notifications?action=admin`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-api-key': import.meta.env.VITE_ADMIN_API_KEY
+        },
         body: JSON.stringify({
-          api: import.meta.env.VITE_ADMIN_API_KEY,
           type: 'task_verification_log',
           data: { message: message }
         })
@@ -108,9 +112,9 @@ const PendingVerificationTab = ({ pendingItems = [], tasks = [], onApprove, onRe
 
     setProcessing({ userId, taskId, action: 'approve' });
 
-    const message = `✅ <b>Task Approved!</b>\n\nYour task "<b>${taskTitle}</b>" has been verified and approved.\n\n<b>+${reward} STON</b> has been added to your balance.`;
-    await sendMessage(userId, message);
-
+    // NOTE: Task approval message is now sent by adminActions.js via notifications API
+    // This prevents duplicate messages and ensures proper channel routing
+    
     try {
       await onApprove(userId, taskId);
       sendAdminLog(`Approval process initiated for user ${userId}`);

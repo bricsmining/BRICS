@@ -108,28 +108,56 @@ export const approveTask = async (userId, taskId) => {
         
         // Send user notification via backend API
         try {
-          await fetch('/api/notifications?action=user', {
+                  await fetch('/api/notifications?action=user', {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'x-api-key': import.meta.env.VITE_ADMIN_API_KEY
+          },
+          body: JSON.stringify({
+            userId: userId,
+            type: 'task_approved',
+            data: {
+              taskTitle: task.title,
+              reward: task.reward
+            }
+          })
+                  });
+        } catch (notifError) {
+          console.error('Failed to send user notification:', notifError);
+        }
+        
+        // Send admin notification for channel routing (task approved notification to general channel)
+        try {
+          await fetch('/api/notifications?action=admin', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+              'Content-Type': 'application/json',
+              'x-api-key': import.meta.env.VITE_ADMIN_API_KEY
+            },
             body: JSON.stringify({
-              api: import.meta.env.VITE_ADMIN_API_KEY,
-              userId: userId,
               type: 'task_approved',
               data: {
+                userId: userId,
+                userName: user.firstName || user.lastName || user.username || `User ${userId}`,
+                userTelegramUsername: user.username,
                 taskTitle: task.title,
                 reward: task.reward
               }
             })
           });
         } catch (notifError) {
-          console.error('Failed to send user notification:', notifError);
+          console.error('Failed to send admin notification for task approval:', notifError);
         }
         
         // Check for pending referral rewards after manual task approval
         try {
           const response = await fetch('/api/telegram-bot', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+            'Content-Type': 'application/json',
+            'x-api-key': import.meta.env.VITE_ADMIN_API_KEY
+          },
             body: JSON.stringify({
               action: 'check_referral_rewards',
               userId: userId
@@ -170,9 +198,11 @@ export const rejectTask = async (userId, taskId, reason = 'Requirements not met'
         try {
           await fetch('/api/notifications?action=user', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+              'Content-Type': 'application/json',
+              'x-api-key': import.meta.env.VITE_ADMIN_API_KEY
+            },
             body: JSON.stringify({
-              api: import.meta.env.VITE_ADMIN_API_KEY,
               userId: userId,
               type: 'task_rejected',
               data: {
@@ -319,9 +349,11 @@ export const approveWithdrawal = async (withdrawalId, userId, amount) => {
       try {
         await fetch('/api/notifications?action=admin', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'x-api-key': import.meta.env.VITE_ADMIN_API_KEY
+          },
           body: JSON.stringify({
-            api: import.meta.env.VITE_ADMIN_API_KEY,
             type: 'payout_failed',
             data: {
               userId: userId,
@@ -414,7 +446,10 @@ export const approveWithdrawal = async (withdrawalId, userId, amount) => {
       try {
         await fetch('/api/telegram-bot', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'x-api-key': import.meta.env.VITE_ADMIN_API_KEY
+          },
           body: JSON.stringify({
             action: 'notify_user',
             userId: userId,
@@ -435,7 +470,10 @@ export const approveWithdrawal = async (withdrawalId, userId, amount) => {
       try {
         await fetch('/api/telegram-bot', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'x-api-key': import.meta.env.VITE_ADMIN_API_KEY
+          },
           body: JSON.stringify({
             action: 'notify_admin',
             type: 'payout_success',
@@ -475,9 +513,11 @@ export const approveWithdrawal = async (withdrawalId, userId, amount) => {
       try {
         await fetch('/api/notifications?action=admin', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'x-api-key': import.meta.env.VITE_ADMIN_API_KEY
+          },
           body: JSON.stringify({
-            api: import.meta.env.VITE_ADMIN_API_KEY,
             type: 'payout_failed',
             data: {
               userId: userId,
@@ -588,7 +628,6 @@ export const rejectWithdrawal = async (withdrawalId) => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          api: import.meta.env.VITE_ADMIN_API_KEY,
           userId: withdrawalData.userId,
           type: 'withdrawal_rejected',
           data: {

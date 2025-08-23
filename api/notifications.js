@@ -88,20 +88,21 @@ async function handleAdminNotification(req, res) {
   }
   console.log('[NOTIFICATIONS] Request body:', JSON.stringify(sanitizedBody, null, 2));
   
-  const { api, type, data } = req.body;
+  // Get API key from headers (more secure) or fallback to body (backwards compatibility)
+  const apiKey = req.headers['x-api-key'] || req.body.api;
+  const { type, data } = req.body;
 
   console.log('[NOTIFICATIONS] Extracted type:', type);
   console.log('[NOTIFICATIONS] Extracted data:', JSON.stringify(data, null, 2));
 
   // Verify API key (check both possible environment variables)
   const validApiKey = process.env.ADMIN_API_KEY || process.env.VITE_ADMIN_API_KEY;
-  console.log('[NOTIFICATIONS] API key provided:', api ? 'Yes' : 'No');
+  console.log('[NOTIFICATIONS] API key provided:', apiKey ? 'Yes (in headers)' : 'No');
   console.log('[NOTIFICATIONS] Expected API key:', validApiKey ? 'Configured' : 'Not configured');
   
-  if (!api || api !== validApiKey) {
+  if (!apiKey || apiKey !== validApiKey) {
     console.error('[NOTIFICATIONS] API key validation failed');
-    console.error('[NOTIFICATIONS] Provided:', api);
-    console.error('[NOTIFICATIONS] Expected:', validApiKey);
+    console.error('[NOTIFICATIONS] API key source:', req.headers['x-api-key'] ? 'Headers' : 'Body');
     return res.status(403).json({ success: false, message: 'Invalid API key.' });
   }
   
@@ -263,15 +264,18 @@ async function handleUserNotification(req, res) {
   }
   console.log('[USER NOTIFICATIONS] Request body:', JSON.stringify(sanitizedBody, null, 2));
   
-  const { api, userId, type, data } = req.body;
+  // Get API key from headers (more secure) or fallback to body (backwards compatibility)
+  const apiKey = req.headers['x-api-key'] || req.body.api;
+  const { userId, type, data } = req.body;
 
   // Verify API key (check both possible environment variables)
   const validApiKey = process.env.ADMIN_API_KEY || process.env.VITE_ADMIN_API_KEY;
-  console.log('[USER NOTIFICATIONS] API key provided:', api ? 'Yes (***masked***)' : 'No');
+  console.log('[USER NOTIFICATIONS] API key provided:', apiKey ? 'Yes (in headers)' : 'No');
   console.log('[USER NOTIFICATIONS] Expected API key:', validApiKey ? 'Configured' : 'Not configured');
   
-  if (!api || api !== validApiKey) {
+  if (!apiKey || apiKey !== validApiKey) {
     console.error('[USER NOTIFICATIONS] API key validation failed');
+    console.error('[USER NOTIFICATIONS] API key source:', req.headers['x-api-key'] ? 'Headers' : 'Body');
     return res.status(403).json({ success: false, message: 'Invalid API key.' });
   }
 
@@ -328,7 +332,7 @@ function getNotificationTarget(type, adminConfig) {
   const generalChannelNotifications = [
     'new_user', 'referral', 'referral_pending', 'referral_completed', 'referral_error',
     'energy_earned', 'mystery_box_earned', 'mystery_box_opened', 
-    'task_completion', 'game_reward', 'user_level_achieve', 
+    'task_completion', 'task_approved', 'game_reward', 'user_level_achieve', 
     'wallet_connect', 'task_submission'
   ];
   
@@ -589,6 +593,16 @@ ${data.memo ? `• Memo: <code>${data.memo}</code>` : ''}
 📝 <b>Task:</b> ${data.taskTitle || 'Unknown Task'}
 💰 <b>Reward:</b> ${data.reward || 0} STON
 📊 <b>Type:</b> ${data.taskType || 'Manual'}
+
+🕐 <b>Time:</b> ${timestamp}`;
+
+    case 'task_approved':
+      return `✅ <b>Task Approved!</b>
+
+👤 <b>User:</b> ${formatUserDisplay(data)}
+📝 <b>Task:</b> ${data.taskTitle || 'Unknown Task'}
+💰 <b>Reward:</b> ${data.reward || 0} STON
+🎉 <b>Status:</b> Approved by Admin
 
 🕐 <b>Time:</b> ${timestamp}`;
 

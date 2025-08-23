@@ -213,10 +213,12 @@ export default function StonDropGame() {
         try {
           await fetch('/api/notifications?action=admin', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+              'Content-Type': 'application/json',
+              'x-api-key': import.meta.env.VITE_ADMIN_API_KEY
+            },
             body: JSON.stringify({
-              api: import.meta.env.VITE_ADMIN_API_KEY,
-              type: 'game_reward',
+                          type: 'game_reward',
               data: {
                 userId: userId,
                 userName: userData?.firstName || userData?.username || `User ${userId}`,
@@ -286,10 +288,12 @@ export default function StonDropGame() {
             try {
               await fetch('/api/notifications?action=admin', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+              'Content-Type': 'application/json',
+              'x-api-key': import.meta.env.VITE_ADMIN_API_KEY
+            },
                 body: JSON.stringify({
-                  api: import.meta.env.VITE_ADMIN_API_KEY,
-                  type: 'game_reward',
+                              type: 'game_reward',
                   data: {
                     userId: userId,
                     userName: userData?.firstName || userData?.username || `User ${userId}`,
@@ -526,10 +530,12 @@ export default function StonDropGame() {
         try {
           await fetch('/api/notifications?action=admin', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+              'Content-Type': 'application/json',
+              'x-api-key': import.meta.env.VITE_ADMIN_API_KEY
+            },
             body: JSON.stringify({
-              api: import.meta.env.VITE_ADMIN_API_KEY,
-              type: 'game_reward',
+                          type: 'game_reward',
               data: {
                 userId: userId,
                 userName: userData?.firstName || userData?.username || `User ${userId}`,

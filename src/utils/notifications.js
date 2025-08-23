@@ -34,9 +34,11 @@ export async function notifyAdmin(type, data) {
 
     const response = await fetch(`${baseUrl}/api/notifications?action=admin`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey
+      },
       body: JSON.stringify({
-        api: apiKey,
         type: type,
         data: data
       })
@@ -70,9 +72,11 @@ export async function notifyUser(userId, type, data) {
 
     const response = await fetch(`${baseUrl}/api/notifications?action=user`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey
+      },
       body: JSON.stringify({
-        api: apiKey,
         userId: userId,
         type: type,
         data: data
