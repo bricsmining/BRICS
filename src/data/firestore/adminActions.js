@@ -293,9 +293,21 @@ export const approveWithdrawal = async (withdrawalId, userId, amount) => {
     
     // Memo is now optional - no need to check for existence
 
-    // Get admin config for dynamic exchange rate
-    const { getServerAdminConfig } = await import('@/lib/serverFirebase');
-    const adminConfig = await getServerAdminConfig();
+    // Get admin config for dynamic exchange rate with fallback
+    let adminConfig;
+    try {
+      const { getServerAdminConfig } = await import('@/lib/serverFirebase');
+      adminConfig = await getServerAdminConfig();
+    } catch (configError) {
+      console.error('Failed to get admin config, using default:', configError);
+      // Use default admin config if server config fails
+      adminConfig = {
+        stonToTonRate: 0.0000001, // Default: 10M STON = 1 TON
+        minWithdrawalAmount: 10000000,
+        maxWithdrawalAmount: 1000000000,
+        withdrawalEnabled: true
+      };
+    }
     
     // Convert STON to TON for payout
     const tonAmount = stonToTon(amount, adminConfig);
@@ -460,6 +472,36 @@ export const approveWithdrawal = async (withdrawalId, userId, amount) => {
 
   } catch (error) {
     console.error('Error approving withdrawal:', error);
+    
+    // Try to send failure notification even for main process errors
+    try {
+      await fetch('/api/notifications?action=admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          api: process.env.ADMIN_API_KEY,
+          type: 'payout_failed',
+          data: {
+            userId: userId,
+            userName: 'Unknown', // We may not have userData in this scope
+            userTelegramUsername: null,
+            username: userId,
+            amount: parseFloat(amount),
+            tonAmount: 0,
+            address: 'Unknown',
+            memo: null,
+            withdrawalId: withdrawalId,
+            error: error.message,
+            errorDetails: 'System error during withdrawal approval process',
+            oxapayDetails: null,
+            fullResponse: null
+          }
+        })
+      });
+    } catch (notificationError) {
+      console.error('Failed to send main error notification:', notificationError);
+    }
+    
     return { 
       success: false, 
       error: error.message,

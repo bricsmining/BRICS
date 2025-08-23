@@ -52,11 +52,14 @@ export {
 export const getServerAdminConfig = async () => {
   try {
     const { doc, getDoc } = await import('firebase/firestore');
+    console.log('[ServerFirebase] Attempting to get admin config...');
     const configDoc = await getDoc(doc(db, 'admin', 'config'));
     
     if (configDoc.exists()) {
+      console.log('[ServerFirebase] Admin config loaded successfully');
       return configDoc.data();
     } else {
+      console.warn('[ServerFirebase] Admin config document does not exist, using defaults');
       // Return fallback values if no config exists (no env vars for these)
       return {
         adminChatId: '', // Must be set in admin panel
@@ -83,7 +86,8 @@ export const getServerAdminConfig = async () => {
       };
     }
   } catch (error) {
-    console.error('Error getting server admin config:', error);
+    console.error('[ServerFirebase] Error getting server admin config:', error);
+    console.log('[ServerFirebase] Using fallback configuration due to connection issues');
     // Return fallback values (no env vars for these)
     return {
       adminChatId: '', // Must be set in admin panel
