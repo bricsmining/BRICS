@@ -1597,7 +1597,10 @@ const ProfileSection = ({ user, refreshUserData }) => {
 
     if (result.success) {
       // Refresh user data to reflect the balance cut
-      await refreshUserData();
+      const updatedUser = await getCurrentUser(user.id);
+      if (updatedUser) {
+        refreshUserData(updatedUser);
+      }
       
       // Calculate user statistics for enhanced notification
       const totalReferrals = user.referrals || 0;
