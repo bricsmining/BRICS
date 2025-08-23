@@ -262,6 +262,11 @@ const stonToTon = (ston, adminConfig = null) => {
 
 // Approve a withdrawal request and initiate OxaPay payout
 export const approveWithdrawal = async (withdrawalId, userId, amount) => {
+  // Declare variables at function scope so they're available in catch blocks
+  let userData = null;
+  let walletAddress = null;
+  let username = null;
+  
   try {
     console.log(`Approving withdrawal: ${withdrawalId} for user: ${userId}, amount: ${amount}`);
     
@@ -274,7 +279,8 @@ export const approveWithdrawal = async (withdrawalId, userId, amount) => {
     }
     
     const withdrawalData = withdrawalDoc.data();
-    const { walletAddress, username } = withdrawalData;
+    walletAddress = withdrawalData.walletAddress;
+    username = withdrawalData.username;
     
     if (!walletAddress) {
       throw new Error('No wallet address found in withdrawal request');
@@ -288,7 +294,7 @@ export const approveWithdrawal = async (withdrawalId, userId, amount) => {
       throw new Error('User not found');
     }
     
-    const userData = userDoc.data();
+    userData = userDoc.data();
     const tonMemo = userData.tonMemo;
     
     // Memo is now optional - no need to check for existence
@@ -318,13 +324,13 @@ export const approveWithdrawal = async (withdrawalId, userId, amount) => {
             type: 'payout_failed',
             data: {
               userId: userId,
-              userName: 'Unknown',
-              userTelegramUsername: null,
-              username: userId,
+              userName: userData.firstName || userData.lastName || userData.username || `User ${userId}`,
+              userTelegramUsername: userData.username,
+              username: userData.username || userId,
               amount: parseFloat(amount),
               tonAmount: 0,
-              address: 'Unknown',
-              memo: null,
+              address: walletAddress || 'Unknown',
+              memo: userData.tonMemo || null,
               withdrawalId: withdrawalId,
               error: 'Admin configuration unavailable',
               errorDetails: `Critical system error: ${configError.message}. Cannot process financial operations without proper admin configuration.`,
@@ -515,13 +521,13 @@ export const approveWithdrawal = async (withdrawalId, userId, amount) => {
           type: 'payout_failed',
           data: {
             userId: userId,
-            userName: 'Unknown', // We may not have userData in this scope
-            userTelegramUsername: null,
-            username: userId,
+            userName: userData?.firstName || userData?.lastName || userData?.username || `User ${userId}`,
+            userTelegramUsername: userData?.username,
+            username: userData?.username || username || userId,
             amount: parseFloat(amount),
             tonAmount: 0,
-            address: 'Unknown',
-            memo: null,
+            address: walletAddress || 'Unknown',
+            memo: userData?.tonMemo || null,
             withdrawalId: withdrawalId,
             error: error.message,
             errorDetails: 'System error during withdrawal approval process',

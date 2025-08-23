@@ -48,48 +48,41 @@ export {
   Timestamp
 } from 'firebase/firestore';
 
-// Helper function to get admin configuration for server-side usage
-export const getServerAdminConfig = async () => {
-  try {
-    const { doc, getDoc } = await import('firebase/firestore');
-    console.log('[ServerFirebase] Attempting to get admin config...');
-    const configDoc = await getDoc(doc(db, 'admin', 'config'));
-    
-    if (configDoc.exists()) {
-      console.log('[ServerFirebase] Admin config loaded successfully');
-      return configDoc.data();
-    } else {
-      console.warn('[ServerFirebase] Admin config document does not exist, using defaults');
-      // Return fallback values if no config exists (no env vars for these)
-      return {
-        adminChatId: '', // Must be set in admin panel
-        adminTgUsername: '', // Must be set in admin panel
-        stonToTonRate: 0.0000001,
-        maxEnergy: 500,
-        dailyEnergyAdLimit: 10,
-        hourlyEnergyAdLimit: 3,
-        dailyBoxAdLimit: 10,
-        hourlyBoxAdLimit: 3,
-        minWithdrawalAmount: 10000000,
-        energyRewardAmount: 10,
-        boxRewardAmount: 1,
-        stonToTonRate: 0.0000001,
-        generalNotificationChannel: '',
-        withdrawalNotificationChannel: '',
-        paymentNotificationChannel: '',
-        withdrawalEnabled: true,
-        miningEnabled: true,
-        tasksEnabled: true,
-        referralEnabled: true,
-        referralReward: 100,
-        welcomeBonus: 50
-      };
+// Helper function to get admin configuration with retry logic
+export const getServerAdminConfig = async (retryCount = 3) => {
+  for (let attempt = 1; attempt <= retryCount; attempt++) {
+    try {
+      const { doc, getDoc } = await import('firebase/firestore');
+      console.log(`[ServerFirebase] Attempting to get admin config... (attempt ${attempt}/${retryCount})`);
+      
+      // Add timeout to the request
+      const configDoc = await Promise.race([
+        getDoc(doc(db, 'admin', 'config')),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Request timeout after 10 seconds')), 10000)
+        )
+      ]);
+      
+      if (configDoc.exists()) {
+        console.log(`[ServerFirebase] Admin config loaded successfully on attempt ${attempt}`);
+        return configDoc.data();
+      } else {
+        console.warn(`[ServerFirebase] Admin config document does not exist (attempt ${attempt})`);
+        throw new Error('Admin configuration document not found in Firebase');
+      }
+    } catch (error) {
+      console.error(`[ServerFirebase] Error on attempt ${attempt}/${retryCount}:`, error.message);
+      
+      if (attempt === retryCount) {
+        // Last attempt failed
+        console.error('[ServerFirebase] CRITICAL: All retry attempts failed');
+        throw new Error(`Failed to retrieve admin configuration after ${retryCount} attempts: ${error.message}. Cannot proceed with financial operations without valid configuration.`);
+      }
+      
+      // Wait before retrying (exponential backoff)
+      const delay = Math.pow(2, attempt) * 1000; // 2s, 4s, 8s
+      console.log(`[ServerFirebase] Waiting ${delay}ms before retry...`);
+      await new Promise(resolve => setTimeout(resolve, delay));
     }
-  } catch (error) {
-    console.error('[ServerFirebase] CRITICAL: Error getting server admin config:', error);
-    console.error('[ServerFirebase] Cannot provide default configuration for financial operations');
-    
-    // Re-throw the error instead of returning defaults for financial operations
-    throw new Error(`Failed to retrieve admin configuration: ${error.message}. Cannot proceed with financial operations without valid configuration.`);
   }
 };
