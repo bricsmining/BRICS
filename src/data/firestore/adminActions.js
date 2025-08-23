@@ -299,18 +299,31 @@ export const approveWithdrawal = async (withdrawalId, userId, amount) => {
     
     // Memo is now optional - no need to check for existence
 
-    // Get admin config for dynamic exchange rate - CRITICAL: No defaults for financial operations
+    // Get admin config for dynamic exchange rate using reliable server-side API
     let adminConfig;
     try {
-      const { getServerAdminConfig } = await import('@/lib/serverFirebase');
-      adminConfig = await getServerAdminConfig();
+      console.log('[ADMIN CONFIG] Fetching admin config via Admin SDK API...');
+      const baseUrl = window.location.origin || 'https://skyton.vercel.app';
+      const response = await fetch(`${baseUrl}/api/admin-config?api=${import.meta.env.VITE_ADMIN_API_KEY}`);
+      
+      if (!response.ok) {
+        throw new Error(`Admin config API failed: ${response.status} ${response.statusText}`);
+      }
+      
+      const result = await response.json();
+      
+      if (!result.success) {
+        throw new Error(`Admin config API error: ${result.error}`);
+      }
+      
+      adminConfig = result.data;
       
       // Validate that we have the critical financial configuration
       if (!adminConfig || !adminConfig.stonToTonRate || adminConfig.stonToTonRate <= 0) {
         throw new Error('Critical admin configuration missing or invalid: stonToTonRate');
       }
       
-      console.log(`[ADMIN CONFIG] Using stonToTonRate: ${adminConfig.stonToTonRate}`);
+      console.log(`[ADMIN CONFIG] Using stonToTonRate: ${adminConfig.stonToTonRate} (via Admin SDK)`);
     } catch (configError) {
       console.error('CRITICAL: Failed to get admin config for financial operation:', configError);
       
