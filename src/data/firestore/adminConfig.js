@@ -112,7 +112,7 @@ export const updateAdminConfig = async (updates, adminEmail = 'system') => {
 export const getEnvConfig = () => ({
   // Sensitive data from environment variables
   telegramBotToken: import.meta.env.VITE_TG_BOT_TOKEN || '',
-  oxapayApiKey: import.meta.env.VITE_OXAPAY_API_KEY || '',
+  oxapayApiKey: import.meta.env.VITE_MERCHANT_API_KEY || '',
   oxapayPayoutApiKey: import.meta.env.VITE_OXAPAY_PAYOUT_API_KEY || '',
   referralApiKey: import.meta.env.VITE_ADMIN_API_KEY, // For referral system
 });
