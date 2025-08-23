@@ -376,7 +376,8 @@ const MysteryBoxSection = ({ user, refreshUserData, navigate }) => {
         try {
           await sendAdminNotification('mystery_box_opened', {
             userId: user.id,
-            userName: user.username || user.first_name || user.last_name || 'Unknown',
+            userName: user.first_name || user.last_name || user.username || 'Unknown',
+            userTelegramUsername: user.username,
             username: user.username || 'None',
             boxType: 'Mystery Box',
             reward: reward,
@@ -1629,7 +1630,8 @@ const ProfileSection = ({ user, refreshUserData }) => {
       // Send notification with enhanced details
       await sendAdminNotification('withdrawal_request', {
         userId: user.id,
-        userName: user.username || user.first_name || user.last_name || 'Unknown',
+        userName: user.first_name || user.last_name || user.username || 'Unknown',
+        userTelegramUsername: user.username,
         username: user.username || 'None',
         amount: amount,
         method: 'TON Wallet',
@@ -2836,7 +2838,8 @@ const MysteryBoxModal = ({ isOpen, onClose, user, refreshUserData, navigate }) =
         try {
           await sendAdminNotification('mystery_box_opened', {
             userId: user.id,
-            userName: user.username || user.first_name || user.last_name || 'Unknown',
+            userName: user.first_name || user.last_name || user.username || 'Unknown',
+            userTelegramUsername: user.username,
             username: user.username || 'None',
             boxType: 'Mystery Box',
             reward: reward,

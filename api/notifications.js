@@ -493,10 +493,7 @@ ${data.totalUsers ? `• Total Users: <b>${data.totalUsers.toLocaleString()}</b>
       return {
         text: `💸 <b>Withdrawal Request!</b>
 
-👤 <b>User Details:</b>
-• ID: <code>${data.userId}</code>
-• Name: ${data.userName || 'Unknown'}
-• Username: @${data.username || 'None'}
+👤 <b>User:</b> ${formatUserDisplay(data)}
 • Joined: ${stats.joinedAt || 'Unknown'}
 
 💰 <b>Withdrawal Details:</b>

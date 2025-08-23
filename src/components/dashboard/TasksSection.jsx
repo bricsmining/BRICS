@@ -660,7 +660,8 @@ const TasksSection = ({ tasks = [], user = {}, refreshUserData, isLoading }) => 
             try {
               await sendAdminNotification('mystery_box_earned', {
                 userId: user.id,
-                userName: user.username || user.first_name || user.last_name || 'Unknown',
+                userName: user.first_name || user.last_name || user.username || 'Unknown',
+                userTelegramUsername: user.username,
                 username: user.username || 'None',
                 boxType: 'Mystery Box',
                 boxesGained: result.boxesGained,
