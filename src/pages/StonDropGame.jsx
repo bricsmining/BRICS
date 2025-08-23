@@ -57,6 +57,9 @@ export default function StonDropGame() {
   const [isDoubling, setIsDoubling] = useState(false);
   const [hasDoubled, setHasDoubled] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isQuitting, setIsQuitting] = useState(false);
+  const [isFinalizingGame, setIsFinalizingGame] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
   const [gameStartTime, setGameStartTime] = useState(null);
   const [combo, setCombo] = useState(0);
   const [showCombo, setShowCombo] = useState(false);
@@ -187,6 +190,13 @@ export default function StonDropGame() {
   }, []);
 
   const quitGame = useCallback(async () => {
+    // Prevent multiple clicks while processing
+    if (isQuitting) {
+      console.log('🔄 Quit already in progress, ignoring additional clicks');
+      return;
+    }
+    
+    setIsQuitting(true);
     clearInterval(gameTimer.current);
     clearInterval(dropInterval.current);
     
@@ -245,7 +255,7 @@ export default function StonDropGame() {
     }
     
     navigate('/tasks');
-  }, [gameStarted, isGameOver, userId, score, navigate, toast, gameStartTime]);
+  }, [gameStarted, isGameOver, userId, score, navigate, toast, gameStartTime, isQuitting]);
 
   const handleDoubleReward = useCallback(() => {
     if (hasDoubled || score <= 0) return;
@@ -495,9 +505,10 @@ export default function StonDropGame() {
   }, [isPaused, score, combo, showGameOverAnimation, isGameOver]);
 
   useEffect(() => {
-    if (!isGameOver || !userId) return;
+    if (!isGameOver || !userId || isFinalizingGame) return;
     
     const finalizeGame = async () => {
+      setIsFinalizingGame(true);
       try {
         const docRef = doc(db, 'users', userId);
         await updateDoc(docRef, { 
@@ -546,9 +557,17 @@ export default function StonDropGame() {
     };
     
     finalizeGame();
-  }, [isGameOver, userId, score, toast]);
+  }, [isGameOver, userId, score, toast, isFinalizingGame]);
 
   const resetGame = useCallback(async () => {
+    // Prevent multiple clicks while processing
+    if (isResetting) {
+      console.log('🔄 Reset already in progress, ignoring additional clicks');
+      return;
+    }
+    
+    setIsResetting(true);
+    
     // Clear all timers
     clearInterval(gameTimer.current);
     clearInterval(dropInterval.current);
@@ -605,7 +624,9 @@ export default function StonDropGame() {
         return;
       }
     }
-  }, [userId, userData, navigate, toast]);
+    
+    setIsResetting(false);
+  }, [userId, userData, navigate, toast, isResetting]);
 
   const handleBackClick = useCallback(() => {
     if (!gameStarted || isGameOver) {
@@ -1094,14 +1115,25 @@ export default function StonDropGame() {
                 <Button
                   className="px-6 py-2 bg-gradient-to-br from-blue-600 to-blue-800 hover:from-blue-700 hover:to-blue-900 text-white rounded-xl font-semibold shadow-lg transition-all duration-300 transform hover:scale-105"
                   onClick={resetGame}
+                  disabled={isResetting}
                 >
-                  <Play className="mr-2 h-4 w-4" />
-                  Play Again
+                  {isResetting ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Starting...
+                    </>
+                  ) : (
+                    <>
+                      <Play className="mr-2 h-4 w-4" />
+                      Play Again
+                    </>
+                  )}
                 </Button>
                 <Button
                   variant="outline"
                   className="px-6 py-2 border-white/30 text-white hover:bg-white/10 rounded-xl font-semibold shadow-lg transition-all duration-300"
                   onClick={() => navigate('/tasks')}
+                  disabled={isResetting}
                 >
                   <ArrowLeft className="mr-2 h-4 w-4" />
                   Back to Tasks
@@ -1132,14 +1164,23 @@ export default function StonDropGame() {
                   setShowQuitConfirm(false);
                   resumeGame();
                 }}
+                disabled={isQuitting}
               >
                 No, Continue
               </Button>
               <Button
                 className="bg-red-600 hover:bg-red-700 text-white"
                 onClick={quitGame}
+                disabled={isQuitting}
               >
-                Yes, Quit
+                {isQuitting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Quitting...
+                  </>
+                ) : (
+                  'Yes, Quit'
+                )}
               </Button>
             </div>
           </motion.div>
