@@ -368,10 +368,7 @@ function generateNotificationMessage(type, data) {
     case 'new_user':
       return `🎉 <b>New User Joined!</b>
 
-👤 <b>User Info:</b>
-• ID: <code>${data.userId}</code>
-• Name: ${data.name || 'Unknown'}
-• Username: @${data.username || 'None'}
+👤 <b>User:</b> ${formatUserDisplay(data)}
 ${data.referrerId ? `• Referred by: <code>${data.referrerId}</code>` : ''}
 ${data.totalUsers ? `• Total Users: <b>${data.totalUsers.toLocaleString()}</b>` : ''}
 
@@ -382,7 +379,7 @@ ${data.totalUsers ? `• Total Users: <b>${data.totalUsers.toLocaleString()}</b>
 
 👥 <b>Referral Info:</b>
 • Referrer: <code>${data.referrerId}</code> (${data.referrerName || 'Unknown'})
-• New User: <code>${data.newUserId}</code> (${data.newUserName || 'Unknown'})
+• New User: ${formatUserDisplay({userId: data.newUserId, userName: data.newUserName, userTelegramUsername: data.newUserTelegramUsername})}
 • Reward: ${data.reward || 0} STON + 1 Free Spin
 
 🕐 <b>Time:</b> ${timestamp}`;
@@ -392,7 +389,7 @@ ${data.totalUsers ? `• Total Users: <b>${data.totalUsers.toLocaleString()}</b>
 
 👥 <b>Referral Info:</b>
 • Referrer: <code>${data.referrerId}</code> (${data.referrerName || 'Unknown'})
-• New User: <code>${data.newUserId}</code> (${data.newUserName || 'Unknown'})
+• New User: ${formatUserDisplay({userId: data.newUserId, userName: data.newUserName, userTelegramUsername: data.newUserTelegramUsername})}
 • Status: <b>Pending</b> (${data.tasksCompleted || 0}/${data.tasksRequired || 3} tasks completed)
 • Potential Reward: ${data.userReward || 0} + ${data.referrerReward || 0} STON
 
@@ -403,7 +400,7 @@ ${data.totalUsers ? `• Total Users: <b>${data.totalUsers.toLocaleString()}</b>
 
 👥 <b>Referral Info:</b>
 • Referrer: <code>${data.referrerId}</code> (${data.referrerName || 'Unknown'})
-• User: <code>${data.userId}</code> (${data.userName || 'Unknown'})
+• User: ${formatUserDisplay(data)}
 • Tasks Completed: <b>${data.tasksCompleted}/${data.tasksRequired}</b>
 • Rewards Distributed: ${data.userReward || 0} + ${data.referrerReward || 0} STON
 
@@ -530,9 +527,7 @@ ${data.totalUsers ? `• Total Users: <b>${data.totalUsers.toLocaleString()}</b>
     case 'payout_failed':
       let failedMessage = `❌ <b>Payout Failed!</b>
 
-👤 <b>User Details:</b>
-• ID: <code>${data.userId}</code>
-• Name: ${data.username || 'Unknown'}
+👤 <b>User:</b> ${formatUserDisplay(data)}
 
 💰 <b>Payout Details:</b>
 • Amount: ${data.amount} STON (${data.tonAmount} TON)

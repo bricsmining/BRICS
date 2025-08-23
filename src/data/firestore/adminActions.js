@@ -422,14 +422,16 @@ export const approveWithdrawal = async (withdrawalId, userId, amount) => {
 
       // Send detailed failure notification to admin via telegram bot
       try {
-        await fetch('/api/telegram-bot', {
+        await fetch('/api/notifications?action=admin', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            action: 'notify_admin',
+            api: process.env.ADMIN_API_KEY,
             type: 'payout_failed',
             data: {
               userId: userId,
+              userName: userData.firstName || userData.lastName || userData.username || username || 'Unknown',
+              userTelegramUsername: userData.username,
               username: username || userId,
               amount: parseFloat(amount),
               tonAmount: parseFloat(tonAmount),

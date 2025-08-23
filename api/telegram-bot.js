@@ -261,7 +261,8 @@ async function handleStartWithReferral(chatId, userId, referrerId, userInfo) {
             type: 'referral_pending',
             data: {
         newUserId: userId,
-        newUserName: userInfo.first_name || 'Unknown',
+        newUserName: userInfo.first_name || userInfo.last_name || userInfo.username || 'Unknown',
+        newUserTelegramUsername: userInfo.username,
         referrerId: referrerId,
               referrerReward: referralResult.referrerReward,
               welcomeBonus: referralResult.welcomeBonus,
@@ -980,10 +981,13 @@ async function processPendingReferralRewards(userId) {
               type: 'referral_completed',
               data: {
                 userId: userId,
+                userName: userData.firstName || userData.lastName || userData.username || 'Unknown',
+                userTelegramUsername: userData.username,
                 referrerId: pendingReward.referrerId,
                 userReward: pendingReward.userReward,
                 referrerReward: pendingReward.referrerReward,
-                tasksCompleted: tasksCompleted
+                tasksCompleted: tasksCompleted,
+                tasksRequired: pendingReward.tasksRequired || 3
               }
             })
           });
@@ -1190,29 +1194,9 @@ function generateAdminMessage(type, data) {
 
 🕐 <b>Time:</b> ${timestamp}`;
 
-    case 'referral_pending':
-      return `⏳ <b>New Referral (Pending)</b>
+    // referral_pending now handled by api/notifications.js - removed duplicate
 
-👥 <b>Referral Info:</b>
-• Referrer: <code>${data.referrerId}</code>
-• New User: <code>${data.newUserId}</code> (${data.newUserName || 'Unknown'})
-• Status: <b>Pending - Requires 3 task completions</b>
-• Pending Referrer Reward: ${data.referrerReward || data.reward || 0} STON + 1 Free Spin
-• Pending Welcome Bonus: ${data.welcomeBonus || 0} STON
-
-🕐 <b>Time:</b> ${timestamp}`;
-
-    case 'referral_completed':
-      return `🎉 <b>Referral Rewards Distributed!</b>
-
-👥 <b>Referral Info:</b>
-• Referrer: <code>${data.referrerId}</code>
-• New User: <code>${data.userId}</code>
-• Tasks Completed: ${data.tasksCompleted}/3 ✅
-• Referrer Reward: ${data.referrerReward || 0} STON + 1 Free Spin
-• User Reward: ${data.userReward || 0} STON
-
-🕐 <b>Time:</b> ${timestamp}`;
+    // referral_completed now handled by api/notifications.js - removed duplicate
 
     case 'referral_error':
       return `❌ <b>Referral Error!</b>
@@ -1323,52 +1307,7 @@ function generateAdminMessage(type, data) {
     // Removed to avoid duplication: task_completion, payout_created, 
     // withdrawal_approval_failed, task_verification_log, payout_success
 
-    case 'payout_failed':
-      let failedMessage = `❌ <b>Payout Failed!</b>
-
-👤 <b>User Details:</b>
-• ID: <code>${data.userId}</code>
-• Name: ${data.username || 'Unknown'}
-
-💰 <b>Payout Details:</b>
-• Amount: ${data.amount} STON (${data.tonAmount} TON)
-• Address: <code>${data.address}</code>
-${data.memo ? `• Memo: <code>${data.memo}</code>` : ''}
-• Withdrawal ID: <code>${data.withdrawalId}</code>
-
-❗ <b>Error Details:</b>
-• Error: ${data.error}
-• Details: ${data.errorDetails}`;
-
-      // Add detailed OxaPay error information if available
-      if (data.oxapayDetails?.error) {
-        const oxError = data.oxapayDetails.error;
-        failedMessage += `
-
-🚨 <b>OxaPay API Error:</b>
-• Type: <code>${oxError.type || 'Unknown'}</code>
-• Key: <code>${oxError.key || 'Unknown'}</code>
-• Message: ${oxError.message || 'No message'}`;
-
-        if (oxError.key === 'amount_exceeds_balance') {
-          failedMessage += `
-💡 <b>Solution:</b> Check OxaPay wallet balance and fund if necessary.`;
-        } else if (oxError.key === 'invalid_address') {
-          failedMessage += `
-💡 <b>Solution:</b> Verify the recipient wallet address format.`;
-        } else if (oxError.key === 'invalid_amount') {
-          failedMessage += `
-💡 <b>Solution:</b> Check the withdrawal amount and limits.`;
-        }
-      }
-
-      failedMessage += `
-
-⚠️ User's balance was NOT deducted. Manual intervention may be required.
-
-🕐 <b>Time:</b> ${timestamp}`;
-
-      return failedMessage;
+    // payout_failed now handled by api/notifications.js - removed duplicate
 
     default:
       return null;

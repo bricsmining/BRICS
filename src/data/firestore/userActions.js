@@ -104,6 +104,8 @@ export const getOrCreateUser = async (telegramUserData, referrerId = null) => {
             type: 'new_user',
             data: {
               userId: telegramUserData.id,
+              userName: telegramUserData.firstName || telegramUserData.lastName || telegramUserData.username || 'Unknown',
+              userTelegramUsername: telegramUserData.username,
               name: telegramUserData.firstName || 'Unknown',
               username: telegramUserData.username,
               referrerId: referrerId
