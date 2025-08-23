@@ -12,6 +12,26 @@ import {
 
 const BOT_TOKEN = process.env.TG_BOT_TOKEN;
 
+// Helper function to escape HTML characters
+function escapeHtml(unsafe) {
+  if (typeof unsafe !== 'string') return unsafe;
+  return unsafe
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+// Helper function to format user display with Telegram link
+function formatUserDisplay(data) {
+  if (data.userTelegramUsername) {
+    return `<a href="https://t.me/${data.userTelegramUsername}">${escapeHtml(data.userName || 'Unknown')}</a>`;
+  } else {
+    return `<code>${data.userId}</code> (${escapeHtml(data.userName || 'Unknown')})`;
+  }
+}
+
 // Utility function to get API base URL
 function getApiBaseUrl(req) {
   // Priority order:
@@ -406,7 +426,7 @@ ${data.totalUsers ? `• Total Users: <b>${data.totalUsers.toLocaleString()}</b>
     case 'energy_earned':
       return `⚡ <b>Energy Earned!</b>
 
-👤 <b>User:</b> <code>${data.userId}</code> (${data.userName || 'Unknown'})
+👤 <b>User:</b> ${formatUserDisplay(data)}
 • Energy Gained: <b>+${data.energyGained || 0}</b>
 • New Energy: <b>${data.newEnergy || 0}</b>
 • Source: ${data.source || 'Ad Reward'}
@@ -418,9 +438,9 @@ ${data.totalUsers ? `• Total Users: <b>${data.totalUsers.toLocaleString()}</b>
     case 'mystery_box_earned':
       return `🎁 <b>Mystery Box Earned!</b>
 
-👤 <b>User:</b> <code>${data.userId}</code> (${data.userName || 'Unknown'})
+👤 <b>User:</b> ${formatUserDisplay(data)}
 • Boxes Gained: <b>+${data.boxesGained || 0}</b>
-• Total Boxes: <b>${data.newBoxCount || 0}</b>
+• Total Boxes: <b>+${data.newBoxCount || 0}</b>
 • Source: ${data.source || 'Ad Reward'}
 • Daily Usage: ${data.dailyUsed || 0}/${data.dailyLimit || 10}
 • Hourly Usage: ${data.hourlyUsed || 0}/${data.hourlyLimit || 3}
@@ -430,7 +450,7 @@ ${data.totalUsers ? `• Total Users: <b>${data.totalUsers.toLocaleString()}</b>
     case 'mystery_box_opened':
       return `🎉 <b>Mystery Box Opened!</b>
 
-👤 <b>User:</b> <code>${data.userId}</code> (${data.userName || 'Unknown'})
+👤 <b>User:</b> ${formatUserDisplay(data)}
 • Reward: <b>+${data.reward || 0} STON</b>
 • Balance Type: ${data.balanceType || 'Box (Withdrawal Only)'}
 • Boxes Remaining: <b>${data.boxesRemaining || 0}</b>
@@ -570,7 +590,7 @@ ${data.memo ? `• Memo: <code>${data.memo}</code>` : ''}
     case 'task_completion':
       return `✅ <b>Task Completed!</b>
 
-👤 <b>User:</b> <code>${data.userId}</code> (${data.userName || 'Unknown'})
+👤 <b>User:</b> ${formatUserDisplay(data)}
 📝 <b>Task:</b> ${data.taskTitle || 'Unknown Task'}
 💰 <b>Reward:</b> ${data.reward || 0} STON
 📊 <b>Type:</b> ${data.taskType || 'Manual'}
@@ -584,10 +604,7 @@ ${data.memo ? `• Memo: <code>${data.memo}</code>` : ''}
     case 'user_level_achieve':
       return `🆙 <b>User Level Achievement!</b>
 
-👤 <b>User Details:</b>
-• ID: <code>${data.userId}</code>
-• Name: ${data.userName || 'Unknown'}
-• Username: @${data.username || 'None'}
+👤 <b>User:</b> ${formatUserDisplay(data)}
 
 🎉 <b>Achievement Details:</b>
 • New Level: ${data.newLevel || 1}
@@ -602,7 +619,7 @@ ${data.memo ? `• Memo: <code>${data.memo}</code>` : ''}
     case 'game_reward':
       let gameMessage = `🎮 <b>Game Reward!</b>
 
-👤 <b>User:</b> <code>${data.userId}</code> (${data.userName || 'Unknown'})
+👤 <b>User:</b> ${formatUserDisplay(data)}
 🎯 <b>Game:</b> ${data.gameType || 'Unknown'}`;
 
       // Handle different reward types
@@ -642,10 +659,7 @@ ${data.memo ? `• Memo: <code>${data.memo}</code>` : ''}
     case 'wallet_connect':
       return `🔗 <b>Wallet Connected!</b>
 
-👤 <b>User Details:</b>
-• ID: <code>${data.userId}</code>
-• Name: ${data.userName || 'Unknown'}
-• Username: @${data.username || 'None'}
+👤 <b>User:</b> ${formatUserDisplay(data)}
 
 💳 <b>Wallet Details:</b>
 • Wallet Address: <code>${data.walletAddress || 'Not provided'}</code>

@@ -219,7 +219,8 @@ export default function StonDropGame() {
               type: 'game_reward',
               data: {
                 userId: userId,
-                userName: `User ${userId}`,
+                userName: userData?.firstName || userData?.username || `User ${userId}`,
+                userTelegramUsername: userData?.username,
                 gameType: 'STON Drop',
                 reward: score,
                 rewardType: 'early_quit'
@@ -291,7 +292,8 @@ export default function StonDropGame() {
                   type: 'game_reward',
                   data: {
                     userId: userId,
-                    userName: `User ${userId}`,
+                    userName: userData?.firstName || userData?.username || `User ${userId}`,
+                    userTelegramUsername: userData?.username,
                     gameType: 'STON Drop',
                     reward: doubledScore,
                     multiplier: '2x',
@@ -530,7 +532,8 @@ export default function StonDropGame() {
               type: 'game_reward',
               data: {
                 userId: userId,
-                userName: `User ${userId}`,
+                userName: userData?.firstName || userData?.username || `User ${userId}`,
+                userTelegramUsername: userData?.username,
                 gameType: 'STON Drop',
                 reward: score,
                 rewardType: 'normal_completion'
