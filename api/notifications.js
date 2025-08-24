@@ -586,6 +586,30 @@ ${data.memo ? `• Memo: <code>${data.memo}</code>` : ''}
         ]
       };
 
+    case 'withdrawal_rejected':
+      return {
+        text: `❌ <b>Withdrawal Rejected!</b>
+
+👤 <b>User:</b> ${formatUserDisplay(data)}
+
+💰 <b>Withdrawal Details:</b>
+• Amount: ${data.amount || 0} STON
+📝 <b>Reason:</b> ${data.reason || 'Administrative decision'}
+
+✅ <b>Balance Restored:</b> User's balance has been refunded
+📊 <b>Status:</b> Rejected by Admin
+
+🕐 <b>Time:</b> ${timestamp}`,
+        keyboard: [
+          [
+            {
+              text: '🎛️ Open Admin Panel',
+              web_app: { url: `${getApiBaseUrl()}/admin` }
+            }
+          ]
+        ]
+      };
+
     case 'task_completion':
       return `✅ <b>Task Completed!</b>
 

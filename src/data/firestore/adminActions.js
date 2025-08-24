@@ -622,11 +622,13 @@ export const rejectWithdrawal = async (withdrawalId) => {
 
     // Send user notification about rejection
     try {
-      
       // Send user notification via backend API
       await fetch('/api/notifications?action=user', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-api-key': import.meta.env.VITE_ADMIN_API_KEY
+        },
         body: JSON.stringify({
           userId: withdrawalData.userId,
           type: 'withdrawal_rejected',
@@ -638,6 +640,33 @@ export const rejectWithdrawal = async (withdrawalId) => {
       });
     } catch (notificationError) {
       console.error('Failed to send rejection notification to user:', notificationError);
+    }
+
+    // Send admin notification for channel routing (withdrawal rejected notification to channel)
+    try {
+      // Get user data for notification
+      const userDoc = await getDoc(userRef);
+      const userData = userDoc.exists() ? userDoc.data() : {};
+      
+      await fetch('/api/notifications?action=admin', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-api-key': import.meta.env.VITE_ADMIN_API_KEY
+        },
+        body: JSON.stringify({
+          type: 'withdrawal_rejected',
+          data: {
+            userId: withdrawalData.userId,
+            userName: userData.firstName || userData.lastName || userData.username || `User ${withdrawalData.userId}`,
+            userTelegramUsername: userData.username,
+            amount: withdrawalData.amount,
+            reason: 'Administrative decision'
+          }
+        })
+      });
+    } catch (notificationError) {
+      console.error('Failed to send admin notification for withdrawal rejection:', notificationError);
     }
 
     console.log(`Withdrawal ${withdrawalId} rejected`);
