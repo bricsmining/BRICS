@@ -28,11 +28,11 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { updateCurrentUser, getCurrentUser } from '@/data/userStore';
-import { getPurchasableBalance, deductPurchasableBalance, updateUserBalanceByType } from '@/data';
+import { updateUserBalanceByType, getPurchasableBalance } from '@/data';
 import { Timestamp } from 'firebase/firestore';
 import { getAdminConfig } from '@/data/firestore/adminConfig';
 import PurchaseDialog from './PurchaseDialog';
-import PaymentModal from './PaymentModal';
+
 
 // Get individual card configurations from admin config
 const getIndividualCards = (adminConfig) => {
@@ -118,16 +118,13 @@ const MiningSection = ({ user, refreshUserData }) => {
   const [miningProgress, setMiningProgress] = useState(0);
   const [pendingRewards, setPendingRewards] = useState(0);
   const [isClaimingRewards, setIsClaimingRewards] = useState(false);
-  const [isPurchasing, setIsPurchasing] = useState(false);
+
   const [currentTime, setCurrentTime] = useState(new Date());
   const [timeUntilNextReward, setTimeUntilNextReward] = useState('');
   const [nextExpiryInfo, setNextExpiryInfo] = useState('');
   const [showPurchaseDialog, setShowPurchaseDialog] = useState(false);
   const [selectedCardLevel, setSelectedCardLevel] = useState(1);
-  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-  const [confirmPurchaseData, setConfirmPurchaseData] = useState(null);
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [paymentData, setPaymentData] = useState(null);
+
   const [adminConfig, setAdminConfig] = useState(null);
 
   // Get dynamic card configurations based on admin config
@@ -290,8 +287,8 @@ const MiningSection = ({ user, refreshUserData }) => {
         setTimeUntilNextReward('--');
       }
 
-      // Set next expiry info
-      if (miningStats.nextToExpire) {
+      // Set next expiry info - ONLY for active cards
+      if (miningStats.nextToExpire && miningStats.nextToExpire.isActive) {
         const card = miningStats.nextToExpire;
         const timeLeft = card.timeUntilExpiry;
         const percentage = Math.max(0, (timeLeft / (card.validityDays * 24 * 60 * 60 * 1000)) * 100);
@@ -303,8 +300,11 @@ const MiningSection = ({ user, refreshUserData }) => {
         
         setNextExpiryInfo(`${status}${card.name} #${card.instanceNumber} - ${formatTimeDuration(timeLeft)}`);
         setMiningProgress(Math.max(0, Math.min(100, 100 - percentage)));
-      } else {
+      } else if (miningStats.activeCards.length === 0) {
         setNextExpiryInfo('No Active Cards');
+        setMiningProgress(0);
+      } else {
+        setNextExpiryInfo('All Cards Active');
         setMiningProgress(0);
       }
     };
@@ -372,88 +372,11 @@ const MiningSection = ({ user, refreshUserData }) => {
     }
   }, [currentUser, pendingRewards, isClaimingRewards, refreshUserData, toast]);
 
-  // Purchase new card instance (NO RENEWAL - always creates new instance)
-  const purchaseNewCard = useCallback(async (cardId, method = 'balance') => {
-    if (isPurchasing) return;
 
-    setIsPurchasing(true);
-    try {
-      const cardConfig = INDIVIDUAL_CARDS[cardId];
-      const now = new Date();
-      
-      // Calculate exact expiry date (admin config days from now)
-      const expirationDate = new Date(now);
-      expirationDate.setDate(expirationDate.getDate() + cardConfig.validityDays);
-
-      // Deduct cost
-      if (method === 'balance') {
-        const availableBalance = await getPurchasableBalance(currentUser.id);
-        if (availableBalance < cardConfig.price) {
-          throw new Error('Insufficient balance');
-        }
-        await deductPurchasableBalance(currentUser.id, cardConfig.price);
-      }
-
-      // Create new card instance (find next available instance number)
-      const existingInstances = Object.keys(currentUser?.cardData || {})
-        .filter(key => key.startsWith(`${cardId}_`))
-        .length;
-      
-      const newCardKey = `${cardId}_${existingInstances + 1}`;
-      
-      const cardDataUpdate = {
-        [`cardData.${newCardKey}`]: {
-          cardId: cardId,
-          purchaseDate: Timestamp.fromDate(now),
-          expirationDate: Timestamp.fromDate(expirationDate),
-          validityDays: cardConfig.validityDays,
-          active: true,
-          method: method,
-          instanceNumber: existingInstances + 1
-        }
-      };
-
-      // Initialize mining data if not exists
-      const miningDataUpdate = {
-        miningData: {
-          ...currentUser.miningData,
-          lastClaimTime: currentUser.miningData?.lastClaimTime || Timestamp.fromDate(now),
-          totalMined: currentUser.miningData?.totalMined || 0,
-          isActive: true,
-        }
-      };
-
-      await updateCurrentUser(currentUser.id, { ...cardDataUpdate, ...miningDataUpdate });
-      
-      const updatedUser = await getCurrentUser(currentUser.id);
-      if (updatedUser) {
-        setCurrentUser(updatedUser);
-        if (refreshUserData) refreshUserData(updatedUser);
-      }
-
-      toast({
-        title: 'Card Purchased! 🎉',
-        description: `${cardConfig.name} #${existingInstances + 1} activated for ${cardConfig.validityDays} days`,
-        variant: 'success',
-        className: 'bg-[#1a1a1a] text-white',
-      });
-
-    } catch (error) {
-      console.error('Error purchasing card:', error);
-      toast({
-        title: 'Purchase Failed',
-        description: error.message || 'Failed to purchase card',
-        variant: 'destructive',
-        className: 'bg-[#1a1a1a] text-white',
-      });
-    } finally {
-      setIsPurchasing(false);
-    }
-  }, [currentUser, INDIVIDUAL_CARDS, isPurchasing, refreshUserData, toast]);
 
   return (
     <motion.div
-      className="p-4 space-y-6 bg-gradient-to-br from-[#0a0a0a] via-[#0f0f0f] to-[#1a1a1a] min-h-screen"
+      className="p-4 space-y-4 bg-gradient-to-br from-[#0a0a0a] via-[#0f0f0f] to-[#1a1a1a] min-h-screen pb-20"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
@@ -463,19 +386,19 @@ const MiningSection = ({ user, refreshUserData }) => {
         <CardContent className="p-6">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center space-x-3">
-              <div className={`p-3 rounded-full bg-gradient-to-r ${miningStats.color}`}>
-                <miningStats.icon className="h-8 w-8 text-white" />
+              <div className={`p-2 rounded-full bg-gradient-to-r ${miningStats.color}`}>
+                <miningStats.icon className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-white">{miningStats.levelName}</h2>
-                <p className="text-gray-400">
+                <h2 className="text-lg font-bold text-white">{miningStats.levelName}</h2>
+                <p className="text-sm text-gray-400">
                   {miningStats.totalActiveCards} Active Cards • {miningStats.totalMiningRate}/hr
                 </p>
               </div>
             </div>
             <div className="text-right">
-              <div className="text-3xl font-bold text-white">{pendingRewards.toLocaleString()}</div>
-              <div className="text-gray-400">STON Pending</div>
+              <div className="text-xl font-bold text-white">{pendingRewards.toLocaleString()}</div>
+              <div className="text-sm text-gray-400">STON Pending</div>
             </div>
           </div>
 
@@ -523,16 +446,16 @@ const MiningSection = ({ user, refreshUserData }) => {
       </Card>
 
       {/* Individual Card Instances */}
-      <div className="space-y-4">
-        <h3 className="text-xl font-bold text-white flex items-center">
-          <CreditCard className="h-5 w-5 mr-2" />
+      <div className="space-y-3">
+        <h3 className="text-lg font-bold text-white flex items-center">
+          <CreditCard className="h-4 w-4 mr-2" />
           Your Mining Cards
         </h3>
         
         {/* Active Cards */}
         {miningStats.activeCards.length > 0 && (
           <div className="space-y-3">
-            <h4 className="text-lg font-semibold text-green-400">Active Cards ({miningStats.activeCards.length})</h4>
+            <h4 className="text-base font-semibold text-green-400">Active Cards ({miningStats.activeCards.length})</h4>
             {miningStats.activeCards.map((card) => (
               <Card key={card.cardKey} className={`${card.bgColor} ${card.borderColor} border`}>
                 <CardContent className="p-4">
@@ -564,7 +487,7 @@ const MiningSection = ({ user, refreshUserData }) => {
         {/* Expired Cards */}
         {miningStats.expiredCards.length > 0 && (
           <div className="space-y-3">
-            <h4 className="text-lg font-semibold text-red-400">Expired Cards ({miningStats.expiredCards.length})</h4>
+            <h4 className="text-base font-semibold text-red-400">Expired Cards ({miningStats.expiredCards.length})</h4>
             {miningStats.expiredCards.map((card) => (
               <Card key={card.cardKey} className="bg-red-600/10 border-red-500/50 border">
                 <CardContent className="p-4">
@@ -598,7 +521,7 @@ const MiningSection = ({ user, refreshUserData }) => {
           <Card className="bg-gray-800/50 border-gray-600/50">
             <CardContent className="p-8 text-center">
               <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h4 className="text-lg font-semibold text-white mb-2">No Mining Cards</h4>
+              <h4 className="text-base font-semibold text-white mb-2">No Mining Cards</h4>
               <p className="text-gray-400 mb-4">Purchase your first mining card to start earning STON!</p>
               <Button
                 onClick={() => setShowPurchaseDialog(true)}
@@ -614,8 +537,8 @@ const MiningSection = ({ user, refreshUserData }) => {
 
       {/* Available Cards for Purchase */}
       <div className="space-y-4">
-        <h3 className="text-xl font-bold text-white flex items-center">
-          <ShoppingCart className="h-5 w-5 mr-2" />
+        <h3 className="text-lg font-bold text-white flex items-center">
+          <ShoppingCart className="h-4 w-4 mr-2" />
           Available Mining Cards
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -630,11 +553,11 @@ const MiningSection = ({ user, refreshUserData }) => {
                   <div className={`p-4 rounded-full bg-gradient-to-r ${card.color} mx-auto w-fit mb-4`}>
                     <card.icon className="h-8 w-8 text-white" />
                   </div>
-                  <h4 className="text-lg font-semibold text-white mb-2">{card.name}</h4>
-                  <p className="text-gray-400 mb-3">{card.description}</p>
+                  <h4 className="text-base font-semibold text-white mb-2">{card.name}</h4>
+                  <p className="text-sm text-gray-400 mb-3">{card.description}</p>
                   <div className="space-y-2">
-                    <div className="text-2xl font-bold text-white">{card.ratePerHour}/hr</div>
-                    <div className="text-lg text-yellow-400">{card.price.toLocaleString()} STON</div>
+                    <div className="text-lg font-bold text-white">{card.ratePerHour}/hr</div>
+                    <div className="text-base text-yellow-400">{card.price.toLocaleString()} STON</div>
                   </div>
                 </div>
               </CardContent>
@@ -648,12 +571,20 @@ const MiningSection = ({ user, refreshUserData }) => {
         <PurchaseDialog
           isOpen={showPurchaseDialog}
           onClose={() => setShowPurchaseDialog(false)}
-          card={INDIVIDUAL_CARDS[selectedCardLevel]}
-          onPurchase={(method) => {
-            purchaseNewCard(selectedCardLevel, method);
+          cardPrice={INDIVIDUAL_CARDS[selectedCardLevel]?.price || 0}
+          cardNumber={selectedCardLevel}
+          currentBalance={getPurchasableBalance(currentUser)}
+          user={currentUser}
+          onSuccess={() => {
             setShowPurchaseDialog(false);
+            // Refresh user data after purchase
+            getCurrentUser(currentUser.id).then(updatedUser => {
+              if (updatedUser) {
+                setCurrentUser(updatedUser);
+                if (refreshUserData) refreshUserData(updatedUser);
+              }
+            });
           }}
-          currentUser={currentUser}
         />
       )}
     </motion.div>
