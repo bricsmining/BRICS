@@ -535,30 +535,43 @@ async function handleCheckPayment(req, res) {
       const purchaseRef = doc(db, 'purchases', orderId);
       purchaseDoc = await getDoc(purchaseRef);
     } else if (trackId) {
+      console.log(`[CHECK-PAYMENT] Searching for trackId: ${trackId}`);
+      
       // trackId might be the same as orderId, or we need to query by paymentId/trackId field
       // First try trackId as document ID
       let purchaseRef = doc(db, 'purchases', trackId);
       purchaseDoc = await getDoc(purchaseRef);
+      console.log(`[CHECK-PAYMENT] Direct trackId lookup exists: ${purchaseDoc.exists()}`);
       
       // If not found by trackId as document ID, query by paymentId field
       if (!purchaseDoc.exists()) {
+        console.log(`[CHECK-PAYMENT] Querying by paymentId field...`);
+        
         // Query purchases collection for a document with paymentId matching trackId
         const purchasesCollection = collection(db, 'purchases');
         const purchaseQuery = query(purchasesCollection, where('paymentId', '==', trackId));
         const querySnapshot = await getDocs(purchaseQuery);
         
+        console.log(`[CHECK-PAYMENT] PaymentId query results: ${querySnapshot.size} documents`);
+        
         if (!querySnapshot.empty) {
           purchaseDoc = querySnapshot.docs[0];
+          console.log(`[CHECK-PAYMENT] Found by paymentId: ${purchaseDoc.id}`);
         } else {
-          // Last resort: try to find by trackId field if it exists
-          const trackIdQuery = query(purchasesCollection, where('trackId', '==', trackId));
+          // Alternative: try to find by track_id in oxapayResponse
+          console.log(`[CHECK-PAYMENT] Querying by oxapayResponse.track_id field...`);
+          const trackIdQuery = query(purchasesCollection, where('oxapayResponse.data.track_id', '==', trackId));
           const trackIdSnapshot = await getDocs(trackIdQuery);
+          
+          console.log(`[CHECK-PAYMENT] Track_id query results: ${trackIdSnapshot.size} documents`);
           
           if (!trackIdSnapshot.empty) {
             purchaseDoc = trackIdSnapshot.docs[0];
+            console.log(`[CHECK-PAYMENT] Found by oxapayResponse.data.track_id: ${purchaseDoc.id}`);
           } else {
+            console.log(`[CHECK-PAYMENT] No purchase found for trackId: ${trackId}`);
             return res.status(404).json({ 
-              error: 'Purchase not found by trackId. Please provide orderId instead.' 
+              error: `Purchase not found by trackId: ${trackId}. Checked direct lookup, paymentId field, and oxapayResponse.data.track_id.` 
             });
           }
         }
