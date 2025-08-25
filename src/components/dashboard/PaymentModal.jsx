@@ -16,6 +16,7 @@ import { Badge } from '@/components/ui/badge';
     amount,
     currency = 'TON',
     trackId,
+    orderId,
     userId
   }) => {
     const [isLoading, setIsLoading] = useState(true);
@@ -190,17 +191,19 @@ import { Badge } from '@/components/ui/badge';
   // Check payment status from OxaPay API
   const checkPaymentStatusFromGateway = async () => {
     try {
-      if (!trackId || !userId) return;
+      if ((!orderId && !trackId) || !userId) return;
 
+      // Use orderId if available (more reliable), fallback to trackId
+      const requestBody = orderId ? 
+        { orderId: orderId, userId: userId } : 
+        { trackId: trackId, userId: userId };
 
+      console.log('🔍 Checking payment status with:', requestBody);
 
       const response = await fetch('/api/oxapay?action=check-payment', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          trackId: trackId,
-          userId: userId
-        })
+        body: JSON.stringify(requestBody)
       });
 
       if (!response.ok) {
