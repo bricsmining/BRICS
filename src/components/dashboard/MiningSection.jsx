@@ -33,7 +33,6 @@ import { Timestamp } from 'firebase/firestore';
 import { getAdminConfig } from '@/data/firestore/adminConfig';
 import PurchaseDialog from './PurchaseDialog';
 
-
 // Get individual card configurations from admin config
 const getIndividualCards = (adminConfig) => {
   const tonToStonRate = 1 / (adminConfig?.stonToTonRate || 0.0000001);
@@ -123,6 +122,7 @@ const MiningSection = ({ user, refreshUserData }) => {
   const [timeUntilNextReward, setTimeUntilNextReward] = useState('');
   const [nextExpiryInfo, setNextExpiryInfo] = useState('');
   const [showPurchaseDialog, setShowPurchaseDialog] = useState(false);
+  const [showCardSelection, setShowCardSelection] = useState(false);
   const [selectedCardLevel, setSelectedCardLevel] = useState(1);
 
   const [adminConfig, setAdminConfig] = useState(null);
@@ -326,7 +326,7 @@ const MiningSection = ({ user, refreshUserData }) => {
         }
         
         setNextExpiryInfo(`${status}${card.name} #${card.instanceNumber} - ${formatTimeDuration(timeLeft)}`);
-        setMiningProgress(Math.max(0, Math.min(100, 100 - percentage)));
+        setMiningProgress(Math.max(0, Math.min(100, percentage)));
       } else if (miningStats.activeCards.length === 0) {
         setNextExpiryInfo('No Active Cards');
         setMiningProgress(0);
@@ -424,8 +424,8 @@ const MiningSection = ({ user, refreshUserData }) => {
               </div>
             </div>
             <div className="text-right">
-              <div className="text-xl font-bold text-white">{pendingRewards.toLocaleString()}</div>
-              <div className="text-sm text-gray-400">STON Pending</div>
+              <div className="text-xl font-bold text-white">{(currentUser?.miningData?.totalMined || 0).toLocaleString()}</div>
+              <div className="text-sm text-gray-400">Total Mined</div>
             </div>
           </div>
 
@@ -447,6 +447,12 @@ const MiningSection = ({ user, refreshUserData }) => {
           </div>
 
           {/* Action Buttons */}
+          {/* Pending Rewards Display */}
+          <div className="text-center mt-4">
+            <div className="text-2xl font-bold text-yellow-400">{pendingRewards.toLocaleString()} STON</div>
+            <div className="text-sm text-gray-400">Available to Claim</div>
+          </div>
+
           <div className="flex space-x-3 mt-6">
             <Button
               onClick={claimRewards}
@@ -458,10 +464,10 @@ const MiningSection = ({ user, refreshUserData }) => {
               ) : (
                 <Coins className="h-4 w-4 mr-2" />
               )}
-              Claim {pendingRewards.toLocaleString()} STON
+              Claim Now
             </Button>
             <Button
-              onClick={() => setShowPurchaseDialog(true)}
+              onClick={() => setShowCardSelection(true)}
               variant="outline"
               className="border-gray-600 text-white hover:bg-gray-800"
             >
@@ -562,36 +568,54 @@ const MiningSection = ({ user, refreshUserData }) => {
         )}
       </div>
 
-      {/* Available Cards for Purchase */}
-      <div className="space-y-4">
-        <h3 className="text-lg font-bold text-white flex items-center">
-          <ShoppingCart className="h-4 w-4 mr-2" />
-          Available Mining Cards
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {Object.values(INDIVIDUAL_CARDS).map((card) => (
-            <Card key={card.id} className={`${card.bgColor} ${card.borderColor} border hover:scale-105 transition-transform cursor-pointer`}
-                  onClick={() => {
-                    setSelectedCardLevel(card.id);
-                    setShowPurchaseDialog(true);
-                  }}>
-              <CardContent className="p-6">
-                <div className="text-center">
-                  <div className={`p-4 rounded-full bg-gradient-to-r ${card.color} mx-auto w-fit mb-4`}>
-                    <card.icon className="h-8 w-8 text-white" />
-                  </div>
-                  <h4 className="text-base font-semibold text-white mb-2">{card.name}</h4>
-                  <p className="text-sm text-gray-400 mb-3">{card.description}</p>
-                  <div className="space-y-2">
-                    <div className="text-lg font-bold text-white">{card.ratePerHour}/hr</div>
-                    <div className="text-base text-yellow-400">{card.price.toLocaleString()} STON</div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+
+
+      {/* Card Selection Dialog */}
+      {showCardSelection && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.9, opacity: 0 }}
+            className="bg-gradient-to-br from-gray-900 to-gray-800 border border-gray-600/50 text-white w-full max-w-2xl p-6 rounded-2xl shadow-2xl relative"
+          >
+            <button
+              className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
+              onClick={() => setShowCardSelection(false)}
+            >
+              <X className="h-6 w-6" />
+            </button>
+
+            <h2 className="text-xl font-bold mb-6 text-center">Choose Your Mining Card</h2>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {Object.values(INDIVIDUAL_CARDS).map((card) => (
+                <Card key={card.id} className={`${card.bgColor} ${card.borderColor} border hover:scale-105 transition-transform cursor-pointer`}
+                      onClick={() => {
+                        setSelectedCardLevel(card.id);
+                        setShowCardSelection(false);
+                        setShowPurchaseDialog(true);
+                      }}>
+                  <CardContent className="p-6">
+                    <div className="text-center">
+                      <div className={`p-4 rounded-full bg-gradient-to-r ${card.color} mx-auto w-fit mb-4`}>
+                        <card.icon className="h-8 w-8 text-white" />
+                      </div>
+                      <h4 className="text-base font-semibold text-white mb-2">{card.name}</h4>
+                      <p className="text-sm text-gray-400 mb-3">{card.description}</p>
+                      <div className="space-y-2">
+                        <div className="text-lg font-bold text-white">{card.ratePerHour}/hr</div>
+                        <div className="text-base text-yellow-400">{card.price.toLocaleString()} STON</div>
+                        <div className="text-xs text-gray-500">{card.cryptoPrice} TON</div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </motion.div>
         </div>
-      </div>
+      )}
 
       {/* Purchase Dialog */}
       {showPurchaseDialog && (
