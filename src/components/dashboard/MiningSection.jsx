@@ -127,6 +127,39 @@ const MiningSection = ({ user, refreshUserData }) => {
 
   const [adminConfig, setAdminConfig] = useState(null);
 
+  // Handle payment return from URL params
+  useEffect(() => {
+    const payment = searchParams.get('payment');
+    const orderId = searchParams.get('orderId');
+    
+    if (payment === 'return' && orderId) {
+      console.log('🔄 User returned from payment, orderId:', orderId);
+      
+      // Show return message
+      toast({
+        title: 'Payment Processing',
+        description: 'Your payment is being processed. Mining card will be activated shortly.',
+        className: 'bg-[#1a1a1a] text-white',
+      });
+      
+      // Clean up URL parameters
+      setSearchParams({});
+      
+      // Refresh user data after a short delay to get updated cards
+      setTimeout(async () => {
+        try {
+          const updatedUser = await getCurrentUser(currentUser.id);
+          if (updatedUser) {
+            setCurrentUser(updatedUser);
+            if (refreshUserData) refreshUserData(updatedUser);
+          }
+        } catch (error) {
+          console.error('Error refreshing user data after payment return:', error);
+        }
+      }, 2000);
+    }
+  }, [searchParams, setSearchParams, currentUser?.id, refreshUserData, toast]);
+
   // Get dynamic card configurations based on admin config
   const INDIVIDUAL_CARDS = useMemo(() => {
     return adminConfig ? getIndividualCards(adminConfig) : getIndividualCards({});

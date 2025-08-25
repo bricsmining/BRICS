@@ -336,41 +336,52 @@ async function handleCreatePayment(req, res) {
   }
 
   try {
-    const { userId, username, cardNumber, currency = 'TON' } = req.body;
+    const { 
+      userId, 
+      userEmail, 
+      cardNumber, 
+      cardPrice,
+      validityDays,
+      currency = 'TON',
+      amount,
+      orderId,
+      description,
+      callbackUrl,
+      returnUrl
+    } = req.body;
 
-    if (!userId || !cardNumber) {
+    if (!userId || !cardNumber || !amount || !orderId) {
       return res.status(400).json({ 
-        error: 'Missing required fields: userId, cardNumber' 
+        error: 'Missing required fields: userId, cardNumber, amount, orderId' 
       });
     }
 
-    // Get admin config to get card prices
-    const adminConfigRef = doc(db, 'admin', 'config');
-    const adminConfigSnap = await getDoc(adminConfigRef);
-    
-    if (!adminConfigSnap.exists()) {
-      return res.status(500).json({ error: 'Admin config not found' });
+    // Get admin config for card details (fallback)
+    let adminConfig = {};
+    try {
+      const adminConfigRef = doc(db, 'admin', 'config');
+      const adminConfigSnap = await getDoc(adminConfigRef);
+      if (adminConfigSnap.exists()) {
+        adminConfig = adminConfigSnap.data();
+      }
+    } catch (error) {
+      console.warn('Could not load admin config:', error.message);
     }
 
-    const adminConfig = adminConfigSnap.data();
+    // Use provided amount or fallback to admin config
+    const cryptoAmount = amount || adminConfig[`card${cardNumber}CryptoPrice`] || (cardNumber === 1 ? 0.1 : cardNumber === 2 ? 0.25 : 0.5);
     
-    // Get card price from admin config
-    const cardPriceField = `card${cardNumber}CryptoPrice`;
-    const cryptoAmount = adminConfig[cardPriceField] || (cardNumber === 1 ? 0.1 : cardNumber === 2 ? 0.25 : 0.5);
-
-    // Generate order ID
-    const orderId = generateOrderId('card');
-    
-    // Create payment request
+    // Create payment request with proper callback/return URLs
     const paymentResult = await createPayment({
       amount: cryptoAmount,
       currency: currency,
       orderId: orderId,
-      description: `Card ${cardNumber} Purchase`,
-      callbackUrl: `${req.headers.origin || process.env.VITE_WEB_APP_URL || process.env.NEXTAUTH_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://skyton.vercel.app')}/api/oxapay?action=webhook`,
-      returnUrl: `${req.headers.origin || process.env.VITE_WEB_APP_URL || process.env.NEXTAUTH_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://skyton.vercel.app')}/mining?payment=return`,
+      description: description || `Mining Card ${cardNumber} Purchase`,
+      // IMPORTANT: Proper URL usage
+      callbackUrl: callbackUrl, // Backend webhook for reliable payment confirmation
+      returnUrl: returnUrl,     // User return URL for UI convenience
       userId: userId,
-      userEmail: `user${userId}@skyton.app`
+      userEmail: userEmail || `user${userId}@skyton.app`
     });
 
     if (!paymentResult.success) {
@@ -396,13 +407,17 @@ async function handleCreatePayment(req, res) {
     const purchaseData = {
       orderId: orderId,
       userId: userId,
-      username: username || '',
+      userEmail: userEmail || `user${userId}@skyton.app`,
       cardNumber: cardNumber,
+      cardPrice: cardPrice,
+      validityDays: validityDays,
       cardType: `card${cardNumber}`,
       amount: cryptoAmount,
       currency: currency,
       status: 'pending',
-      createdAt: serverTimestamp()
+      type: 'mining_card',
+      createdAt: serverTimestamp(),
+      oxapayResponse: paymentData
     };
 
     // Only add optional fields if they exist
@@ -591,12 +606,50 @@ async function handleWebhook(req, res) {
         switch (status) {
           case 'completed':
           case 'confirmed':
-            // Add mining card to user
+            // Add individual mining card instance to user
             const userRef = doc(db, 'users', purchase.userId);
-            await updateDoc(userRef, {
-              [`cards.card${purchase.cardNumber}`]: increment(1),
-              lastPurchase: serverTimestamp()
-            });
+            const userDoc = await getDoc(userRef);
+            
+            if (userDoc.exists()) {
+              const userData = userDoc.data();
+              
+              // Find next available instance number for this card type
+              const existingInstances = Object.keys(userData?.cardData || {})
+                .filter(key => key.startsWith(`${purchase.cardNumber}_`))
+                .length;
+              
+              const newCardKey = `${purchase.cardNumber}_${existingInstances + 1}`;
+              const now = new Date();
+              const expirationDate = new Date(now);
+              expirationDate.setDate(expirationDate.getDate() + (purchase.validityDays || 7));
+              
+              const cardDataUpdate = {
+                [`cardData.${newCardKey}`]: {
+                  cardId: purchase.cardNumber,
+                  purchaseDate: serverTimestamp(),
+                  expirationDate: expirationDate,
+                  validityDays: purchase.validityDays || 7,
+                  active: true,
+                  method: 'crypto',
+                  instanceNumber: existingInstances + 1,
+                  orderId: order_id,
+                  paymentId: payment_id
+                }
+              };
+
+              // Initialize mining data if not exists
+              const miningDataUpdate = {
+                miningData: {
+                  ...userData?.miningData,
+                  lastClaimTime: userData?.miningData?.lastClaimTime || serverTimestamp(),
+                  totalMined: userData?.miningData?.totalMined || 0,
+                  isActive: true,
+                },
+                lastPurchase: serverTimestamp()
+              };
+
+              await updateDoc(userRef, { ...cardDataUpdate, ...miningDataUpdate });
+            }
 
             // Notify admin of successful payment
             await notifyAdminDirect('payment_completed', {
