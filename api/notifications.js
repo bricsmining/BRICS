@@ -325,7 +325,9 @@ function getNotificationTarget(type, adminConfig) {
     'payment_status_update',     // 3. Payment status update
     'payment_webhook_unknown',   // 3. Payment error
     'new_user',                  // 4. New user join
-    'payout_failed'              // 4. Payout failure (detailed error)
+    'payout_failed',             // 4. Payout failure (detailed error)
+    'payout_created',            // 4. Payout initiated
+    'payout_success'             // 4. Payout completed
   ];
   
   // GENERAL CHANNEL notifications
@@ -338,7 +340,7 @@ function getNotificationTarget(type, adminConfig) {
   
   // WITHDRAWAL CHANNEL notifications
   const withdrawalChannelNotifications = [
-    'withdrawal_request', 'withdrawal_approved', 'withdrawal_rejected', 'payout_failed'
+    'withdrawal_request', 'withdrawal_approved', 'withdrawal_rejected', 'payout_failed', 'payout_created', 'payout_success'
   ];
   
   // PAYMENT CHANNEL notifications
@@ -790,6 +792,58 @@ ${data.paymentUrl ? `🔗 <b>Payment URL:</b> ${data.paymentUrl}` : ''}
 
 🕐 <b>Time:</b> ${timestamp}`;
 
+    case 'payout_created':
+      return `💸 <b>Payout Initiated</b>
+
+👤 <b>User:</b> ${formatUserDisplay(data)}
+💰 <b>Amount:</b> ${data.amount} ${data.currency || 'TON'}
+💳 <b>Address:</b> <code>${data.address}</code>
+🆔 <b>Withdrawal ID:</b> <code>${data.withdrawalId}</code>
+🔗 <b>Track ID:</b> <code>${data.trackId}</code>
+📊 <b>Status:</b> ${data.status || 'Processing'}
+
+⏳ Payout request sent to OxaPay for processing.
+
+🕐 <b>Time:</b> ${timestamp}`;
+
+    case 'payout_success':
+      return `✅ <b>Payout Completed!</b>
+
+👤 <b>User:</b> ${formatUserDisplay(data)}
+💰 <b>Amount:</b> ${data.tonAmount || data.amount} ${data.currency || 'TON'}
+💳 <b>Address:</b> <code>${data.address}</code>
+🆔 <b>Withdrawal ID:</b> <code>${data.withdrawalId}</code>
+🔗 <b>Track ID:</b> <code>${data.trackId}</code>
+📊 <b>Status:</b> ${data.status || 'Completed'}
+${data.memo ? `📝 <b>Memo:</b> ${data.memo}` : ''}
+
+🎉 Payout successfully processed and sent to user's wallet!
+
+🕐 <b>Time:</b> ${timestamp}`;
+
+    case 'payout_failed':
+      return `❌ <b>Payout Failed!</b>
+
+👤 <b>User Details:</b>
+• ID: ${data.userId}
+• Name: ${data.userName || 'Unknown'}
+
+💰 <b>Payout Details:</b>
+• Amount: ${data.amount ? `${data.amount.toLocaleString()} STON` : 'Unknown'} ${data.tonAmount ? `(${data.tonAmount} TON)` : ''}
+• Address: <code>${data.address || 'Not provided'}</code>
+${data.memo ? `• Memo: ${data.memo}` : ''}
+• Withdrawal ID: <code>${data.withdrawalId || 'Unknown'}</code>
+
+❗ <b>Error Details:</b>
+• Error: ${data.error || 'Failed to create payout'}
+• Details: ${data.errorDetails || 'No additional details available'}
+${data.oxapayDetails ? `• OxaPay Response: ${data.oxapayDetails.message || 'API Error'}` : ''}
+${data.oxapayDetails?.error?.message ? `• Specific Issue: ${data.oxapayDetails.error.message}` : ''}
+
+⚠️ User's balance was ${data.balanceRefunded ? 'refunded' : 'NOT deducted'}. ${data.balanceRefunded ? '' : 'Manual intervention may be required.'}
+
+🕐 <b>Time:</b> ${timestamp}`;
+
     default:
       return null;
   }
@@ -842,14 +896,14 @@ Please try again following the task requirements. 🔄`;
     case 'withdrawal_approved':
       return `✅ <b>Withdrawal Approved!</b>
 
-Your withdrawal request has been approved!
+Your withdrawal request has been approved and is being processed!
 
-💰 <b>Amount:</b> ${data.amount || 0} STON
-💳 <b>Method:</b> ${data.method || 'Unknown'}
-📍 <b>Address:</b> <code>${data.address || 'Not provided'}</code>
-⏱️ <b>Processing Time:</b> 24-48 hours
+💰 <b>Amount:</b> ${data.amount || data.tonAmount || 0} ${data.amount ? 'STON' : 'TON'}
+💳 <b>Address:</b> <code>${data.address || 'Not provided'}</code>
+${data.trackId ? `🔗 <b>Track ID:</b> <code>${data.trackId}</code>` : ''}
+⏱️ <b>Processing Time:</b> Usually within minutes
 
-Your tokens will be transferred soon! 🚀`;
+Your tokens are being transferred to your wallet! 🚀`;
 
     case 'withdrawal_rejected':
       return `❌ <b>Withdrawal Rejected</b>

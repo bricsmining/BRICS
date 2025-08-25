@@ -635,12 +635,16 @@ async function handleWebhook(req, res) {
       order_id, 
       orderId,
       amount, 
-      currency 
+      currency,
+      type,
+      tx_hash,
+      address
     } = req.body;
 
     // Use the first available payment ID field
     const finalPaymentId = payment_id || paymentId || track_id || trackId;
     const finalOrderId = order_id || orderId;
+    const webhookType = type || 'payment'; // 'payment' or 'payout'
 
     console.log('Received OxaPay webhook:', {
       status, 
@@ -648,11 +652,68 @@ async function handleWebhook(req, res) {
       order_id: finalOrderId, 
       amount, 
       currency,
+      type: webhookType,
+      tx_hash,
+      address,
       originalBody: req.body
     });
 
-    // Update purchase status and notify admin
-    if (finalOrderId) {
+    // Handle different webhook types
+    if (webhookType === 'payout' && finalPaymentId) {
+      // Handle payout webhook - find withdrawal by trackId
+      try {
+        const withdrawalsCollection = collection(db, 'withdrawals');
+        const withdrawalQuery = query(withdrawalsCollection, where('trackId', '==', finalPaymentId));
+        const querySnapshot = await getDocs(withdrawalQuery);
+        
+        if (!querySnapshot.empty) {
+          const withdrawalDoc = querySnapshot.docs[0];
+          const withdrawal = withdrawalDoc.data();
+          
+          // Update withdrawal status
+          await updateDoc(withdrawalDoc.ref, {
+            status: status.toLowerCase(),
+            txHash: tx_hash,
+            completedAt: status === 'Confirmed' ? serverTimestamp() : null,
+            updatedAt: serverTimestamp()
+          });
+
+          // Send payout completion notification
+          if (status === 'Confirmed') {
+            try {
+              await fetch(`${process.env.VITE_WEB_APP_URL || 'https://skyton.vercel.app'}/api/notifications?action=admin`, {
+                method: 'POST',
+                headers: { 
+                  'Content-Type': 'application/json',
+                  'x-api-key': process.env.ADMIN_API_KEY
+                },
+                body: JSON.stringify({
+                  type: 'payout_success',
+                  data: {
+                    userId: withdrawal.userId,
+                    userName: withdrawal.username || 'Unknown',
+                    amount: withdrawal.amount,
+                    tonAmount: withdrawal.tonAmount,
+                    address: withdrawal.address || address,
+                    trackId: finalPaymentId,
+                    withdrawalId: withdrawal.id || withdrawalDoc.id,
+                    status: status,
+                    txHash: tx_hash
+                  }
+                })
+              });
+            } catch (error) {
+              console.error('Failed to send payout success notification:', error);
+            }
+          }
+        } else {
+          console.warn('Withdrawal not found for trackId:', finalPaymentId);
+        }
+      } catch (error) {
+        console.error('Error handling payout webhook:', error);
+      }
+    } else if (finalOrderId) {
+      // Handle payment webhook - existing logic
       const purchaseRef = doc(db, 'purchases', finalOrderId);
       const purchaseDoc = await getDoc(purchaseRef);
 
