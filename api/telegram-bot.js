@@ -8,6 +8,7 @@ import {
   collection, 
   doc,
   getDoc,
+  getDocs,
   setDoc,
   updateDoc,
   addDoc,
@@ -253,16 +254,21 @@ async function handleStartWithReferral(chatId, userId, referrerId, userInfo) {
       
       // Send admin notification via API routing system
       try {
-        await fetch(`${getApiBaseUrl(req)}/api/notifications?action=admin`, {
+        const apiBaseUrl = process.env.VITE_WEB_APP_URL || 'https://skyton.vercel.app';
+        await fetch(`${apiBaseUrl}/api/notifications?action=admin`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'x-api-key': process.env.ADMIN_API_KEY
+          },
           body: JSON.stringify({
-            api: process.env.ADMIN_API_KEY,
             type: 'referral_pending',
             data: {
               newUserId: userId,
               newUserName: userInfo.first_name || userInfo.last_name || userInfo.username || 'Unknown',
               newUserTelegramUsername: userInfo.username,
+              userName: userInfo.first_name || userInfo.last_name || userInfo.username || 'Unknown',
+              userTelegramUsername: userInfo.username,
               referrerId: referrerId,
               referrerReward: referralResult.referrerReward,
               welcomeBonus: referralResult.welcomeBonus,
@@ -332,11 +338,14 @@ Keep sharing to get more referrals! 🚀
       
       // Send error notification to admin
       try {
-        await fetch(`${getApiBaseUrl(req)}/api/notifications?action=admin`, {
+        const apiBaseUrl = process.env.VITE_WEB_APP_URL || 'https://skyton.vercel.app';
+        await fetch(`${apiBaseUrl}/api/notifications?action=admin`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'x-api-key': process.env.ADMIN_API_KEY
+          },
           body: JSON.stringify({
-            api: process.env.ADMIN_API_KEY,
             type: 'referral_error',
             data: {
               newUserId: userId,
@@ -358,11 +367,14 @@ Keep sharing to get more referrals! 🚀
     
     // Send error notification to admin
     try {
-      await fetch(`${getApiBaseUrl(req)}/api/notifications?action=admin`, {
+      const apiBaseUrl = process.env.VITE_WEB_APP_URL || 'https://skyton.vercel.app';
+      await fetch(`${apiBaseUrl}/api/notifications?action=admin`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-api-key': process.env.ADMIN_API_KEY
+        },
         body: JSON.stringify({
-          api: process.env.ADMIN_API_KEY,
           type: 'referral_error',
           data: {
             newUserId: userId,
@@ -396,15 +408,20 @@ async function handleStart(chatId, userId, userInfo, customMessage = null) {
     
     // Send new user notification via API routing system
     try {
-      await fetch(`${getApiBaseUrl(req)}/api/notifications?action=admin`, {
+      const apiBaseUrl = process.env.VITE_WEB_APP_URL || 'https://skyton.vercel.app';
+      await fetch(`${apiBaseUrl}/api/notifications?action=admin`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-api-key': process.env.ADMIN_API_KEY
+        },
         body: JSON.stringify({
-          api: process.env.ADMIN_API_KEY,
           type: 'new_user',
           data: {
-      userId: userId,
-      name: userInfo.first_name || 'Unknown',
+            userId: userId,
+            userName: userInfo.first_name || userInfo.last_name || userInfo.username || 'Unknown',
+            userTelegramUsername: userInfo.username,
+            name: userInfo.first_name || 'Unknown',
             username: userInfo.username || null,
             totalUsers: totalUsers
           }
@@ -868,11 +885,14 @@ async function processReferralDirect(newUserId, referrerId, userInfo) {
 
     // Send error notification to admin
     try {
-      await fetch(`${getApiBaseUrl(req)}/api/notifications?action=admin`, {
+      const apiBaseUrl = process.env.VITE_WEB_APP_URL || 'https://skyton.vercel.app';
+      await fetch(`${apiBaseUrl}/api/notifications?action=admin`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-api-key': process.env.ADMIN_API_KEY
+        },
         body: JSON.stringify({
-          api: process.env.ADMIN_API_KEY,
           type: 'referral_error',
           data: {
             newUserId: newUserId,
@@ -973,11 +993,14 @@ async function processPendingReferralRewards(userId) {
         
         // Send notifications via API routing system
         try {
-          await fetch(`${getApiBaseUrl(req)}/api/notifications?action=admin`, {
+          const apiBaseUrl = process.env.VITE_WEB_APP_URL || 'https://skyton.vercel.app';
+          await fetch(`${apiBaseUrl}/api/notifications?action=admin`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+              'Content-Type': 'application/json',
+              'x-api-key': process.env.ADMIN_API_KEY
+            },
             body: JSON.stringify({
-              api: process.env.ADMIN_API_KEY,
               type: 'referral_completed',
               data: {
                 userId: userId,
