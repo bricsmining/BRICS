@@ -719,6 +719,21 @@ ${data.memo ? `• Memo: <code>${data.memo}</code>` : ''}
 // Generate user notification messages
 function generateUserMessage(type, data) {
   switch (type) {
+    case 'payment_invoice_created':
+      return `💳 <b>Payment Invoice Created!</b>
+
+Your mining card payment invoice has been generated successfully!
+
+🛒 <b>Purchase Details:</b>
+• Card: ${data.cardName || 'Mining Card'}
+• Amount: ${data.amount} ${data.currency || 'TON'}
+• Order ID: <code>${data.orderId}</code>
+${data.expiresAt ? `• Expires: ${data.expiresAt}` : ''}
+
+<a href="${data.paymentUrl}">💳 Click to pay</a>
+
+Complete your payment to activate your mining card! ⛏️`;
+
     case 'task_approved':
       return `✅ <b>Task Approved!</b>
 

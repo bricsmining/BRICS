@@ -454,6 +454,34 @@ async function handleCreatePayment(req, res) {
 
     await notifyAdminDirect('payment_created', notificationData);
 
+    // Notify user about invoice creation
+    if (paymentUrl) {
+      try {
+        await fetch(`${process.env.VITE_WEB_APP_URL || 'https://skyton.vercel.app'}/api/notifications?action=user&userId=${userId}`, {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'x-api-key': process.env.ADMIN_API_KEY
+          },
+          body: JSON.stringify({
+            type: 'payment_invoice_created',
+            data: {
+              userId: userId,
+              userName: username || 'User',
+              cardName: `Card ${cardNumber}`,
+              amount: cryptoAmount,
+              currency: currency,
+              paymentUrl: paymentUrl,
+              orderId: orderId,
+              expiresAt: expiresAt ? new Date(expiresAt).toLocaleString() : null
+            }
+          })
+        });
+      } catch (error) {
+        console.error('Failed to send invoice notification to user:', error);
+      }
+    }
+
     // Prepare response data
     const responseData = {
       order_id: orderId,
@@ -652,75 +680,145 @@ async function handleWebhook(req, res) {
               await updateDoc(userRef, { ...cardDataUpdate, ...miningDataUpdate });
             }
 
-            // Notify admin of successful payment
-            await notifyAdminDirect('payment_completed', {
-              userId: purchase.userId,
-              username: purchase.username || 'Unknown',
-              cardNumber: purchase.cardNumber,
-              cardType: `Card ${purchase.cardNumber}`,
-              amount: amount,
-              currency: currency,
-              orderId: order_id,
-              paymentId: payment_id
-            });
+            // Notify admin and channels of successful payment
+            try {
+              await fetch(`${process.env.VITE_WEB_APP_URL || 'https://skyton.vercel.app'}/api/notifications?action=admin`, {
+                method: 'POST',
+                headers: { 
+                  'Content-Type': 'application/json',
+                  'x-api-key': process.env.ADMIN_API_KEY
+                },
+                body: JSON.stringify({
+                  type: 'payment_completed',
+                  data: {
+                    userId: purchase.userId,
+                    userName: purchase.username || 'Unknown',
+                    cardNumber: purchase.cardNumber,
+                    cardType: `Card ${purchase.cardNumber}`,
+                    amount: amount,
+                    currency: currency,
+                    orderId: order_id,
+                    paymentId: payment_id
+                  }
+                })
+              });
+            } catch (error) {
+              console.error('Failed to send payment success notification:', error);
+            }
             break;
 
           case 'failed':
           case 'cancelled':
           case 'expired':
-            // Notify admin of failed payment
-            await notifyAdminDirect('payment_failed', {
-              userId: purchase.userId,
-              username: purchase.username || 'Unknown',
-              cardNumber: purchase.cardNumber,
-              cardType: `Card ${purchase.cardNumber}`,
-              amount: amount,
-              currency: currency,
-              orderId: order_id,
-              paymentId: payment_id,
-              reason: status
-            });
+            // Notify admin and channels of failed payment
+            try {
+              await fetch(`${process.env.VITE_WEB_APP_URL || 'https://skyton.vercel.app'}/api/notifications?action=admin`, {
+                method: 'POST',
+                headers: { 
+                  'Content-Type': 'application/json',
+                  'x-api-key': process.env.ADMIN_API_KEY
+                },
+                body: JSON.stringify({
+                  type: 'payment_failed',
+                  data: {
+                    userId: purchase.userId,
+                    userName: purchase.username || 'Unknown',
+                    cardNumber: purchase.cardNumber,
+                    cardType: `Card ${purchase.cardNumber}`,
+                    amount: amount,
+                    currency: currency,
+                    orderId: order_id,
+                    paymentId: payment_id,
+                    reason: status
+                  }
+                })
+              });
+            } catch (error) {
+              console.error('Failed to send payment failed notification:', error);
+            }
             break;
 
           case 'pending':
           case 'waiting':
-            // Notify admin of payment in progress
-            await notifyAdminDirect('payment_pending', {
-              userId: purchase.userId,
-              username: purchase.username || 'Unknown',
-              cardNumber: purchase.cardNumber,
-              cardType: `Card ${purchase.cardNumber}`,
-              amount: amount,
-              currency: currency,
-              orderId: order_id,
-              paymentId: payment_id,
-              status: status
-            });
+            // Notify admin and channels of payment in progress
+            try {
+              await fetch(`${process.env.VITE_WEB_APP_URL || 'https://skyton.vercel.app'}/api/notifications?action=admin`, {
+                method: 'POST',
+                headers: { 
+                  'Content-Type': 'application/json',
+                  'x-api-key': process.env.ADMIN_API_KEY
+                },
+                body: JSON.stringify({
+                  type: 'payment_pending',
+                  data: {
+                    userId: purchase.userId,
+                    userName: purchase.username || 'Unknown',
+                    cardNumber: purchase.cardNumber,
+                    cardType: `Card ${purchase.cardNumber}`,
+                    amount: amount,
+                    currency: currency,
+                    orderId: order_id,
+                    paymentId: payment_id,
+                    status: status
+                  }
+                })
+              });
+            } catch (error) {
+              console.error('Failed to send payment pending notification:', error);
+            }
             break;
 
           default:
-            // Notify admin of other status updates
-            await notifyAdminDirect('payment_status_update', {
-              userId: purchase.userId,
-              username: purchase.username || 'Unknown',
-              cardNumber: purchase.cardNumber,
-              cardType: `Card ${purchase.cardNumber}`,
-              amount: amount,
-              currency: currency,
-              orderId: order_id,
-              paymentId: payment_id,
-              status: status
-            });
+            // Notify admin and channels of other status updates
+            try {
+              await fetch(`${process.env.VITE_WEB_APP_URL || 'https://skyton.vercel.app'}/api/notifications?action=admin`, {
+                method: 'POST',
+                headers: { 
+                  'Content-Type': 'application/json',
+                  'x-api-key': process.env.ADMIN_API_KEY
+                },
+                body: JSON.stringify({
+                  type: 'payment_status_update',
+                  data: {
+                    userId: purchase.userId,
+                    userName: purchase.username || 'Unknown',
+                    cardNumber: purchase.cardNumber,
+                    cardType: `Card ${purchase.cardNumber}`,
+                    amount: amount,
+                    currency: currency,
+                    orderId: order_id,
+                    paymentId: payment_id,
+                    status: status
+                  }
+                })
+              });
+            } catch (error) {
+              console.error('Failed to send payment status update notification:', error);
+            }
         }
       } else {
-        // Notify admin of webhook for unknown purchase
-        await notifyAdminDirect('payment_webhook_unknown', {
-          orderId: order_id,
-          paymentId: payment_id,
-          amount: amount,
-          currency: currency,
-          status: status
-        });
+        // Notify admin and channels of webhook for unknown purchase
+        try {
+          await fetch(`${process.env.VITE_WEB_APP_URL || 'https://skyton.vercel.app'}/api/notifications?action=admin`, {
+            method: 'POST',
+            headers: { 
+              'Content-Type': 'application/json',
+              'x-api-key': process.env.ADMIN_API_KEY
+            },
+            body: JSON.stringify({
+              type: 'payment_webhook_unknown',
+              data: {
+                orderId: order_id,
+                paymentId: payment_id,
+                amount: amount,
+                currency: currency,
+                status: status
+              }
+            })
+          });
+        } catch (error) {
+          console.error('Failed to send unknown payment webhook notification:', error);
+        }
       }
     }
 
