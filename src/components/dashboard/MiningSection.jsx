@@ -541,7 +541,7 @@ const MiningSection = ({ user, refreshUserData }) => {
               <h4 className="text-base font-semibold text-white mb-2">No Mining Cards</h4>
               <p className="text-gray-400 mb-4">Purchase your first mining card to start earning STON!</p>
               <Button
-                onClick={() => setShowPurchaseDialog(true)}
+                onClick={() => setShowCardSelection(true)}
                 className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
               >
                 <ShoppingCart className="h-4 w-4 mr-2" />
@@ -644,24 +644,24 @@ const MiningSection = ({ user, refreshUserData }) => {
               <div className="flex-1 overflow-y-auto">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pb-4">
                   {Object.values(INDIVIDUAL_CARDS).map((card) => (
-                    <Card key={card.id} className={`${card.bgColor} ${card.borderColor} border hover:scale-105 transition-transform cursor-pointer`}
+                    <Card key={card.id} className={`${card.bgColor} ${card.borderColor} border hover:scale-105 transition-transform cursor-pointer h-64`}
                           onClick={() => {
                             setSelectedCardLevel(card.id);
                             setShowCardSelection(false);
                             setShowPurchaseDialog(true);
                           }}>
-                      <CardContent className="p-6">
-                        <div className="text-center">
-                          <div className={`p-4 rounded-full bg-gradient-to-r ${card.color} mx-auto w-fit mb-4`}>
-                            <card.icon className="h-8 w-8 text-white" />
+                      <CardContent className="p-4 h-full flex flex-col justify-between">
+                        <div className="text-center flex-1 flex flex-col justify-center">
+                          <div className={`p-3 rounded-full bg-gradient-to-r ${card.color} mx-auto w-fit mb-3`}>
+                            <card.icon className="h-6 w-6 text-white" />
                           </div>
-                          <h4 className="text-base font-semibold text-white mb-2">{card.name}</h4>
-                          <p className="text-sm text-gray-400 mb-3">{card.description}</p>
-                          <div className="space-y-2">
-                            <div className="text-lg font-bold text-white">{card.ratePerHour}/hr</div>
-                            <div className="text-base text-yellow-400">{card.price.toLocaleString()} STON</div>
-                            <div className="text-xs text-gray-500">{card.cryptoPrice} TON</div>
-                          </div>
+                          <h4 className="text-sm font-semibold text-white mb-2">{card.name}</h4>
+                          <p className="text-xs text-gray-400 mb-3 line-clamp-2">{card.description}</p>
+                        </div>
+                        <div className="space-y-1 text-center">
+                          <div className="text-base font-bold text-white">{card.ratePerHour}/hr</div>
+                          <div className="text-sm text-yellow-400">{card.price.toLocaleString()} STON</div>
+                          <div className="text-xs text-gray-500">{card.cryptoPrice} TON</div>
                         </div>
                       </CardContent>
                     </Card>
