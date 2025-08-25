@@ -127,25 +127,19 @@ const MiningSection = ({ user, refreshUserData }) => {
 
   const [adminConfig, setAdminConfig] = useState(null);
 
-  // Handle payment return from URL params
+  // Handle payment return from URL params (fallback for direct navigation)
   useEffect(() => {
     const payment = searchParams.get('payment');
     const orderId = searchParams.get('orderId');
     
     if (payment === 'return' && orderId) {
-      console.log('🔄 User returned from payment, orderId:', orderId);
+      console.log('🔄 Direct navigation from payment return, orderId:', orderId);
       
-      // Show return message
-      toast({
-        title: 'Payment Processing',
-        description: 'Your payment is being processed. Mining card will be activated shortly.',
-        className: 'bg-[#1a1a1a] text-white',
-      });
-      
-      // Clean up URL parameters
+      // Clean up URL parameters immediately
       setSearchParams({});
       
-      // Refresh user data after a short delay to get updated cards
+      // Note: PaymentModal should handle payment verification automatically
+      // This is just a fallback for direct URL navigation
       setTimeout(async () => {
         try {
           const updatedUser = await getCurrentUser(currentUser.id);
@@ -156,9 +150,9 @@ const MiningSection = ({ user, refreshUserData }) => {
         } catch (error) {
           console.error('Error refreshing user data after payment return:', error);
         }
-      }, 2000);
+      }, 1000);
     }
-  }, [searchParams, setSearchParams, currentUser?.id, refreshUserData, toast]);
+  }, [searchParams, setSearchParams, currentUser?.id, refreshUserData]);
 
   // Get dynamic card configurations based on admin config
   const INDIVIDUAL_CARDS = useMemo(() => {

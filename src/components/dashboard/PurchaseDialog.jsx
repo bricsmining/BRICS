@@ -489,8 +489,10 @@ const PurchaseDialog = ({ isOpen, onClose, cardPrice, cardNumber, currentBalance
           onClose={() => setShowPaymentModal(false)}
           paymentUrl={paymentData.paymentUrl}
           trackId={paymentData.trackId}
-          orderId={paymentData.orderId}
           userId={user.id}
+          cardName={cardConfigs[cardNumber]?.name || `Card ${cardNumber}`}
+          amount={paymentData.amount}
+          currency={paymentData.currency}
           onPaymentSuccess={handlePaymentSuccess}
           onPaymentFailure={handlePaymentFailure}
           onPaymentCancel={handlePaymentCancel}
