@@ -154,6 +154,20 @@ const MiningSection = ({ user, refreshUserData }) => {
     }
   }, [searchParams, setSearchParams, currentUser?.id, refreshUserData]);
 
+  // Prevent body scroll when dialogs are open
+  useEffect(() => {
+    if (showCardSelection || showPurchaseDialog) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    
+    // Cleanup on unmount
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [showCardSelection, showPurchaseDialog]);
+
   // Get dynamic card configurations based on admin config
   const INDIVIDUAL_CARDS = useMemo(() => {
     return adminConfig ? getIndividualCards(adminConfig) : getIndividualCards({});
@@ -284,7 +298,7 @@ const MiningSection = ({ user, refreshUserData }) => {
     const seconds = totalSeconds % 60;
 
     if (days > 0) {
-      return `${days}d ${hours}h ${minutes}m`;
+      return `${days}d ${hours}h ${minutes}m ${seconds}s`;
     } else if (hours > 0) {
       return `${hours}h ${minutes}m ${seconds}s`;
     } else if (minutes > 0) {
@@ -610,12 +624,12 @@ const MiningSection = ({ user, refreshUserData }) => {
 
       {/* Card Selection Dialog */}
       {showCardSelection && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-hidden">
           <motion.div
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.9, opacity: 0 }}
-            className="bg-gradient-to-br from-gray-900 to-gray-800 border border-gray-600/50 text-white w-full max-w-2xl p-6 rounded-2xl shadow-2xl relative"
+            className="bg-gradient-to-br from-gray-900 to-gray-800 border border-gray-600/50 text-white w-full max-w-4xl max-h-[90vh] p-6 rounded-2xl shadow-2xl relative overflow-y-auto"
           >
             <button
               className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
@@ -624,32 +638,36 @@ const MiningSection = ({ user, refreshUserData }) => {
               <X className="h-6 w-6" />
             </button>
 
-            <h2 className="text-xl font-bold mb-6 text-center">Choose Your Mining Card</h2>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {Object.values(INDIVIDUAL_CARDS).map((card) => (
-                <Card key={card.id} className={`${card.bgColor} ${card.borderColor} border hover:scale-105 transition-transform cursor-pointer`}
-                      onClick={() => {
-                        setSelectedCardLevel(card.id);
-                        setShowCardSelection(false);
-                        setShowPurchaseDialog(true);
-                      }}>
-                  <CardContent className="p-6">
-                    <div className="text-center">
-                      <div className={`p-4 rounded-full bg-gradient-to-r ${card.color} mx-auto w-fit mb-4`}>
-                        <card.icon className="h-8 w-8 text-white" />
-                      </div>
-                      <h4 className="text-base font-semibold text-white mb-2">{card.name}</h4>
-                      <p className="text-sm text-gray-400 mb-3">{card.description}</p>
-                      <div className="space-y-2">
-                        <div className="text-lg font-bold text-white">{card.ratePerHour}/hr</div>
-                        <div className="text-base text-yellow-400">{card.price.toLocaleString()} STON</div>
-                        <div className="text-xs text-gray-500">{card.cryptoPrice} TON</div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+            <div className="flex flex-col max-h-full">
+              <h2 className="text-xl font-bold mb-6 text-center flex-shrink-0">Choose Your Mining Card</h2>
+              
+              <div className="flex-1 overflow-y-auto">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pb-4">
+                  {Object.values(INDIVIDUAL_CARDS).map((card) => (
+                    <Card key={card.id} className={`${card.bgColor} ${card.borderColor} border hover:scale-105 transition-transform cursor-pointer`}
+                          onClick={() => {
+                            setSelectedCardLevel(card.id);
+                            setShowCardSelection(false);
+                            setShowPurchaseDialog(true);
+                          }}>
+                      <CardContent className="p-6">
+                        <div className="text-center">
+                          <div className={`p-4 rounded-full bg-gradient-to-r ${card.color} mx-auto w-fit mb-4`}>
+                            <card.icon className="h-8 w-8 text-white" />
+                          </div>
+                          <h4 className="text-base font-semibold text-white mb-2">{card.name}</h4>
+                          <p className="text-sm text-gray-400 mb-3">{card.description}</p>
+                          <div className="space-y-2">
+                            <div className="text-lg font-bold text-white">{card.ratePerHour}/hr</div>
+                            <div className="text-base text-yellow-400">{card.price.toLocaleString()} STON</div>
+                            <div className="text-xs text-gray-500">{card.cryptoPrice} TON</div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
             </div>
           </motion.div>
         </div>

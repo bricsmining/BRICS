@@ -96,6 +96,20 @@ const PurchaseDialog = ({ isOpen, onClose, cardPrice, cardNumber, currentBalance
     }
   }, [cardNumber, cardConfigs]);
 
+  // Prevent body scroll when dialog is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    
+    // Cleanup on unmount
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen]);
+
   // Generate order ID
   const generateOrderId = (prefix = 'card') => {
     const timestamp = Date.now();
@@ -326,12 +340,12 @@ const PurchaseDialog = ({ isOpen, onClose, cardPrice, cardNumber, currentBalance
       {/* Purchase Dialog */}
       <AnimatePresence>
         {isOpen && !showPaymentModal && (
-          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-hidden">
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-gradient-to-br from-gray-900 to-gray-800 border border-gray-600/50 text-white w-full max-w-md p-6 rounded-2xl shadow-2xl relative"
+              className="bg-gradient-to-br from-gray-900 to-gray-800 border border-gray-600/50 text-white w-full max-w-md max-h-[90vh] p-6 rounded-2xl shadow-2xl relative overflow-y-auto"
             >
               <button
                 className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
@@ -341,22 +355,24 @@ const PurchaseDialog = ({ isOpen, onClose, cardPrice, cardNumber, currentBalance
                 <X className="h-6 w-6" />
               </button>
 
-              <h2 className="text-xl font-bold mb-4 text-center">
-                Purchase {cardName || cardConfigs[cardNumber]?.name || `Card ${cardNumber || 1}`}
-              </h2>
-              
-              {cardNumber && cardConfigs[cardNumber] && (
-                <div className="text-center mb-4">
-                  <p className="text-sm text-gray-300">
-                    {cardConfigs[cardNumber].name} - {cardConfigs[cardNumber].description}
-                  </p>
-                  <p className="text-xs text-gray-400">
-                    {cardConfigs[cardNumber].ratePerHour.toLocaleString()} STON/hour mining rate
-                  </p>
-                </div>
-              )}
+              <div className="flex flex-col max-h-full">
+                <h2 className="text-xl font-bold mb-4 text-center flex-shrink-0">
+                  Purchase {cardName || cardConfigs[cardNumber]?.name || `Card ${cardNumber || 1}`}
+                </h2>
+                
+                {cardNumber && cardConfigs[cardNumber] && (
+                  <div className="text-center mb-4 flex-shrink-0">
+                    <p className="text-sm text-gray-300">
+                      {cardConfigs[cardNumber].name} - {cardConfigs[cardNumber].description}
+                    </p>
+                    <p className="text-xs text-gray-400">
+                      {cardConfigs[cardNumber].ratePerHour.toLocaleString()} STON/hour mining rate
+                    </p>
+                  </div>
+                )}
 
-              <div className="space-y-4">
+                <div className="flex-1 overflow-y-auto">
+                  <div className="space-y-4 pb-4">
                 <div className="grid grid-cols-2 gap-3 mb-6">
                   <button
                     onClick={() => setPurchaseMethod('balance')}
@@ -477,6 +493,8 @@ const PurchaseDialog = ({ isOpen, onClose, cardPrice, cardNumber, currentBalance
                     </Button>
                   </>
                 )}
+                  </div>
+                </div>
               </div>
             </motion.div>
           </div>
