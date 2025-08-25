@@ -25,15 +25,59 @@ import { Badge } from '@/components/ui/badge';
     const iframeRef = useRef(null);
     const startTimeRef = useRef(Date.now());
 
-    // Check if paymentUrl is valid
-    useEffect(() => {
-      if (isOpen) {
-        if (!paymentUrl || paymentUrl === 'undefined' || paymentUrl === '') {
-          console.error('Invalid payment URL:', paymentUrl);
-          setLoadError(true);
+      // Check if paymentUrl is valid
+  useEffect(() => {
+    if (isOpen) {
+      if (!paymentUrl || paymentUrl === 'undefined' || paymentUrl === '') {
+        console.error('Invalid payment URL:', paymentUrl);
+        setLoadError(true);
+      }
+    }
+  }, [isOpen, paymentUrl]);
+
+  // Hide navigation bar when modal opens, show when it closes
+  useEffect(() => {
+    if (isOpen) {
+      // Hide navigation bar
+      const navElements = document.querySelectorAll('[data-nav-bar], .bottom-nav, .navigation, nav');
+      navElements.forEach(nav => {
+        nav.style.display = 'none';
+      });
+      
+      // Also hide any bottom navigation specifically
+      const bottomNav = document.querySelector('div[class*="bottom"]');
+      if (bottomNav && bottomNav.querySelector('button')) {
+        bottomNav.style.display = 'none';
+      }
+    } else {
+      // Show navigation bar
+      const navElements = document.querySelectorAll('[data-nav-bar], .bottom-nav, .navigation, nav');
+      navElements.forEach(nav => {
+        nav.style.display = '';
+      });
+      
+      // Also show bottom navigation
+      const bottomNav = document.querySelector('div[class*="bottom"]');
+      if (bottomNav && bottomNav.querySelector('button')) {
+        bottomNav.style.display = '';
+      }
+    }
+
+    // Cleanup function to ensure nav is shown if component unmounts
+    return () => {
+      if (!isOpen) {
+        const navElements = document.querySelectorAll('[data-nav-bar], .bottom-nav, .navigation, nav');
+        navElements.forEach(nav => {
+          nav.style.display = '';
+        });
+        
+        const bottomNav = document.querySelector('div[class*="bottom"]');
+        if (bottomNav && bottomNav.querySelector('button')) {
+          bottomNav.style.display = '';
         }
       }
-    }, [isOpen, paymentUrl]);
+    };
+  }, [isOpen]);
 
   // Timer to track how long user stays on payment page
   useEffect(() => {
@@ -159,7 +203,7 @@ import { Badge } from '@/components/ui/badge';
         
         if (iframeUrl && (iframeUrl.includes('/mining?payment=return') || iframeUrl.includes('payment=return'))) {
           console.log('🔄 Iframe navigated to return URL, closing modal');
-          onClose?.();
+          handleModalClose();
           // Check payment status after a short delay
           setTimeout(() => {
             checkPaymentStatusFromGateway();
@@ -213,9 +257,9 @@ import { Badge } from '@/components/ui/badge';
       const result = await response.json();
       
       if (result.success && (result.status === 'completed' || result.status === 'paid' || result.status === 'confirmed')) {
-        onPaymentSuccess?.(result.data);
+        handlePaymentSuccess(result.data);
       } else if (result.status === 'failed' || result.status === 'expired' || result.status === 'cancelled') {
-        onPaymentFailure?.(result);
+        handlePaymentFailure(result);
       } else if (result.status === 'pending') {
         // Payment still processing, wait a bit and check again
         setTimeout(checkPaymentStatusFromGateway, 5000);
@@ -266,9 +310,9 @@ import { Badge } from '@/components/ui/badge';
       console.log('💳 Payment status result:', result);
       
       if (result.success && (result.status === 'completed' || result.status === 'paid' || result.status === 'confirmed')) {
-        onPaymentSuccess?.(result.data);
+        handlePaymentSuccess(result.data);
       } else if (result.status === 'failed' || result.status === 'expired' || result.status === 'cancelled') {
-        onPaymentFailure?.(result);
+        handlePaymentFailure(result);
       } else if (result.status === 'pending') {
         // Payment still processing, wait a bit and check again
         setTimeout(() => checkPaymentStatusFromGatewayWithTrackId(targetTrackId), 5000);
@@ -279,7 +323,7 @@ import { Badge } from '@/components/ui/badge';
       // If it's a network error and user just returned, assume success for better UX
       if (error.message.includes('fetch') || error.message.includes('503')) {
         console.log('🔄 API unavailable but user returned, assuming success');
-        onPaymentSuccess?.({ 
+        handlePaymentSuccess({ 
           message: 'Payment completed! Your mining card will be activated shortly.',
           trackId: targetTrackId,
           status: 'completed' // Mark as completed for better user experience
@@ -287,7 +331,7 @@ import { Badge } from '@/components/ui/badge';
         return;
       }
       
-      onPaymentFailure?.({ message: 'Failed to verify payment status. Please contact support if payment was completed.' });
+      handlePaymentFailure({ message: 'Failed to verify payment status. Please contact support if payment was completed.' });
     }
   };
 
@@ -301,6 +345,69 @@ import { Badge } from '@/components/ui/badge';
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  // Handle modal close with navigation restoration
+  const handleModalClose = () => {
+    // Show navigation bar before closing
+    const navElements = document.querySelectorAll('[data-nav-bar], .bottom-nav, .navigation, nav');
+    navElements.forEach(nav => {
+      nav.style.display = '';
+    });
+    
+    const bottomNav = document.querySelector('div[class*="bottom"]');
+    if (bottomNav && bottomNav.querySelector('button')) {
+      bottomNav.style.display = '';
+    }
+    
+    // Call the original handleClose
+    handleClose();
+  };
+
+  // Enhanced handlers that ensure navigation is restored
+  const handlePaymentSuccess = (result) => {
+    // Show navigation bar
+    const navElements = document.querySelectorAll('[data-nav-bar], .bottom-nav, .navigation, nav');
+    navElements.forEach(nav => {
+      nav.style.display = '';
+    });
+    
+    const bottomNav = document.querySelector('div[class*="bottom"]');
+    if (bottomNav && bottomNav.querySelector('button')) {
+      bottomNav.style.display = '';
+    }
+    
+    onPaymentSuccess?.(result);
+  };
+
+  const handlePaymentFailure = (result) => {
+    // Show navigation bar
+    const navElements = document.querySelectorAll('[data-nav-bar], .bottom-nav, .navigation, nav');
+    navElements.forEach(nav => {
+      nav.style.display = '';
+    });
+    
+    const bottomNav = document.querySelector('div[class*="bottom"]');
+    if (bottomNav && bottomNav.querySelector('button')) {
+      bottomNav.style.display = '';
+    }
+    
+    onPaymentFailure?.(result);
+  };
+
+  const handlePaymentCancel = (result) => {
+    // Show navigation bar
+    const navElements = document.querySelectorAll('[data-nav-bar], .bottom-nav, .navigation, nav');
+    navElements.forEach(nav => {
+      nav.style.display = '';
+    });
+    
+    const bottomNav = document.querySelector('div[class*="bottom"]');
+    if (bottomNav && bottomNav.querySelector('button')) {
+      bottomNav.style.display = '';
+    }
+    
+    onPaymentCancel?.(result);
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -309,13 +416,13 @@ import { Badge } from '@/components/ui/badge';
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+        className="fixed inset-0 bg-black z-50"
       >
                   <motion.div
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.9, opacity: 0 }}
-            className="w-full max-w-4xl h-[80vh] bg-[#1a1a1a] rounded-2xl border border-gray-800 overflow-hidden shadow-2xl relative z-[9999]"
+            className="w-full h-full bg-[#1a1a1a] overflow-hidden relative z-[9999]"
             onClick={(e) => e.stopPropagation()}
             style={{ 
               isolation: 'isolate',
@@ -345,7 +452,7 @@ import { Badge } from '@/components/ui/badge';
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={handleClose}
+                onClick={handleModalClose}
                 className="text-gray-400 hover:text-white hover:bg-gray-800"
               >
                 <X className="h-4 w-4" />
@@ -354,7 +461,7 @@ import { Badge } from '@/components/ui/badge';
           </div>
 
           {/* Payment Content */}
-          <div className="relative h-[calc(100%-5rem)] bg-[#1a1a1a] z-[10000]" style={{ isolation: 'isolate' }}>
+          <div className="relative h-[calc(100vh-5rem)] bg-[#1a1a1a] z-[10000]" style={{ isolation: 'isolate' }}>
             {/* Loading State */}
             {isLoading && (
               <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#1a1a1a]">
