@@ -517,37 +517,7 @@ const MiningSection = ({ user, refreshUserData }) => {
           </div>
         )}
 
-        {/* Expired Cards */}
-        {miningStats.expiredCards.length > 0 && (
-          <div className="space-y-3">
-            <h4 className="text-base font-semibold text-red-400">Expired Cards ({miningStats.expiredCards.length})</h4>
-            {miningStats.expiredCards.map((card) => (
-              <Card key={card.cardKey} className="bg-red-600/10 border-red-500/50 border">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className="p-2 rounded-full bg-red-600/30">
-                        <X className="h-5 w-5 text-red-400" />
-                      </div>
-                      <div>
-                        <h5 className="font-semibold text-white">{card.name} #{card.instanceNumber}</h5>
-                        <p className="text-sm text-gray-400">Expired {formatTimeDuration(Math.abs(card.timeUntilExpiry))} ago</p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <Badge variant="outline" className="text-red-400 border-red-400">
-                        Expired
-                      </Badge>
-                      <p className="text-xs text-gray-400 mt-1">
-                        {card.expirationDate.toLocaleDateString()} {card.expirationDate.toLocaleTimeString()}
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
+
 
         {/* No Cards Message */}
         {miningStats.activeCards.length === 0 && miningStats.expiredCards.length === 0 && (
@@ -599,6 +569,44 @@ const MiningSection = ({ user, refreshUserData }) => {
           ))}
         </div>
       </div>
+
+      {/* Expired Cards - Shown at the bottom */}
+      {miningStats.expiredCards.length > 0 && (
+        <div className="space-y-3">
+          <h3 className="text-lg font-bold text-white flex items-center">
+            <X className="h-4 w-4 mr-2" />
+            Expired Mining Cards
+          </h3>
+          <div className="space-y-3">
+            <h4 className="text-base font-semibold text-red-400">Expired Cards ({miningStats.expiredCards.length})</h4>
+            {miningStats.expiredCards.map((card) => (
+              <Card key={card.cardKey} className="bg-red-600/10 border-red-500/50 border">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className="p-2 rounded-full bg-red-600/30">
+                        <X className="h-5 w-5 text-red-400" />
+                      </div>
+                      <div>
+                        <h5 className="font-semibold text-white">{card.name} #{card.instanceNumber}</h5>
+                        <p className="text-sm text-gray-400">Expired {formatTimeDuration(Math.abs(card.timeUntilExpiry))} ago</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <Badge variant="outline" className="text-red-400 border-red-400">
+                        Expired
+                      </Badge>
+                      <p className="text-xs text-gray-400 mt-1">
+                        {card.expirationDate.toLocaleDateString()} {card.expirationDate.toLocaleTimeString()}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Card Selection Dialog */}
       {showCardSelection && (
