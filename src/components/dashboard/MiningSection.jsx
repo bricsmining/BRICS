@@ -568,7 +568,37 @@ const MiningSection = ({ user, refreshUserData }) => {
         )}
       </div>
 
-
+      {/* Available Cards for Purchase */}
+      <div className="space-y-4">
+        <h3 className="text-lg font-bold text-white flex items-center">
+          <ShoppingCart className="h-4 w-4 mr-2" />
+          Available Mining Cards
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {Object.values(INDIVIDUAL_CARDS).map((card) => (
+            <Card key={card.id} className={`${card.bgColor} ${card.borderColor} border hover:scale-105 transition-transform cursor-pointer`}
+                  onClick={() => {
+                    setSelectedCardLevel(card.id);
+                    setShowPurchaseDialog(true);
+                  }}>
+              <CardContent className="p-6">
+                <div className="text-center">
+                  <div className={`p-4 rounded-full bg-gradient-to-r ${card.color} mx-auto w-fit mb-4`}>
+                    <card.icon className="h-8 w-8 text-white" />
+                  </div>
+                  <h4 className="text-base font-semibold text-white mb-2">{card.name}</h4>
+                  <p className="text-sm text-gray-400 mb-3">{card.description}</p>
+                  <div className="space-y-2">
+                    <div className="text-lg font-bold text-white">{card.ratePerHour}/hr</div>
+                    <div className="text-base text-yellow-400">{card.price.toLocaleString()} STON</div>
+                    <div className="text-xs text-gray-500">{card.cryptoPrice} TON</div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
 
       {/* Card Selection Dialog */}
       {showCardSelection && (
@@ -624,6 +654,7 @@ const MiningSection = ({ user, refreshUserData }) => {
           onClose={() => setShowPurchaseDialog(false)}
           cardPrice={INDIVIDUAL_CARDS[selectedCardLevel]?.price || 0}
           cardNumber={selectedCardLevel}
+          cardName={INDIVIDUAL_CARDS[selectedCardLevel]?.name}
           currentBalance={getPurchasableBalance(currentUser)}
           user={currentUser}
           onSuccess={() => {

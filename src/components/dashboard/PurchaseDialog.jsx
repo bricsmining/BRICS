@@ -61,7 +61,7 @@ const getCardConfigurations = (adminConfig) => {
 };
 
 // Dialog Component for Card Purchase  
-const PurchaseDialog = ({ isOpen, onClose, cardPrice, cardNumber, currentBalance, user, onSuccess }) => {
+const PurchaseDialog = ({ isOpen, onClose, cardPrice, cardNumber, currentBalance, user, onSuccess, cardName }) => {
   const [purchaseMethod, setPurchaseMethod] = useState('balance');
   const [isProcessing, setIsProcessing] = useState(false);
   const [cryptoAmount, setCryptoAmount] = useState(null);
@@ -204,7 +204,7 @@ const PurchaseDialog = ({ isOpen, onClose, cardPrice, cardNumber, currentBalance
           currency: 'TON',
           orderId: orderId,
           description: `${cardConfig.name} Purchase`,
-          // IMPORTANT: Proper callback/return URL usage
+          // IMPORTANT: Proper callback/return URL usage 
           callbackUrl: `${window.location.origin}/api/oxapay?action=webhook`, // For backend confirmation
           returnUrl: `${window.location.origin}/mining?payment=return&orderId=${orderId}`, // For user return
           userId: user.id,
@@ -342,7 +342,7 @@ const PurchaseDialog = ({ isOpen, onClose, cardPrice, cardNumber, currentBalance
               </button>
 
               <h2 className="text-xl font-bold mb-4 text-center">
-                Purchase {cardConfigs[cardNumber]?.name || `Card ${cardNumber || 1}`}
+                Purchase {cardName || cardConfigs[cardNumber]?.name || `Card ${cardNumber || 1}`}
               </h2>
               
               {cardNumber && cardConfigs[cardNumber] && (
