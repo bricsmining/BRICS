@@ -5,7 +5,7 @@
 
 // Note: Import replaced with inline functions to avoid server/client compatibility issues
 import { db } from '../src/lib/serverFirebase.js';
-import { doc, updateDoc, getDoc, setDoc, increment, serverTimestamp } from 'firebase/firestore';
+import { doc, updateDoc, getDoc, setDoc, increment, serverTimestamp, collection, query, where, getDocs } from 'firebase/firestore';
 import { notifyAdminDirect } from './telegram-bot.js';
 
 // OxaPay API configuration
@@ -535,16 +535,33 @@ async function handleCheckPayment(req, res) {
       const purchaseRef = doc(db, 'purchases', orderId);
       purchaseDoc = await getDoc(purchaseRef);
     } else if (trackId) {
-      // trackId is usually same as orderId or we need to find by paymentId
-      const purchaseRef = doc(db, 'purchases', trackId);
+      // trackId might be the same as orderId, or we need to query by paymentId/trackId field
+      // First try trackId as document ID
+      let purchaseRef = doc(db, 'purchases', trackId);
       purchaseDoc = await getDoc(purchaseRef);
       
-      // If not found by trackId as document ID, we might need to query by paymentId field
+      // If not found by trackId as document ID, query by paymentId field
       if (!purchaseDoc.exists()) {
-        // For now, return error - could implement query by paymentId field if needed
-        return res.status(404).json({ 
-          error: 'Purchase not found by trackId. Please provide orderId instead.' 
-        });
+        // Query purchases collection for a document with paymentId matching trackId
+        const purchasesCollection = collection(db, 'purchases');
+        const purchaseQuery = query(purchasesCollection, where('paymentId', '==', trackId));
+        const querySnapshot = await getDocs(purchaseQuery);
+        
+        if (!querySnapshot.empty) {
+          purchaseDoc = querySnapshot.docs[0];
+        } else {
+          // Last resort: try to find by trackId field if it exists
+          const trackIdQuery = query(purchasesCollection, where('trackId', '==', trackId));
+          const trackIdSnapshot = await getDocs(trackIdQuery);
+          
+          if (!trackIdSnapshot.empty) {
+            purchaseDoc = trackIdSnapshot.docs[0];
+          } else {
+            return res.status(404).json({ 
+              error: 'Purchase not found by trackId. Please provide orderId instead.' 
+            });
+          }
+        }
       }
     } else {
       // Find by payment ID (would need a query - simplified for now)
@@ -608,15 +625,35 @@ async function handleWebhook(req, res) {
   }
 
   try {
-    const { status, payment_id, order_id, amount, currency } = req.body;
+    // Try different field names that OxaPay might use
+    const { 
+      status, 
+      payment_id, 
+      paymentId, 
+      track_id,
+      trackId,
+      order_id, 
+      orderId,
+      amount, 
+      currency 
+    } = req.body;
+
+    // Use the first available payment ID field
+    const finalPaymentId = payment_id || paymentId || track_id || trackId;
+    const finalOrderId = order_id || orderId;
 
     console.log('Received OxaPay webhook:', {
-      status, payment_id, order_id, amount, currency
+      status, 
+      payment_id: finalPaymentId, 
+      order_id: finalOrderId, 
+      amount, 
+      currency,
+      originalBody: req.body
     });
 
     // Update purchase status and notify admin
-    if (order_id) {
-      const purchaseRef = doc(db, 'purchases', order_id);
+    if (finalOrderId) {
+      const purchaseRef = doc(db, 'purchases', finalOrderId);
       const purchaseDoc = await getDoc(purchaseRef);
 
       if (purchaseDoc.exists()) {
@@ -697,8 +734,8 @@ async function handleWebhook(req, res) {
                     cardType: `Card ${purchase.cardNumber}`,
                     amount: amount,
                     currency: currency,
-                    orderId: order_id,
-                    paymentId: payment_id
+                    orderId: finalOrderId,
+                    paymentId: finalPaymentId
                   }
                 })
               });
@@ -727,8 +764,8 @@ async function handleWebhook(req, res) {
                     cardType: `Card ${purchase.cardNumber}`,
                     amount: amount,
                     currency: currency,
-                    orderId: order_id,
-                    paymentId: payment_id,
+                    orderId: finalOrderId,
+                    paymentId: finalPaymentId,
                     reason: status
                   }
                 })
@@ -757,8 +794,8 @@ async function handleWebhook(req, res) {
                     cardType: `Card ${purchase.cardNumber}`,
                     amount: amount,
                     currency: currency,
-                    orderId: order_id,
-                    paymentId: payment_id,
+                    orderId: finalOrderId,
+                    paymentId: finalPaymentId,
                     status: status
                   }
                 })
@@ -786,8 +823,8 @@ async function handleWebhook(req, res) {
                     cardType: `Card ${purchase.cardNumber}`,
                     amount: amount,
                     currency: currency,
-                    orderId: order_id,
-                    paymentId: payment_id,
+                    orderId: finalOrderId,
+                    paymentId: finalPaymentId,
                     status: status
                   }
                 })
@@ -808,8 +845,8 @@ async function handleWebhook(req, res) {
             body: JSON.stringify({
               type: 'payment_webhook_unknown',
               data: {
-                orderId: order_id,
-                paymentId: payment_id,
+                orderId: finalOrderId,
+                paymentId: finalPaymentId,
                 amount: amount,
                 currency: currency,
                 status: status

@@ -710,6 +710,86 @@ ${data.memo ? `• Memo: <code>${data.memo}</code>` : ''}
 
 🕐 <b>Time:</b> ${timestamp}`;
 
+    case 'payment_completed':
+      return `✅ <b>Payment Completed!</b>
+
+👤 <b>User:</b> ${formatUserDisplay(data)}
+🛒 <b>Purchase:</b> ${data.cardType || 'Mining Card'}
+💰 <b>Amount:</b> ${data.amount} ${data.currency || 'TON'}
+📄 <b>Order ID:</b> <code>${data.orderId}</code>
+${data.paymentId ? `🔗 <b>Payment ID:</b> <code>${data.paymentId}</code>` : ''}
+
+🎉 Payment successfully processed and card activated!
+
+🕐 <b>Time:</b> ${timestamp}`;
+
+    case 'payment_failed':
+      return `❌ <b>Payment Failed!</b>
+
+👤 <b>User:</b> ${formatUserDisplay(data)}
+🛒 <b>Purchase:</b> ${data.cardType || 'Mining Card'}
+💰 <b>Amount:</b> ${data.amount} ${data.currency || 'TON'}
+📄 <b>Order ID:</b> <code>${data.orderId}</code>
+${data.paymentId ? `🔗 <b>Payment ID:</b> <code>${data.paymentId}</code>` : ''}
+📝 <b>Reason:</b> ${data.reason || 'Unknown error'}
+
+⚠️ Payment was not processed. User was not charged.
+
+🕐 <b>Time:</b> ${timestamp}`;
+
+    case 'payment_pending':
+      return `⏳ <b>Payment Pending</b>
+
+👤 <b>User:</b> ${formatUserDisplay(data)}
+🛒 <b>Purchase:</b> ${data.cardType || 'Mining Card'}
+💰 <b>Amount:</b> ${data.amount} ${data.currency || 'TON'}
+📄 <b>Order ID:</b> <code>${data.orderId}</code>
+${data.paymentId ? `🔗 <b>Payment ID:</b> <code>${data.paymentId}</code>` : ''}
+📊 <b>Status:</b> ${data.status || 'Processing'}
+
+⌛ Payment is being processed...
+
+🕐 <b>Time:</b> ${timestamp}`;
+
+    case 'payment_status_update':
+      return `🔄 <b>Payment Status Update</b>
+
+👤 <b>User:</b> ${formatUserDisplay(data)}
+🛒 <b>Purchase:</b> ${data.cardType || 'Mining Card'}
+💰 <b>Amount:</b> ${data.amount} ${data.currency || 'TON'}
+📄 <b>Order ID:</b> <code>${data.orderId}</code>
+${data.paymentId ? `🔗 <b>Payment ID:</b> <code>${data.paymentId}</code>` : ''}
+📊 <b>Status:</b> ${data.status || 'Unknown'}
+
+ℹ️ Payment status has been updated.
+
+🕐 <b>Time:</b> ${timestamp}`;
+
+    case 'payment_webhook_unknown':
+      return `❓ <b>Unknown Payment Webhook</b>
+
+📄 <b>Order ID:</b> <code>${data.orderId}</code>
+${data.paymentId ? `🔗 <b>Payment ID:</b> <code>${data.paymentId}</code>` : ''}
+💰 <b>Amount:</b> ${data.amount} ${data.currency || 'TON'}
+📊 <b>Status:</b> ${data.status || 'Unknown'}
+
+⚠️ Received webhook for unknown purchase. Manual review required.
+
+🕐 <b>Time:</b> ${timestamp}`;
+
+    case 'payment_created':
+      return `💳 <b>Payment Invoice Created</b>
+
+👤 <b>User:</b> ${formatUserDisplay(data)}
+🛒 <b>Purchase:</b> ${data.cardType || 'Mining Card'}
+💰 <b>Amount:</b> ${data.amount} ${data.currency || 'TON'}
+📄 <b>Order ID:</b> <code>${data.orderId}</code>
+${data.paymentUrl ? `🔗 <b>Payment URL:</b> ${data.paymentUrl}` : ''}
+
+📝 Payment invoice has been generated and sent to user.
+
+🕐 <b>Time:</b> ${timestamp}`;
+
     default:
       return null;
   }
