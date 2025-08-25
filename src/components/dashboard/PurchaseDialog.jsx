@@ -209,6 +209,7 @@ const PurchaseDialog = ({ isOpen, onClose, cardPrice, cardNumber, currentBalance
           returnUrl: `${window.location.origin}/mining?payment=return&orderId=${orderId}`, // For user return
           userId: user.id,
           userEmail: user.email || `user${user.id}@skyton.app`,
+          username: user.username || user.firstName || `user${user.id}`,
           cardNumber: cardNumber,
           cardPrice: cardPrice,
           validityDays: cardConfig.validityDays

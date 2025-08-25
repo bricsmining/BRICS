@@ -347,7 +347,8 @@ async function handleCreatePayment(req, res) {
       orderId,
       description,
       callbackUrl,
-      returnUrl
+      returnUrl,
+      username
     } = req.body;
 
     if (!userId || !cardNumber || !amount || !orderId) {
