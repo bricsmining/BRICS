@@ -16,6 +16,7 @@ import ReferralWelcome from '@/components/ReferralWelcome';
 import { AdTimerProvider, useAdTimer } from '@/contexts/AdTimerContext';
 import { initializeAppData } from '@/data';
 import { Loader2 } from 'lucide-react';
+import DynamicLoader from '@/components/ui/DynamicLoader';
 import { initializeAdNetworks, showRewardedAd } from '@/ads/adsController';
 import { useAdminConfig } from '@/hooks/useAdminConfig';
 import MaintenanceMode from '@/components/MaintenanceMode';
@@ -221,12 +222,7 @@ function App() {
 
 
   if (isLoading || configLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#0f0f0f] text-white">
-        <Loader2 className="h-12 w-12 animate-spin text-sky-400" />
-        <p className="text-sm text-muted-foreground ml-3">Loading your dashboard...</p>
-      </div>
-    );
+    return <DynamicLoader message="Loading your dashboard" />;
   }
 
   // Check for maintenance mode (unless accessing admin routes or user is admin)
