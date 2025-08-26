@@ -623,26 +623,29 @@ export const rejectWithdrawal = async (withdrawalId) => {
     // Restore balance breakdown based on original deduction
     if (withdrawalData.deductionDetails) {
       const deductionDetails = withdrawalData.deductionDetails;
+      console.log(`Restoring breakdown based on deduction details:`, deductionDetails);
       
       if (deductionDetails.mining > 0) {
         refundUpdates[`balanceBreakdown.mining`] = increment(deductionDetails.mining);
-        console.log(`Refunded ${deductionDetails.mining} to mining balance`);
+        console.log(`Refunded ${deductionDetails.mining} STON to mining balance`);
       }
       
       if (deductionDetails.box > 0) {
         refundUpdates[`balanceBreakdown.box`] = increment(deductionDetails.box);
-        console.log(`Refunded ${deductionDetails.box} to box balance`);
+        console.log(`Refunded ${deductionDetails.box} STON to box balance`);
       }
       
       if (deductionDetails.referral > 0) {
         refundUpdates[`balanceBreakdown.referral`] = increment(deductionDetails.referral);
-        console.log(`Refunded ${deductionDetails.referral} to referral balance`);
+        console.log(`Refunded ${deductionDetails.referral} STON to referral balance`);
       }
       
       if (deductionDetails.task > 0) {
         refundUpdates[`balanceBreakdown.task`] = increment(deductionDetails.task);
-        console.log(`Refunded ${deductionDetails.task} to task balance`);
+        console.log(`Refunded ${deductionDetails.task} STON to task balance`);
       }
+    } else {
+      console.warn(`No deduction details found for withdrawal ${withdrawalId} - refund will only go to main balance`);
     }
 
     await updateDoc(userRef, refundUpdates);
@@ -724,7 +727,8 @@ export const createWithdrawalRequest = async (userId, amount, walletAddress, use
       throw new Error('Insufficient balance for withdrawal');
     }
     
-    // Cut the balance immediately as pending withdrawal WITH priority-based breakdown deduction
+    // Calculate deduction details BEFORE making changes (for accurate refund tracking)
+    const deductionDetails = {};
     const updates = {
       balance: increment(-parseFloat(amount)),
       pendingWithdrawal: increment(parseFloat(amount)) // Track pending amount
@@ -740,6 +744,7 @@ export const createWithdrawalRequest = async (userId, amount, walletAddress, use
       if (remainingToDeduct > 0 && breakdown.mining > 0) {
         const deductFromMining = Math.min(breakdown.mining, remainingToDeduct);
         updates[`balanceBreakdown.mining`] = increment(-deductFromMining);
+        deductionDetails.mining = deductFromMining; // Track for refund
         remainingToDeduct -= deductFromMining;
         console.log(`Deducted ${deductFromMining} from mining balance, remaining: ${remainingToDeduct}`);
       }
@@ -748,6 +753,7 @@ export const createWithdrawalRequest = async (userId, amount, walletAddress, use
       if (remainingToDeduct > 0 && breakdown.box > 0) {
         const deductFromBox = Math.min(breakdown.box, remainingToDeduct);
         updates[`balanceBreakdown.box`] = increment(-deductFromBox);
+        deductionDetails.box = deductFromBox; // Track for refund
         remainingToDeduct -= deductFromBox;
         console.log(`Deducted ${deductFromBox} from box balance, remaining: ${remainingToDeduct}`);
       }
@@ -756,6 +762,7 @@ export const createWithdrawalRequest = async (userId, amount, walletAddress, use
       if (remainingToDeduct > 0 && breakdown.referral > 0) {
         const deductFromReferral = Math.min(breakdown.referral, remainingToDeduct);
         updates[`balanceBreakdown.referral`] = increment(-deductFromReferral);
+        deductionDetails.referral = deductFromReferral; // Track for refund
         remainingToDeduct -= deductFromReferral;
         console.log(`Deducted ${deductFromReferral} from referral balance, remaining: ${remainingToDeduct}`);
       }
@@ -764,6 +771,7 @@ export const createWithdrawalRequest = async (userId, amount, walletAddress, use
       if (remainingToDeduct > 0 && breakdown.task > 0) {
         const deductFromTask = Math.min(breakdown.task, remainingToDeduct);
         updates[`balanceBreakdown.task`] = increment(-deductFromTask);
+        deductionDetails.task = deductFromTask; // Track for refund
         remainingToDeduct -= deductFromTask;
         console.log(`Deducted ${deductFromTask} from task balance, remaining: ${remainingToDeduct}`);
       }
@@ -775,38 +783,6 @@ export const createWithdrawalRequest = async (userId, amount, walletAddress, use
 
     await updateDoc(userRef, updates);
     
-    // Track deduction details for potential refund
-    const deductionDetails = {};
-    if (userData.balanceBreakdown) {
-      const breakdown = { ...userData.balanceBreakdown };
-      let remainingToDeduct = parseFloat(amount);
-      
-      // Same logic as above to track what was deducted
-      if (remainingToDeduct > 0 && breakdown.mining > 0) {
-        const deductFromMining = Math.min(breakdown.mining, remainingToDeduct);
-        deductionDetails.mining = deductFromMining;
-        remainingToDeduct -= deductFromMining;
-      }
-      
-      if (remainingToDeduct > 0 && breakdown.box > 0) {
-        const deductFromBox = Math.min(breakdown.box, remainingToDeduct);
-        deductionDetails.box = deductFromBox;
-        remainingToDeduct -= deductFromBox;
-      }
-      
-      if (remainingToDeduct > 0 && breakdown.referral > 0) {
-        const deductFromReferral = Math.min(breakdown.referral, remainingToDeduct);
-        deductionDetails.referral = deductFromReferral;
-        remainingToDeduct -= deductFromReferral;
-      }
-      
-      if (remainingToDeduct > 0 && breakdown.task > 0) {
-        const deductFromTask = Math.min(breakdown.task, remainingToDeduct);
-        deductionDetails.task = deductFromTask;
-        remainingToDeduct -= deductFromTask;
-      }
-    }
-    
     const withdrawalsRef = collection(db, 'withdrawals');
     const docRef = await addDoc(withdrawalsRef, {
       userId: userId.toString(), // Ensure userId is a string
@@ -815,10 +791,12 @@ export const createWithdrawalRequest = async (userId, amount, walletAddress, use
       walletAddress,
       userBalance: currentBalance, // Store balance before deduction
       balanceAfterDeduction: currentBalance - parseFloat(amount),
-      deductionDetails: deductionDetails, // Store what was deducted for refunds
+      deductionDetails: deductionDetails, // Store what was ACTUALLY deducted for accurate refunds
       status: 'pending',
       createdAt: serverTimestamp()
     });
+    
+    console.log(`Withdrawal request created with deduction details:`, deductionDetails);
     
     console.log(`Withdrawal request created with ID: ${docRef.id} for user ${userId}, amount: ${amount} STON - Balance cut immediately`);
     
