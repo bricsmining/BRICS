@@ -416,12 +416,13 @@ const MiningSection = ({ user, refreshUserData }) => {
 
 
   return (
-    <motion.div
-      className="p-4 space-y-6 bg-gradient-to-br from-slate-900 via-purple-900/20 to-slate-900 min-h-screen pb-20 relative overflow-hidden"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.5 }}
-    >
+    <>
+      <motion.div
+        className="p-4 space-y-6 bg-gradient-to-br from-slate-900 via-purple-900/20 to-slate-900 min-h-screen pb-20 relative overflow-hidden"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5 }}
+      >
       {/* Animated background elements */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-10 left-10 w-72 h-72 bg-purple-500/10 rounded-full blur-3xl animate-pulse"></div>
@@ -712,81 +713,82 @@ const MiningSection = ({ user, refreshUserData }) => {
           </div>
         </motion.div>
       )}
+    </motion.div>
 
-      {/* Card Selection Dialog */}
-      {showCardSelection && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-hidden">
-          <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.9, opacity: 0 }}
-            className="bg-gradient-to-br from-gray-900 to-gray-800 border border-gray-600/50 text-white w-full max-w-4xl max-h-[90vh] p-6 rounded-2xl shadow-2xl relative overflow-y-auto"
+    {/* Card Selection Dialog */}
+    {showCardSelection && (
+      <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-hidden">
+        <motion.div
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          exit={{ scale: 0.9, opacity: 0 }}
+          className="bg-gradient-to-br from-gray-900 to-gray-800 border border-gray-600/50 text-white w-full max-w-4xl max-h-[90vh] p-6 rounded-2xl shadow-2xl relative overflow-y-auto"
+        >
+          <button
+            className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
+            onClick={() => setShowCardSelection(false)}
           >
-            <button
-              className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
-              onClick={() => setShowCardSelection(false)}
-            >
-              <X className="h-6 w-6" />
-            </button>
+            <X className="h-6 w-6" />
+          </button>
 
-            <div className="flex flex-col max-h-full">
-              <h2 className="text-xl font-bold mb-6 text-center flex-shrink-0">Choose Your Mining Card</h2>
-              
-              <div className="flex-1 overflow-y-auto">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pb-4">
-                  {Object.values(INDIVIDUAL_CARDS).map((card) => (
-                    <Card key={card.id} className={`${card.bgColor} ${card.borderColor} border hover:scale-105 transition-transform cursor-pointer h-64`}
-                          onClick={() => {
-                            setSelectedCardLevel(card.id);
-                            setShowCardSelection(false);
-                            setShowPurchaseDialog(true);
-                          }}>
-                      <CardContent className="p-4 h-full flex flex-col justify-between">
-                        <div className="text-center flex-1 flex flex-col justify-center">
-                          <div className={`p-3 rounded-full bg-gradient-to-r ${card.color} mx-auto w-fit mb-3`}>
-                            <card.icon className="h-6 w-6 text-white" />
-                          </div>
-                          <h4 className="text-sm font-semibold text-white mb-2">{card.name}</h4>
-                          <p className="text-xs text-gray-400 mb-3 line-clamp-2">{card.description}</p>
+          <div className="flex flex-col max-h-full">
+            <h2 className="text-xl font-bold mb-6 text-center flex-shrink-0">Choose Your Mining Card</h2>
+            
+            <div className="flex-1 overflow-y-auto">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pb-4">
+                {Object.values(INDIVIDUAL_CARDS).map((card) => (
+                  <Card key={card.id} className={`${card.bgColor} ${card.borderColor} border hover:scale-105 transition-transform cursor-pointer h-64`}
+                        onClick={() => {
+                          setSelectedCardLevel(card.id);
+                          setShowCardSelection(false);
+                          setShowPurchaseDialog(true);
+                        }}>
+                    <CardContent className="p-4 h-full flex flex-col justify-between">
+                      <div className="text-center flex-1 flex flex-col justify-center">
+                        <div className={`p-3 rounded-full bg-gradient-to-r ${card.color} mx-auto w-fit mb-3`}>
+                          <card.icon className="h-6 w-6 text-white" />
                         </div>
-                        <div className="space-y-1 text-center">
-                          <div className="text-base font-bold text-white">{card.ratePerHour}/hr</div>
-                          <div className="text-sm text-yellow-400">{card.price.toLocaleString()} STON</div>
-                          <div className="text-xs text-gray-500">{card.cryptoPrice} TON</div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
+                        <h4 className="text-sm font-semibold text-white mb-2">{card.name}</h4>
+                        <p className="text-xs text-gray-400 mb-3 line-clamp-2">{card.description}</p>
+                      </div>
+                      <div className="space-y-1 text-center">
+                        <div className="text-base font-bold text-white">{card.ratePerHour}/hr</div>
+                        <div className="text-sm text-yellow-400">{card.price.toLocaleString()} STON</div>
+                        <div className="text-xs text-gray-500">{card.cryptoPrice} TON</div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
             </div>
-          </motion.div>
-        </div>
-      )}
+          </div>
+        </motion.div>
+      </div>
+    )}
 
-      {/* Purchase Dialog */}
-      {showPurchaseDialog && (
-        <PurchaseDialog
-          isOpen={showPurchaseDialog}
-          onClose={() => setShowPurchaseDialog(false)}
-          cardPrice={INDIVIDUAL_CARDS[selectedCardLevel]?.price || 0}
-          cardNumber={selectedCardLevel}
-          cardName={INDIVIDUAL_CARDS[selectedCardLevel]?.name}
-          currentBalance={getPurchasableBalance(currentUser)}
-          user={currentUser}
-          onSuccess={() => {
-            setShowPurchaseDialog(false);
-            // Refresh user data after purchase
-            getCurrentUser(currentUser.id).then(updatedUser => {
-              if (updatedUser) {
-                setCurrentUser(updatedUser);
-                if (refreshUserData) refreshUserData(updatedUser);
-              }
-            });
-          }}
-        />
-      )}
-    </motion.div>
+    {/* Purchase Dialog */}
+    {showPurchaseDialog && (
+      <PurchaseDialog
+        isOpen={showPurchaseDialog}
+        onClose={() => setShowPurchaseDialog(false)}
+        cardPrice={INDIVIDUAL_CARDS[selectedCardLevel]?.price || 0}
+        cardNumber={selectedCardLevel}
+        cardName={INDIVIDUAL_CARDS[selectedCardLevel]?.name}
+        currentBalance={getPurchasableBalance(currentUser)}
+        user={currentUser}
+        onSuccess={() => {
+          setShowPurchaseDialog(false);
+          // Refresh user data after purchase
+          getCurrentUser(currentUser.id).then(updatedUser => {
+            if (updatedUser) {
+              setCurrentUser(updatedUser);
+              if (refreshUserData) refreshUserData(updatedUser);
+            }
+          });
+        }}
+      />
+    )}
+    </>
   );
 };
 
