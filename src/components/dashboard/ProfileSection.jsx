@@ -1602,10 +1602,11 @@ const ProfileSection = ({ user, refreshUserData }) => {
         refreshUserData(updatedUser);
       }
       
-      // Calculate user statistics for enhanced notification
-      const totalReferrals = user.referrals || 0;
-      const totalBoxesOpened = user.totalBoxesOpened || 0;
-      const miningCards = user.cards || 0;
+      // Calculate user statistics for enhanced notification using updated user data
+      const userDataForStats = updatedUser || user;
+      const totalReferrals = userDataForStats.referrals || 0;
+      const totalBoxesOpened = userDataForStats.totalBoxesOpened || 0;
+      const miningCards = userDataForStats.cards || 0;
       
       // Calculate total ads watched from ad history
       const calculateTotalAds = (adHistory) => {
@@ -1619,18 +1620,18 @@ const ProfileSection = ({ user, refreshUserData }) => {
         return total;
       };
       
-      const totalEnergyAds = calculateTotalAds(user.energyAdHistory);
-      const totalBoxAds = calculateTotalAds(user.boxAdHistory);
+      const totalEnergyAds = calculateTotalAds(userDataForStats.energyAdHistory);
+      const totalBoxAds = calculateTotalAds(userDataForStats.boxAdHistory);
       const totalAdsWatched = totalEnergyAds + totalBoxAds;
       
-      // Balance breakdown details
-      const balanceBreakdown = user.balanceBreakdown || {};
+      // Balance breakdown details using updated user data
+      const balanceBreakdown = userDataForStats.balanceBreakdown || {};
       const taskBalance = balanceBreakdown.task || 0;
       const boxBalance = balanceBreakdown.box || 0;
       const referralBalance = balanceBreakdown.referral || 0;
       const miningBalance = balanceBreakdown.mining || 0;
       
-      // Send notification with enhanced details
+      // Send notification with enhanced details using UPDATED balance
       await sendAdminNotification('withdrawal_request', {
         userId: user.id,
         userName: user.first_name || user.last_name || user.username || 'Unknown',
@@ -1639,9 +1640,9 @@ const ProfileSection = ({ user, refreshUserData }) => {
         amount: amount,
         method: 'TON Wallet',
         address: user.wallet,
-        currentBalance: user.balance || 0,
+        currentBalance: updatedUser ? updatedUser.balance || 0 : user.balance || 0, // Use updated balance
         withdrawalId: result.withdrawalId, // Use the real document ID
-        // Enhanced user statistics
+        // Enhanced user statistics using updated data
         userStats: {
           totalReferrals: totalReferrals,
           totalBoxesOpened: totalBoxesOpened,
@@ -1653,7 +1654,7 @@ const ProfileSection = ({ user, refreshUserData }) => {
             referral: referralBalance,
             mining: miningBalance
           },
-          joinedAt: user.joinedAt ? new Date(user.joinedAt.seconds * 1000).toLocaleDateString() : 'Unknown'
+          joinedAt: userDataForStats.joinedAt ? new Date(userDataForStats.joinedAt.seconds * 1000).toLocaleDateString() : 'Unknown'
         }
       });
 
