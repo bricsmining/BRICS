@@ -5,7 +5,7 @@
 
 // Note: Import replaced with inline functions to avoid server/client compatibility issues
 import { db } from '../src/lib/serverFirebase.js';
-import { doc, updateDoc, getDoc, setDoc, increment, serverTimestamp, collection, query, where, getDocs } from 'firebase/firestore';
+import { doc, updateDoc, getDoc, setDoc, increment, serverTimestamp, Timestamp, collection, query, where, getDocs } from 'firebase/firestore';
 import { notifyAdminDirect } from './telegram-bot.js';
 
 // OxaPay API configuration
@@ -738,7 +738,7 @@ async function handleWebhook(req, res) {
           status: status,
           finalAmount: amount,
           finalCurrency: currency,
-          completedAt: status === 'completed' ? serverTimestamp() : null,
+          completedAt: (status === 'completed' || status === 'confirmed' || status === 'Paid') ? serverTimestamp() : null,
           updatedAt: serverTimestamp()
         });
 
@@ -746,6 +746,7 @@ async function handleWebhook(req, res) {
         switch (status) {
           case 'completed':
           case 'confirmed':
+          case 'Paid':
             // Add individual mining card instance to user
             const userRef = doc(db, 'users', purchase.userId);
             const userDoc = await getDoc(userRef);
@@ -767,13 +768,13 @@ async function handleWebhook(req, res) {
                 [`cardData.${newCardKey}`]: {
                   cardId: purchase.cardNumber,
                   purchaseDate: serverTimestamp(),
-                  expirationDate: expirationDate,
+                  expirationDate: Timestamp.fromDate(expirationDate),
                   validityDays: purchase.validityDays || 7,
                   active: true,
                   method: 'crypto',
                   instanceNumber: existingInstances + 1,
-                  orderId: order_id,
-                  paymentId: payment_id
+                  orderId: finalOrderId,
+                  paymentId: finalPaymentId
                 }
               };
 

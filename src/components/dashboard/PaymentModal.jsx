@@ -202,8 +202,8 @@ import { Badge } from '@/components/ui/badge';
         const iframeUrl = iframe.contentWindow?.location?.href;
         
         if (iframeUrl && (iframeUrl.includes('/mining?payment=return') || iframeUrl.includes('payment=return'))) {
-          console.log('🔄 Iframe navigated to return URL, closing modal');
-          handleModalClose();
+          console.log('🔄 Iframe navigated to return URL, checking payment status');
+          handlePaymentReturn();
           // Check payment status after a short delay
           setTimeout(() => {
             checkPaymentStatusFromGateway();
@@ -360,6 +360,23 @@ import { Badge } from '@/components/ui/badge';
     
     // Call the original handleClose
     handleClose();
+  };
+
+  // Handle return from payment gateway (don't show cancellation)
+  const handlePaymentReturn = () => {
+    // Show navigation bar before closing
+    const navElements = document.querySelectorAll('[data-nav-bar], .bottom-nav, .navigation, nav');
+    navElements.forEach(nav => {
+      nav.style.display = '';
+    });
+    
+    const bottomNav = document.querySelector('div[class*="bottom"]');
+    if (bottomNav && bottomNav.querySelector('button')) {
+      bottomNav.style.display = '';
+    }
+    
+    // Close modal without cancellation message
+    onClose?.();
   };
 
   // Enhanced handlers that ensure navigation is restored

@@ -1,0 +1,10 @@
+[33m5a4dc2e[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m 🔧 FIXED: Card Selection Dialog Top Margin Issue (Mining Section)
+[33mf70fb1e[m 🔧 FIXED: Mining Purchase Dialog Top Margin Issue
+[33m11683bb[m 🔧 FIXED: Payment Modal Gaps & Header Sizing Issues
+[33m743a8fd[m 📱 ENHANCED: Fullscreen Payment Modal with Navigation Bar Control
+[33md4d9b88[m 🔧 FIXED: Payment Status Check Error - Use OrderID Instead of TrackID
+[33m883768c[m 🔍 ENHANCED: Check-Payment API Debugging
+[33mb63ba1a[m 💸 FIXED: Payout/Withdrawal Notification System Issues
+[33mb3e92d5[m ENV oxapay api config veriable name fixed
+[33m7529745[m 🚀 CRITICAL FIX: Payment System Webhook & Notification Issues
+[33m2acc9c2[m 💳 ENHANCED: Payment Notifications - Invoice Creation & Status Updates + Mining UI Fixes
