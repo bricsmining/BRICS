@@ -1326,7 +1326,7 @@ const ProfileSection = ({ user, refreshUserData }) => {
   }, []);
 
   const totalEarnings = useMemo(() => {
-    return getWithdrawableBalance(user) + (user.totalWithdrawn || 0);
+    return (user.balance || 0) + (user.totalWithdrawn || 0);
   }, [user]);
 
   const purchasableBalance = useMemo(() => {
@@ -2209,13 +2209,13 @@ const ProfileSection = ({ user, refreshUserData }) => {
                 <div className="text-center mb-4">
                   <motion.p
                     variants={balanceCounterVariants}
-                    key={getWithdrawableBalance(user)}
+                    key={user.balance || 0}
                     initial="initial"
                     animate="animate"
                     className="text-2xl font-bold text-white mb-1"
                   >
                     {balanceVisible 
-                      ? getWithdrawableBalance(user).toLocaleString()
+                      ? (user.balance || 0).toLocaleString()
                       : "•••••••"
                     }
                   </motion.p>
@@ -2224,7 +2224,7 @@ const ProfileSection = ({ user, refreshUserData }) => {
                     Total STON
                   </p>
                   <p className="text-xs text-gray-400 mt-1">
-                    ≈ {stonToTon(getWithdrawableBalance(user))} TON
+                    ≈ {stonToTon(user.balance || 0)} TON
                   </p>
                 </div>
 
@@ -2290,7 +2290,7 @@ const ProfileSection = ({ user, refreshUserData }) => {
                   <div className="flex items-center gap-1">
                     <span className="text-cyan-400">💳 Withdrawable:</span>
                     <span className="text-white font-medium">
-                      {balanceVisible ? getWithdrawableBalance(user).toLocaleString() : "•••"}
+                      {balanceVisible ? (user.balance || 0).toLocaleString() : "•••"}
                     </span>
                   </div>
                 </div>

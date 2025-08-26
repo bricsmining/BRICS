@@ -613,12 +613,39 @@ export const rejectWithdrawal = async (withdrawalId) => {
       processedBy: 'admin'
     });
 
-    // Refund the balance to user
+    // Refund the balance to user WITH breakdown restoration
     const userRef = doc(db, 'users', userId);
-    await updateDoc(userRef, {
+    const refundUpdates = {
       balance: increment(parseFloat(amount)), // Refund the amount
       pendingWithdrawal: increment(-parseFloat(amount)) // Remove from pending
-    });
+    };
+
+    // Restore balance breakdown based on original deduction
+    if (withdrawalData.deductionDetails) {
+      const deductionDetails = withdrawalData.deductionDetails;
+      
+      if (deductionDetails.mining > 0) {
+        refundUpdates[`balanceBreakdown.mining`] = increment(deductionDetails.mining);
+        console.log(`Refunded ${deductionDetails.mining} to mining balance`);
+      }
+      
+      if (deductionDetails.box > 0) {
+        refundUpdates[`balanceBreakdown.box`] = increment(deductionDetails.box);
+        console.log(`Refunded ${deductionDetails.box} to box balance`);
+      }
+      
+      if (deductionDetails.referral > 0) {
+        refundUpdates[`balanceBreakdown.referral`] = increment(deductionDetails.referral);
+        console.log(`Refunded ${deductionDetails.referral} to referral balance`);
+      }
+      
+      if (deductionDetails.task > 0) {
+        refundUpdates[`balanceBreakdown.task`] = increment(deductionDetails.task);
+        console.log(`Refunded ${deductionDetails.task} to task balance`);
+      }
+    }
+
+    await updateDoc(userRef, refundUpdates);
 
     // Send user notification about rejection
     try {
@@ -697,11 +724,88 @@ export const createWithdrawalRequest = async (userId, amount, walletAddress, use
       throw new Error('Insufficient balance for withdrawal');
     }
     
-    // Cut the balance immediately as pending withdrawal
-    await updateDoc(userRef, {
+    // Cut the balance immediately as pending withdrawal WITH priority-based breakdown deduction
+    const updates = {
       balance: increment(-parseFloat(amount)),
       pendingWithdrawal: increment(parseFloat(amount)) // Track pending amount
-    });
+    };
+
+    // Apply priority-based deduction from balance breakdown
+    // Priority: Mining > Box > Referral > Task (highest to lowest value typically)
+    if (userData.balanceBreakdown) {
+      const breakdown = { ...userData.balanceBreakdown };
+      let remainingToDeduct = parseFloat(amount);
+      
+      // Priority 1: Mining balance (highest value, first to deduct)
+      if (remainingToDeduct > 0 && breakdown.mining > 0) {
+        const deductFromMining = Math.min(breakdown.mining, remainingToDeduct);
+        updates[`balanceBreakdown.mining`] = increment(-deductFromMining);
+        remainingToDeduct -= deductFromMining;
+        console.log(`Deducted ${deductFromMining} from mining balance, remaining: ${remainingToDeduct}`);
+      }
+      
+      // Priority 2: Box balance (withdrawal only, but valuable)
+      if (remainingToDeduct > 0 && breakdown.box > 0) {
+        const deductFromBox = Math.min(breakdown.box, remainingToDeduct);
+        updates[`balanceBreakdown.box`] = increment(-deductFromBox);
+        remainingToDeduct -= deductFromBox;
+        console.log(`Deducted ${deductFromBox} from box balance, remaining: ${remainingToDeduct}`);
+      }
+      
+      // Priority 3: Referral balance (withdrawal only)
+      if (remainingToDeduct > 0 && breakdown.referral > 0) {
+        const deductFromReferral = Math.min(breakdown.referral, remainingToDeduct);
+        updates[`balanceBreakdown.referral`] = increment(-deductFromReferral);
+        remainingToDeduct -= deductFromReferral;
+        console.log(`Deducted ${deductFromReferral} from referral balance, remaining: ${remainingToDeduct}`);
+      }
+      
+      // Priority 4: Task balance (last, can be used for purchases)
+      if (remainingToDeduct > 0 && breakdown.task > 0) {
+        const deductFromTask = Math.min(breakdown.task, remainingToDeduct);
+        updates[`balanceBreakdown.task`] = increment(-deductFromTask);
+        remainingToDeduct -= deductFromTask;
+        console.log(`Deducted ${deductFromTask} from task balance, remaining: ${remainingToDeduct}`);
+      }
+      
+      if (remainingToDeduct > 0) {
+        console.warn(`Warning: Could not fully deduct from breakdown. Remaining: ${remainingToDeduct}`);
+      }
+    }
+
+    await updateDoc(userRef, updates);
+    
+    // Track deduction details for potential refund
+    const deductionDetails = {};
+    if (userData.balanceBreakdown) {
+      const breakdown = { ...userData.balanceBreakdown };
+      let remainingToDeduct = parseFloat(amount);
+      
+      // Same logic as above to track what was deducted
+      if (remainingToDeduct > 0 && breakdown.mining > 0) {
+        const deductFromMining = Math.min(breakdown.mining, remainingToDeduct);
+        deductionDetails.mining = deductFromMining;
+        remainingToDeduct -= deductFromMining;
+      }
+      
+      if (remainingToDeduct > 0 && breakdown.box > 0) {
+        const deductFromBox = Math.min(breakdown.box, remainingToDeduct);
+        deductionDetails.box = deductFromBox;
+        remainingToDeduct -= deductFromBox;
+      }
+      
+      if (remainingToDeduct > 0 && breakdown.referral > 0) {
+        const deductFromReferral = Math.min(breakdown.referral, remainingToDeduct);
+        deductionDetails.referral = deductFromReferral;
+        remainingToDeduct -= deductFromReferral;
+      }
+      
+      if (remainingToDeduct > 0 && breakdown.task > 0) {
+        const deductFromTask = Math.min(breakdown.task, remainingToDeduct);
+        deductionDetails.task = deductFromTask;
+        remainingToDeduct -= deductFromTask;
+      }
+    }
     
     const withdrawalsRef = collection(db, 'withdrawals');
     const docRef = await addDoc(withdrawalsRef, {
@@ -711,6 +815,7 @@ export const createWithdrawalRequest = async (userId, amount, walletAddress, use
       walletAddress,
       userBalance: currentBalance, // Store balance before deduction
       balanceAfterDeduction: currentBalance - parseFloat(amount),
+      deductionDetails: deductionDetails, // Store what was deducted for refunds
       status: 'pending',
       createdAt: serverTimestamp()
     });
