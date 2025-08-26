@@ -417,116 +417,183 @@ const MiningSection = ({ user, refreshUserData }) => {
 
   return (
     <motion.div
-      className="p-4 space-y-4 bg-gradient-to-br from-[#0a0a0a] via-[#0f0f0f] to-[#1a1a1a] min-h-screen pb-20"
+      className="p-4 space-y-6 bg-gradient-to-br from-slate-900 via-purple-900/20 to-slate-900 min-h-screen pb-20 relative overflow-hidden"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
     >
+      {/* Animated background elements */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-10 left-10 w-72 h-72 bg-purple-500/10 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute top-1/2 right-20 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }}></div>
+        <div className="absolute bottom-20 left-1/3 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '4s' }}></div>
+      </div>
       {/* Mining Overview Card */}
-      <Card className={`${miningStats.bgColor} ${miningStats.borderColor} border-2 shadow-2xl`}>
-        <CardContent className="p-6">
+      <motion.div
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.6, delay: 0.1 }}
+        className="relative"
+      >
+        <Card className="bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl hover:shadow-purple-500/20 transition-all duration-300 relative overflow-hidden">
+          {/* Glassmorphism glow effect */}
+          <div className={`absolute inset-0 bg-gradient-to-r ${miningStats.color} opacity-20 blur-xl`}></div>
+          <CardContent className="p-6 relative z-10">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center space-x-3">
-              <div className={`p-2 rounded-full bg-gradient-to-r ${miningStats.color}`}>
-                <miningStats.icon className="h-6 w-6 text-white" />
-              </div>
+              <motion.div 
+                className={`p-3 rounded-2xl bg-gradient-to-r ${miningStats.color} shadow-lg`}
+                whileHover={{ scale: 1.1, rotate: 5 }}
+                transition={{ type: "spring", stiffness: 300 }}
+              >
+                <miningStats.icon className="h-6 w-6 text-white drop-shadow-lg" />
+              </motion.div>
               <div>
-                <h2 className="text-lg font-bold text-white">{miningStats.levelName}</h2>
-                <p className="text-sm text-gray-400">
+                <h2 className="text-xl font-bold text-white drop-shadow-lg">{miningStats.levelName}</h2>
+                <p className="text-sm text-gray-300/80">
                   {miningStats.totalActiveCards} Active Cards • {miningStats.totalMiningRate}/hr
                 </p>
               </div>
             </div>
             <div className="text-right">
-              <div className="text-xl font-bold text-white">{(currentUser?.miningData?.totalMined || 0).toLocaleString()}</div>
-              <div className="text-sm text-gray-400">Total Mined</div>
+              <motion.div 
+                className="text-2xl font-bold text-white drop-shadow-lg"
+                initial={{ scale: 0.5 }}
+                animate={{ scale: 1 }}
+                transition={{ type: "spring", stiffness: 200 }}
+              >
+                {(currentUser?.miningData?.totalMined || 0).toLocaleString()}
+              </motion.div>
+              <div className="text-sm text-gray-300/80">Total Mined</div>
             </div>
           </div>
 
           {/* Progress Bar */}
-          <div className="space-y-2">
+          <div className="space-y-3 bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
             <div className="flex justify-between text-sm">
-              <span className="text-gray-400">Next Expiry Progress</span>
-              <span className="text-gray-400">{miningProgress.toFixed(1)}%</span>
+              <span className="text-gray-300/90">Next Expiry Progress</span>
+              <span className="text-white font-semibold">{miningProgress.toFixed(1)}%</span>
             </div>
-            <div className="w-full bg-gray-800 rounded-full h-3">
+            <div className="w-full bg-white/10 rounded-full h-3 overflow-hidden shadow-inner">
               <motion.div
-                className={`h-3 rounded-full bg-gradient-to-r ${miningStats.color}`}
+                className="h-3 bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600 rounded-full shadow-lg"
                 initial={{ width: 0 }}
                 animate={{ width: `${miningProgress}%` }}
-                transition={{ duration: 0.5 }}
+                transition={{ duration: 1, ease: "easeOut" }}
               />
             </div>
-            <div className="text-sm text-gray-400">{nextExpiryInfo}</div>
+            <div className="text-sm text-gray-300/90 font-medium">{nextExpiryInfo}</div>
           </div>
 
-          {/* Action Buttons */}
           {/* Pending Rewards Display */}
-          <div className="text-center mt-4">
-            <div className="text-2xl font-bold text-yellow-400">{pendingRewards.toLocaleString()} STON</div>
-            <div className="text-sm text-gray-400">Available to Claim</div>
-          </div>
+          <motion.div 
+            className="text-center mt-6 bg-gradient-to-r from-yellow-500/20 to-orange-500/20 backdrop-blur-sm rounded-xl p-4 border border-yellow-500/30"
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+          >
+            <motion.div 
+              className="text-3xl font-bold bg-gradient-to-r from-yellow-400 to-orange-400 bg-clip-text text-transparent drop-shadow-lg"
+              animate={{ scale: [1, 1.05, 1] }}
+              transition={{ duration: 2, repeat: Infinity }}
+            >
+              {pendingRewards.toLocaleString()} STON
+            </motion.div>
+            <div className="text-sm text-gray-300/90 font-medium">Available to Claim</div>
+          </motion.div>
 
-          <div className="flex space-x-3 mt-6">
-            <Button
-              onClick={claimRewards}
-              disabled={pendingRewards <= 0 || isClaimingRewards}
-              className="flex-1 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800"
-            >
-              {isClaimingRewards ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              ) : (
-                <Coins className="h-4 w-4 mr-2" />
-              )}
-              Claim Now
-            </Button>
-            <Button
-              onClick={() => setShowCardSelection(true)}
-              variant="outline"
-              className="border-gray-600 text-white hover:bg-gray-800"
-            >
-              <ShoppingCart className="h-4 w-4 mr-2" />
-              Buy Cards
-            </Button>
+          <div className="flex space-x-4 mt-6">
+            <motion.div className="flex-1" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+              <Button
+                onClick={claimRewards}
+                disabled={pendingRewards <= 0 || isClaimingRewards}
+                className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 backdrop-blur-sm border border-green-500/30 shadow-lg hover:shadow-green-500/20 transition-all duration-300"
+              >
+                {isClaimingRewards ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : (
+                  <Coins className="h-4 w-4 mr-2" />
+                )}
+                Claim Now
+              </Button>
+            </motion.div>
+            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+              <Button
+                onClick={() => setShowCardSelection(true)}
+                className="bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/20 shadow-lg hover:shadow-purple-500/20 transition-all duration-300"
+              >
+                <ShoppingCart className="h-4 w-4 mr-2" />
+                Buy Cards
+              </Button>
+            </motion.div>
           </div>
         </CardContent>
-      </Card>
+        </Card>
+      </motion.div>
 
       {/* Individual Card Instances */}
-      <div className="space-y-3">
-        <h3 className="text-lg font-bold text-white flex items-center">
-          <CreditCard className="h-4 w-4 mr-2" />
+      <motion.div 
+        className="space-y-4"
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.6, delay: 0.2 }}
+      >
+        <h3 className="text-xl font-bold text-white flex items-center drop-shadow-lg">
+          <motion.div
+            animate={{ rotate: [0, 5, -5, 0] }}
+            transition={{ duration: 2, repeat: Infinity }}
+          >
+            <CreditCard className="h-5 w-5 mr-3 text-cyan-400" />
+          </motion.div>
           Your Mining Cards
         </h3>
         
         {/* Active Cards */}
         {miningStats.activeCards.length > 0 && (
           <div className="space-y-3">
-            <h4 className="text-base font-semibold text-green-400">Active Cards ({miningStats.activeCards.length})</h4>
-            {miningStats.activeCards.map((card) => (
-              <Card key={card.cardKey} className={`${card.bgColor} ${card.borderColor} border`}>
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className={`p-2 rounded-full bg-gradient-to-r ${card.color}`}>
-                        <card.icon className="h-5 w-5 text-white" />
+            <h4 className="text-lg font-semibold text-green-400 flex items-center">
+              <div className="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse"></div>
+              Active Cards ({miningStats.activeCards.length})
+            </h4>
+            {miningStats.activeCards.map((card, index) => (
+              <motion.div
+                key={card.cardKey}
+                initial={{ x: -20, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+                whileHover={{ scale: 1.02, y: -2 }}
+                className="group"
+              >
+                <Card className="bg-white/5 backdrop-blur-xl border border-white/10 hover:border-green-500/30 shadow-lg hover:shadow-green-500/20 transition-all duration-300 relative overflow-hidden">
+                  {/* Card glow effect */}
+                  <div className={`absolute inset-0 bg-gradient-to-r ${card.color} opacity-10 group-hover:opacity-20 transition-opacity duration-300`}></div>
+                  <CardContent className="p-4 relative z-10">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <motion.div 
+                          className={`p-2 rounded-full bg-gradient-to-r ${card.color} shadow-lg`}
+                          whileHover={{ rotate: 360 }}
+                          transition={{ duration: 0.5 }}
+                        >
+                          <card.icon className="h-5 w-5 text-white" />
+                        </motion.div>
+                        <div>
+                          <h5 className="font-semibold text-white drop-shadow-sm">{card.name} #{card.instanceNumber}</h5>
+                          <p className="text-sm text-gray-300/80">{card.ratePerHour}/hr • Expires in {formatTimeDuration(card.timeUntilExpiry)}</p>
+                        </div>
                       </div>
-                      <div>
-                        <h5 className="font-semibold text-white">{card.name} #{card.instanceNumber}</h5>
-                        <p className="text-sm text-gray-400">{card.ratePerHour}/hr • Expires in {formatTimeDuration(card.timeUntilExpiry)}</p>
+                      <div className="text-right">
+                        <Badge className="bg-green-500/20 text-green-400 border-green-500/30 backdrop-blur-sm">
+                          Active
+                        </Badge>
+                        <p className="text-xs text-gray-300/70 mt-1">
+                          {card.expirationDate.toLocaleDateString()} {card.expirationDate.toLocaleTimeString()}
+                        </p>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <Badge variant="outline" className="text-green-400 border-green-400">
-                        Active
-                      </Badge>
-                      <p className="text-xs text-gray-400 mt-1">
-                        {card.expirationDate.toLocaleDateString()} {card.expirationDate.toLocaleTimeString()}
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              </motion.div>
             ))}
           </div>
         )}
@@ -550,7 +617,7 @@ const MiningSection = ({ user, refreshUserData }) => {
             </CardContent>
           </Card>
         )}
-      </div>
+      </motion.div>
 
       {/* Available Cards for Purchase */}
       <div className="space-y-4">
@@ -586,40 +653,64 @@ const MiningSection = ({ user, refreshUserData }) => {
 
       {/* Expired Cards - Shown at the bottom */}
       {miningStats.expiredCards.length > 0 && (
-        <div className="space-y-3">
-          <h3 className="text-lg font-bold text-white flex items-center">
-            <X className="h-4 w-4 mr-2" />
+        <motion.div 
+          className="space-y-4"
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.6, delay: 0.4 }}
+        >
+          <h3 className="text-xl font-bold text-white flex items-center drop-shadow-lg">
+            <motion.div
+              animate={{ rotate: [0, -10, 10, 0] }}
+              transition={{ duration: 2, repeat: Infinity }}
+            >
+              <X className="h-5 w-5 mr-3 text-red-400" />
+            </motion.div>
             Expired Mining Cards
           </h3>
           <div className="space-y-3">
-            <h4 className="text-base font-semibold text-red-400">Expired Cards ({miningStats.expiredCards.length})</h4>
-            {miningStats.expiredCards.map((card) => (
-              <Card key={card.cardKey} className="bg-red-600/10 border-red-500/50 border">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className="p-2 rounded-full bg-red-600/30">
-                        <X className="h-5 w-5 text-red-400" />
+            <h4 className="text-lg font-semibold text-red-400 flex items-center">
+              <div className="w-2 h-2 bg-red-400 rounded-full mr-2 animate-pulse"></div>
+              Expired Cards ({miningStats.expiredCards.length})
+            </h4>
+            {miningStats.expiredCards.map((card, index) => (
+              <motion.div
+                key={card.cardKey}
+                initial={{ x: -20, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+                whileHover={{ scale: 1.01 }}
+                className="group"
+              >
+                <Card className="bg-white/5 backdrop-blur-xl border border-red-500/20 hover:border-red-500/40 shadow-lg hover:shadow-red-500/20 transition-all duration-300 relative overflow-hidden opacity-75">
+                  {/* Card glow effect */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-red-600/10 to-red-800/10 group-hover:from-red-600/20 group-hover:to-red-800/20 transition-all duration-300"></div>
+                  <CardContent className="p-4 relative z-10">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <div className="p-2 rounded-full bg-red-600/30 backdrop-blur-sm">
+                          <X className="h-5 w-5 text-red-400" />
+                        </div>
+                        <div>
+                          <h5 className="font-semibold text-white drop-shadow-sm">{card.name} #{card.instanceNumber}</h5>
+                          <p className="text-sm text-gray-300/80">Expired {formatTimeDuration(Math.abs(card.timeUntilExpiry))} ago</p>
+                        </div>
                       </div>
-                      <div>
-                        <h5 className="font-semibold text-white">{card.name} #{card.instanceNumber}</h5>
-                        <p className="text-sm text-gray-400">Expired {formatTimeDuration(Math.abs(card.timeUntilExpiry))} ago</p>
+                      <div className="text-right">
+                        <Badge className="bg-red-500/20 text-red-400 border-red-500/30 backdrop-blur-sm">
+                          Expired
+                        </Badge>
+                        <p className="text-xs text-gray-300/70 mt-1">
+                          {card.expirationDate.toLocaleDateString()} {card.expirationDate.toLocaleTimeString()}
+                        </p>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <Badge variant="outline" className="text-red-400 border-red-400">
-                        Expired
-                      </Badge>
-                      <p className="text-xs text-gray-400 mt-1">
-                        {card.expirationDate.toLocaleDateString()} {card.expirationDate.toLocaleTimeString()}
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              </motion.div>
             ))}
           </div>
-        </div>
+        </motion.div>
       )}
 
       {/* Card Selection Dialog */}
