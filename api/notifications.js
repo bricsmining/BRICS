@@ -928,6 +928,32 @@ Keep sharing to earn more rewards! 🚀
 
 <b>Share your link:</b> https://t.me/${process.env.BOT_USERNAME || 'xSkyTON_Bot'}?start=refID${data.referrerId}`;
 
+    case 'withdrawal_success':
+      return `🎉 <b>Withdrawal Completed!</b>
+
+Your withdrawal has been successfully processed and sent to your wallet!
+
+💰 <b>Amount:</b> ${data.tonAmount || data.amount || 0} TON
+💳 <b>Wallet Address:</b> <code>${data.address || 'Not provided'}</code>
+🔗 <b>Transaction Hash:</b> <code>${data.txHash || 'Processing'}</code>
+🆔 <b>Track ID:</b> <code>${data.trackId || 'N/A'}</code>
+
+✅ Your tokens have been successfully transferred! Check your wallet to confirm receipt. 🚀`;
+
+    case 'payment_completed':
+      return `🎉 <b>Payment Successful!</b>
+
+Your mining card purchase has been completed successfully!
+
+🛒 <b>Purchase Details:</b>
+• Card: ${data.cardName || data.cardType || 'Mining Card'}
+• Amount: ${data.amount} ${data.currency || 'TON'}
+• Order ID: <code>${data.orderId}</code>
+• Payment ID: <code>${data.paymentId}</code>
+${data.validityDays ? `• Validity: ${data.validityDays} days` : ''}
+
+⛏️ Your mining card has been activated and is now generating rewards! Start mining now! 🚀`;
+
     default:
       return null;
   }

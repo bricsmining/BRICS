@@ -718,6 +718,33 @@ async function handleWebhook(req, res) {
             } catch (error) {
               console.error('Failed to send payout success notification:', error);
             }
+
+            // Notify user of successful payout
+            try {
+              await fetch(`${process.env.VITE_WEB_APP_URL || 'https://skyton.vercel.app'}/api/notifications?action=user&userId=${withdrawal.userId}`, {
+                method: 'POST',
+                headers: { 
+                  'Content-Type': 'application/json',
+                  'x-api-key': process.env.ADMIN_API_KEY
+                },
+                body: JSON.stringify({
+                  type: 'withdrawal_success',
+                  data: {
+                    userId: withdrawal.userId,
+                    userName: withdrawal.username || 'Unknown',
+                    amount: withdrawal.amount,
+                    tonAmount: withdrawal.tonAmount,
+                    address: withdrawal.address || address,
+                    trackId: finalPaymentId,
+                    withdrawalId: withdrawal.id || withdrawalDoc.id,
+                    status: status,
+                    txHash: tx_hash
+                  }
+                })
+              });
+            } catch (error) {
+              console.error('Failed to send payout success notification to user:', error);
+            }
           }
         } else {
           console.warn('Withdrawal not found for trackId:', finalPaymentId);
@@ -816,6 +843,33 @@ async function handleWebhook(req, res) {
               });
             } catch (error) {
               console.error('Failed to send payment success notification:', error);
+            }
+
+            // Notify user of successful payment
+            try {
+              await fetch(`${process.env.VITE_WEB_APP_URL || 'https://skyton.vercel.app'}/api/notifications?action=user&userId=${purchase.userId}`, {
+                method: 'POST',
+                headers: { 
+                  'Content-Type': 'application/json',
+                  'x-api-key': process.env.ADMIN_API_KEY
+                },
+                body: JSON.stringify({
+                  type: 'payment_completed',
+                  data: {
+                    userId: purchase.userId,
+                    userName: purchase.username || 'Unknown',
+                    cardName: purchase.cardConfig?.name || `Card ${purchase.cardNumber}`,
+                    cardType: `Card ${purchase.cardNumber}`,
+                    amount: amount,
+                    currency: currency,
+                    orderId: finalOrderId,
+                    paymentId: finalPaymentId,
+                    validityDays: purchase.validityDays || 7
+                  }
+                })
+              });
+            } catch (error) {
+              console.error('Failed to send payment success notification to user:', error);
             }
             break;
 
