@@ -593,6 +593,17 @@ const SpinModal = ({
 	}, [showAdAfterSpin, isLoadingAd, gigapubInitialized, toast]);
 
 	const handleSpin = async () => {
+		// Check if user is banned/blocked
+		if (currentUser.isBanned === true) {
+			toast({
+				title: 'Account Blocked 🚫',
+				description: 'Your account has been blocked. You cannot spin the wheel while blocked.',
+				variant: 'destructive',
+				className: 'bg-gradient-to-r from-red-600 to-red-700 text-white border-red-500',
+			});
+			return;
+		}
+		
 		// Check if user has free spins
 		if ((currentUser.freeSpins || 0) <= 0) {
 			// Show referral prompt instead of error

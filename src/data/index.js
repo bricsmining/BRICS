@@ -987,6 +987,13 @@ export const openMysteryBox = async (userId, boxesToOpen = 1) => {
     }
 
     const userData = userDoc.data();
+    
+    // Check if user is banned/blocked
+    if (userData.isBanned === true) {
+      console.error('User is blocked:', userId);
+      return { success: false, error: 'Your account has been blocked. You cannot open mystery boxes while blocked.' };
+    }
+    
     const currentBoxes = userData.mysteryBoxes || 0;
 
     if (currentBoxes < boxesToOpen) {

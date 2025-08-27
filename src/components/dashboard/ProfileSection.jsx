@@ -356,7 +356,7 @@ const MysteryBoxSection = ({ user, refreshUserData, navigate }) => {
   };
 
   const handleOpenBox = useCallback(async () => {
-    if (!user?.id || mysteryBoxCount <= 0 || isOpening) return;
+    if (!user?.id || mysteryBoxCount <= 0 || isOpening || user.isBanned) return;
 
     setIsOpening(true);
 
@@ -2144,7 +2144,11 @@ const ProfileSection = ({ user, refreshUserData }) => {
                       }}
                       transition={{ duration: 2, repeat: Infinity }}
                     >
-                      <CheckCircle className="h-4 w-4 text-green-400" />
+                      {isBanned ? (
+                        <XCircle className="h-4 w-4 text-red-400" />
+                      ) : (
+                        <CheckCircle className="h-4 w-4 text-green-400" />
+                      )}
                     </motion.div>
                     <span className="text-xs text-gray-300 font-medium">Status</span>
                   </div>
@@ -2155,12 +2159,12 @@ const ProfileSection = ({ user, refreshUserData }) => {
                         opacity: [0.7, 1, 0.7]
                       }}
                       transition={{ duration: 2, repeat: Infinity }}
-                      className="w-2 h-2 bg-green-400 rounded-full"
+                      className={`w-2 h-2 rounded-full ${isBanned ? 'bg-red-400' : 'bg-green-400'}`}
                     />
-                    <span className="text-sm font-bold text-green-400">
-                      {isBanned ? 'Banned' : 'Active'}
-                </span>
-              </div>
+                    <span className={`text-sm font-bold ${isBanned ? 'text-red-400' : 'text-green-400'}`}>
+                      {isBanned ? 'Blocked' : 'Active'}
+                    </span>
+                  </div>
                 </div>
                 
                 {/* User ID */}
@@ -2633,6 +2637,15 @@ const ProfileSection = ({ user, refreshUserData }) => {
             <Button
                 className="w-full h-10 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold rounded-2xl border-0 shadow-lg hover:shadow-xl transition-all duration-300 relative overflow-hidden group disabled:opacity-50 disabled:cursor-not-allowed disabled:from-gray-600 disabled:to-gray-700"
               onClick={() => {
+                if (user.isBanned) {
+                  toast({
+                    title: "Account Blocked",
+                    description: "Your account has been blocked. You cannot make withdrawal requests while blocked.",
+                    variant: "destructive",
+                    className: "bg-[#1a1a1a] text-white",
+                  });
+                  return;
+                }
                 if (globalAdminConfig?.withdrawalEnabled === false) {
                   toast({
                     title: "Withdrawals Disabled",
@@ -2644,7 +2657,7 @@ const ProfileSection = ({ user, refreshUserData }) => {
                 }
                 setShowWithdrawDialog(true);
               }}
-              disabled={globalAdminConfig?.withdrawalEnabled === false}
+              disabled={globalAdminConfig?.withdrawalEnabled === false || user.isBanned}
             >
                 <motion.div
                   className="absolute inset-0 bg-gradient-to-r from-green-400/20 to-emerald-400/20"
@@ -2852,7 +2865,7 @@ const MysteryBoxModal = ({ isOpen, onClose, user, refreshUserData, navigate }) =
   };
 
   const handleOpenBox = useCallback(async () => {
-    if (!user?.id || mysteryBoxCount <= 0 || isOpening) return;
+    if (!user?.id || mysteryBoxCount <= 0 || isOpening || user.isBanned) return;
 
     setIsOpening(true);
 

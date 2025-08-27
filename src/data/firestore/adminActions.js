@@ -744,6 +744,12 @@ export const createWithdrawalRequest = async (userId, amount, walletAddress, use
     }
     
     const userData = userDoc.data();
+    
+    // Check if user is banned/blocked
+    if (userData.isBanned === true) {
+      throw new Error('Your account has been blocked. You cannot make withdrawal requests while blocked.');
+    }
+    
     const currentBalance = userData.balance || 0;
     
     if (currentBalance < amount) {
