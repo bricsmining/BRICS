@@ -733,7 +733,9 @@ async function handleWebhook(req, res) {
                     userId: withdrawal.userId,
                     userName: withdrawal.username || 'Unknown',
                     amount: withdrawal.amount,
-                    tonAmount: withdrawal.tonAmount,
+                    tonAmount: withdrawal.tonAmount, // Net amount after fee
+                    grossTonAmount: withdrawal.grossTonAmount || withdrawal.tonAmount, // Gross amount before fee
+                    withdrawalFee: withdrawal.withdrawalFee || 0, // Fee deducted
                     address: withdrawal.address || address,
                     trackId: finalPaymentId,
                     withdrawalId: withdrawal.id || withdrawalDoc.id,

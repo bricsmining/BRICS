@@ -28,6 +28,7 @@ const defaultConfig = {
   hourlyBoxAdLimit: 3,
   maxEnergy: 500,
   minWithdrawalAmount: 10000000, // Default minimum withdrawal (10M STON = 1 TON)
+  withdrawalFee: 0.008, // Default withdrawal fee in TON (deducted from user's withdrawal amount)
   energyRewardAmount: 10, // Energy reward per ad watch
   boxRewardAmount: 1, // Box reward per ad watch
   stonToTonRate: 0.0000001, // 1 STON = 0.0000001 TON (10,000,000 STON = 1 TON)

@@ -290,6 +290,20 @@ const stonToTon = (ston, adminConfig = null) => {
   return (amount * stonToTonRate).toFixed(6);
 };
 
+// Helper function to convert STON to TON with withdrawal fee deduction
+const stonToTonWithFee = (ston, adminConfig = null) => {
+  const amount = parseFloat(ston) || 0;
+  const stonToTonRate = adminConfig?.stonToTonRate || 0.0000001; // Default: 10M STON = 1 TON
+  const withdrawalFee = adminConfig?.withdrawalFee || 0.008; // Default: 0.008 TON
+  const tonAmount = amount * stonToTonRate;
+  const netAmount = Math.max(0, tonAmount - withdrawalFee);
+  return {
+    grossAmount: tonAmount.toFixed(6),
+    withdrawalFee: withdrawalFee.toFixed(6),
+    netAmount: netAmount.toFixed(6)
+  };
+};
+
 // Approve a withdrawal request and initiate OxaPay payout
 export const approveWithdrawal = async (withdrawalId, userId, amount) => {
   // Declare variables at function scope so they're available in catch blocks
@@ -380,10 +394,13 @@ export const approveWithdrawal = async (withdrawalId, userId, amount) => {
       throw new Error(`Cannot process withdrawal: Admin configuration unavailable (${configError.message})`);
     }
     
-    // Convert STON to TON for payout
-    const tonAmount = stonToTon(amount, adminConfig);
+    // Convert STON to TON for payout with fee calculation
+    const tonCalculation = stonToTonWithFee(amount, adminConfig);
+    const tonAmount = tonCalculation.netAmount; // Amount user will receive after fee
+    const grossTonAmount = tonCalculation.grossAmount; // Amount before fee
+    const withdrawalFee = tonCalculation.withdrawalFee; // Fee amount
     
-    console.log(`Initiating OxaPay payout: ${tonAmount} TON to ${walletAddress}`);
+    console.log(`Initiating OxaPay payout: ${grossTonAmount} TON gross, ${withdrawalFee} TON fee, ${tonAmount} TON net to ${walletAddress}`);
 
     // Call OxaPay payout API with v1 specification
     try {
@@ -432,7 +449,9 @@ export const approveWithdrawal = async (withdrawalId, userId, amount) => {
         processedBy: 'admin',
         payoutTrackId: payoutResult.data.track_id,
         payoutStatus: payoutResult.data.status,
-        tonAmount: parseFloat(tonAmount),
+        tonAmount: parseFloat(tonAmount), // Net amount after fee
+        grossTonAmount: parseFloat(grossTonAmount), // Gross amount before fee
+        withdrawalFee: parseFloat(withdrawalFee), // Fee deducted
         payoutCreatedAt: serverTimestamp()
       });
 
@@ -456,7 +475,9 @@ export const approveWithdrawal = async (withdrawalId, userId, amount) => {
             type: 'withdrawal_approved',
             data: {
               amount: parseFloat(amount),
-              tonAmount: parseFloat(tonAmount),
+              tonAmount: parseFloat(tonAmount), // Net amount after fee
+              grossTonAmount: parseFloat(grossTonAmount), // Gross amount before fee
+              withdrawalFee: parseFloat(withdrawalFee), // Fee deducted
               address: walletAddress,
               trackId: payoutResult.data.track_id
             }
@@ -481,7 +502,9 @@ export const approveWithdrawal = async (withdrawalId, userId, amount) => {
               userId: userId,
               username: username || userId,
               amount: parseFloat(amount),
-              tonAmount: parseFloat(tonAmount),
+              tonAmount: parseFloat(tonAmount), // Net amount after fee
+              grossTonAmount: parseFloat(grossTonAmount), // Gross amount before fee
+              withdrawalFee: parseFloat(withdrawalFee), // Fee deducted
               address: walletAddress,
               memo: tonMemo || null,
               trackId: payoutResult.data.track_id,

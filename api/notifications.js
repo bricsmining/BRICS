@@ -810,7 +810,10 @@ ${data.paymentUrl ? `🔗 <b>Payment URL:</b> ${data.paymentUrl}` : ''}
       return `✅ <b>Payout Completed!</b>
 
 👤 <b>User:</b> ${formatUserDisplay(data)}
-💰 <b>Amount:</b> ${data.tonAmount || data.amount} ${data.currency || 'TON'}
+💰 <b>STON Amount:</b> ${data.amount || 0} STON
+💰 <b>Gross TON:</b> ${data.grossTonAmount || data.tonAmount || 0} TON
+💳 <b>Withdrawal Fee:</b> ${data.withdrawalFee || 0} TON
+💵 <b>Net Sent:</b> ${data.tonAmount || 0} TON
 💳 <b>Address:</b> <code>${data.address}</code>
 🆔 <b>Withdrawal ID:</b> <code>${data.withdrawalId}</code>
 🔗 <b>Track ID:</b> <code>${data.trackId}</code>
@@ -898,7 +901,10 @@ Please try again following the task requirements. 🔄`;
 
 Your withdrawal request has been approved and is being processed!
 
-💰 <b>Amount:</b> ${data.amount || data.tonAmount || 0} ${data.amount ? 'STON' : 'TON'}
+💰 <b>STON Amount:</b> ${data.amount || 0} STON
+💰 <b>Gross TON:</b> ${data.grossTonAmount || data.tonAmount || 0} TON
+💳 <b>Withdrawal Fee:</b> ${data.withdrawalFee || 0} TON
+💵 <b>You'll Receive:</b> ${data.tonAmount || 0} TON
 💳 <b>Address:</b> <code>${data.address || 'Not provided'}</code>
 ${data.trackId ? `🔗 <b>Track ID:</b> <code>${data.trackId}</code>` : ''}
 ⏱️ <b>Processing Time:</b> Usually within minutes
@@ -933,7 +939,10 @@ Keep sharing to earn more rewards! 🚀
 
 Your withdrawal has been successfully processed and sent to your wallet!
 
-💰 <b>Amount:</b> ${data.tonAmount || data.amount || 0} TON
+💰 <b>STON Amount:</b> ${data.amount || 0} STON
+💰 <b>Gross TON:</b> ${data.grossTonAmount || data.tonAmount || 0} TON
+💳 <b>Withdrawal Fee:</b> ${data.withdrawalFee || 0} TON
+💵 <b>Received:</b> ${data.tonAmount || 0} TON
 💳 <b>Wallet Address:</b> <code>${data.address || 'Not provided'}</code>
 🔗 <b>Transaction Hash:</b> <code>${data.txHash || 'Processing'}</code>
 🆔 <b>Track ID:</b> <code>${data.trackId || 'N/A'}</code>

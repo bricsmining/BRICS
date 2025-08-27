@@ -1059,7 +1059,11 @@ const WithdrawDialog = ({ isOpen, onClose, user, onWithdraw, stonToTon, adminCon
 
   const amount = parseFloat(withdrawAmount) || 0;
   const minWithdrawal = adminConfig?.minWithdrawalAmount || 10000000;
-  const isValidAmount = amount >= minWithdrawal && amount <= (user.balance || 0);
+  const withdrawalFee = adminConfig?.withdrawalFee || 0.008; // TON
+  const stonToTonRate = adminConfig?.stonToTonRate || 0.0000001;
+  const tonAmount = amount * stonToTonRate;
+  const netTonAmount = Math.max(0, tonAmount - withdrawalFee);
+  const isValidAmount = amount >= minWithdrawal && amount <= (user.balance || 0) && tonAmount > withdrawalFee;
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -1136,20 +1140,46 @@ const WithdrawDialog = ({ isOpen, onClose, user, onWithdraw, stonToTon, adminCon
             </div>
 
             <div className="mb-4">
-              <div className="bg-gradient-to-r from-blue-600/20 to-purple-600/20 border border-blue-500/50 rounded-xl p-2">
-                <p className="text-blue-300 text-sm mb-1 text-center font-medium">
-                  Auto Conversion:
+              <div className="bg-gradient-to-r from-blue-600/20 to-purple-600/20 border border-blue-500/50 rounded-xl p-3">
+                <p className="text-blue-300 text-sm mb-2 text-center font-medium">
+                  Withdrawal Breakdown:
                 </p>
-                <p className="text-white font-bold text-lg text-center">
-                  {withdrawAmount || "0"} STON ={" "}
-                  {stonToTon(withdrawAmount)} TON
-                </p>
-                <p className="text-xs text-gray-400 mt-1 text-center">
-                  Rate: {Math.round(1 / (adminConfig?.stonToTonRate || 0.0000001)).toLocaleString()} STON = 1 TON
+                
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-300">STON Amount:</span>
+                    <span className="text-white font-medium">{withdrawAmount || "0"} STON</span>
+                  </div>
+                  
+                  <div className="flex justify-between">
+                    <span className="text-gray-300">TON Equivalent:</span>
+                    <span className="text-white font-medium">{tonAmount.toFixed(6)} TON</span>
+                  </div>
+                  
+                  <div className="flex justify-between">
+                    <span className="text-red-300">Withdrawal Fee:</span>
+                    <span className="text-red-400 font-medium">-{withdrawalFee.toFixed(3)} TON</span>
+                  </div>
+                  
+                  <hr className="border-gray-600" />
+                  
+                  <div className="flex justify-between">
+                    <span className="text-green-300 font-medium">You'll Receive:</span>
+                    <span className="text-green-400 font-bold text-lg">{netTonAmount.toFixed(6)} TON</span>
+                  </div>
+                </div>
+                
+                <p className="text-xs text-gray-400 mt-2 text-center">
+                  Rate: {Math.round(1 / stonToTonRate).toLocaleString()} STON = 1 TON
                 </p>
                 <p className="text-xs text-yellow-400 mt-1 text-center">
-                  Minimum: {minWithdrawal.toLocaleString()} STON ({(minWithdrawal * (adminConfig?.stonToTonRate || 0.0000001)).toFixed(1)} TON)
+                  Minimum: {minWithdrawal.toLocaleString()} STON ({(minWithdrawal * stonToTonRate).toFixed(6)} TON)
                 </p>
+                {tonAmount <= withdrawalFee && amount > 0 && (
+                  <p className="text-xs text-red-400 mt-1 text-center font-medium">
+                    ⚠️ Amount too small - must be greater than withdrawal fee
+                  </p>
+                )}
               </div>
             </div>
 

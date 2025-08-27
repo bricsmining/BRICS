@@ -473,6 +473,23 @@ const AdminSettings = ({ adminData }) => {
             
             <div>
               <label className="text-sm font-medium text-gray-300 mb-2 block">
+                Withdrawal Fee (TON)
+              </label>
+              <Input
+                type="number"
+                step="0.001"
+                value={config.withdrawalFee || 0.008}
+                onChange={(e) => updateConfigField('withdrawalFee', parseFloat(e.target.value))}
+                className="bg-input border-border focus:border-blue-500 focus:bg-input/80 text-white"
+                placeholder="0.008"
+              />
+              <p className="text-xs text-gray-400 mt-1">
+                Fee deducted from withdrawal amount (e.g., 0.008 TON fee means user receives amount - 0.008 TON)
+              </p>
+            </div>
+            
+            <div>
+              <label className="text-sm font-medium text-gray-300 mb-2 block">
                 STON to TON Exchange Rate
               </label>
               <Input
