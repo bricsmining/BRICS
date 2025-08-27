@@ -20,33 +20,15 @@ function getBaseUrl() {
 // Send admin notification
 export async function notifyAdmin(type, data) {
   try {
-    const baseUrl = getBaseUrl();
-    // SECURITY: No API key needed - using secure endpoint
-    
-    if (!apiKey) {
-      console.warn('Admin API key not configured for notifications');
-      return false;
-    }
-
-    const response = await fetch(`${baseUrl}/api/notifications?action=admin`, {
-      method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey
-      },
-      body: JSON.stringify({
-        type: type,
-        data: data
-      })
-    });
-
-    const result = await response.json();
+    // SECURITY: Use secure API without exposing keys
+    const { sendSecureNotification } = await import('@/utils/secureApi');
+    const result = await sendSecureNotification(null, type, data);
     
     if (result.success) {
       console.log(`✅ Admin notification sent: ${type}`);
       return true;
     } else {
-      console.error(`❌ Admin notification failed: ${result.message}`);
+      console.error(`❌ Admin notification failed: ${result.error}`);
       return false;
     }
   } catch (error) {
@@ -61,31 +43,20 @@ export async function notifyUser(userId, type, data) {
     const baseUrl = getBaseUrl();
     // SECURITY: No API key needed - using secure endpoint
     
-    if (!apiKey) {
-      console.warn('Admin API key not configured for notifications');
+    if (!userId) {
+      console.warn('User ID is required for user notifications');
       return false;
     }
 
-    const response = await fetch(`${baseUrl}/api/notifications?action=user`, {
-      method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey
-      },
-      body: JSON.stringify({
-        userId: userId,
-        type: type,
-        data: data
-      })
-    });
-
-    const result = await response.json();
+    // SECURITY: Use secure API without exposing keys
+    const { sendSecureNotification } = await import('@/utils/secureApi');
+    const result = await sendSecureNotification(userId, type, data);
     
     if (result.success) {
       console.log(`✅ User notification sent: ${type} to ${userId}`);
       return true;
     } else {
-      console.error(`❌ User notification failed: ${result.message}`);
+      console.error(`❌ User notification failed: ${result.error}`);
       return false;
     }
   } catch (error) {

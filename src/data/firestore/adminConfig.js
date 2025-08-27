@@ -137,6 +137,9 @@ export const broadcastMessage = async (message, adminEmail) => {
     
     const promises = [];
     
+    // SECURITY: Import secure API outside the loop
+    const { sendSecureNotification } = await import('@/utils/secureApi');
+    
     usersSnapshot.forEach((userDoc) => {
       const userData = userDoc.data();
       const telegramId = userData.telegramId || userData.id;
@@ -145,7 +148,6 @@ export const broadcastMessage = async (message, adminEmail) => {
         // Use server-side API for sending messages to avoid CORS and token issues
         const apiBaseUrl = window.location.hostname === 'localhost' ? 'https://skyton.vercel.app' : '';
         // SECURITY: Use secure API without exposing keys
-        const { sendSecureNotification } = await import('@/utils/secureApi');
         const promise = sendSecureNotification(telegramId, 'broadcast', {
             message: message,
             adminEmail: adminEmail,
