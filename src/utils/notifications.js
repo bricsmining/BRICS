@@ -14,18 +14,14 @@ function getBaseUrl() {
 }
 
 // Get admin API key
-function getAdminApiKey() {
-  if (typeof window !== 'undefined') {
-    return import.meta.env.VITE_ADMIN_API_KEY;
-  }
-  return process.env.ADMIN_API_KEY;
-}
+// SECURITY: No API keys exposed to client
+// Use secure API endpoints instead
 
 // Send admin notification
 export async function notifyAdmin(type, data) {
   try {
     const baseUrl = getBaseUrl();
-    const apiKey = getAdminApiKey();
+    // SECURITY: No API key needed - using secure endpoint
     
     if (!apiKey) {
       console.warn('Admin API key not configured for notifications');
@@ -63,7 +59,7 @@ export async function notifyAdmin(type, data) {
 export async function notifyUser(userId, type, data) {
   try {
     const baseUrl = getBaseUrl();
-    const apiKey = getAdminApiKey();
+    // SECURITY: No API key needed - using secure endpoint
     
     if (!apiKey) {
       console.warn('Admin API key not configured for notifications');

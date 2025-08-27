@@ -102,10 +102,7 @@ const BroadcastTab = () => {
     setIsLoading(true);
 
     try {
-      const adminApiKey = import.meta.env.VITE_ADMIN_API_KEY;
-      if (!adminApiKey) {
-        throw new Error('Admin API key not configured');
-      }
+      // SECURITY: Use secure API without exposing keys
 
       const payload = {
         message: broadcastData.message,

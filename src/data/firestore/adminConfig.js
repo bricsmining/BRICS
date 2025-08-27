@@ -111,11 +111,8 @@ export const updateAdminConfig = async (updates, adminEmail = 'system') => {
 
 // Get environment variables (sensitive data only)
 export const getEnvConfig = () => ({
-  // Sensitive data from environment variables
-  telegramBotToken: import.meta.env.VITE_TG_BOT_TOKEN || '',
-  oxapayApiKey: import.meta.env.VITE_OXAPAY_MERCHANT_API_KEY || '',
-  oxapayPayoutApiKey: import.meta.env.VITE_OXAPAY_PAYOUT_API_KEY || '',
-  referralApiKey: import.meta.env.VITE_ADMIN_API_KEY, // For referral system
+  // SECURITY: No sensitive data exposed to client
+  // API keys are handled server-side only
 });
 
 // Broadcast message to all users
@@ -147,18 +144,14 @@ export const broadcastMessage = async (message, adminEmail) => {
       if (telegramId) {
         // Use server-side API for sending messages to avoid CORS and token issues
         const apiBaseUrl = window.location.hostname === 'localhost' ? 'https://skyton.vercel.app' : '';
-        const promise = fetch(`${apiBaseUrl}/api/notifications?action=user`, {
-          method: 'POST',
-          headers: { 
-            'Content-Type': 'application/json',
-            'x-api-key': import.meta.env.VITE_ADMIN_API_KEY
-          },
-          body: JSON.stringify({
-            type: 'broadcast',
-            data: { message: message }
-          })
+        // SECURITY: Use secure API without exposing keys
+        const { sendSecureNotification } = await import('@/utils/secureApi');
+        const promise = sendSecureNotification(telegramId, 'broadcast', {
+            message: message,
+            adminEmail: adminEmail,
+            timestamp: new Date().toISOString()
         }).then(response => {
-          if (response.ok) {
+          if (response.success) {
             successCount++;
           } else {
             failCount++;
