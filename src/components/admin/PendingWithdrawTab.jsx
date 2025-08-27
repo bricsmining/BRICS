@@ -553,20 +553,20 @@ const PendingWithdrawTab = ({ pendingWithdrawals = [], onApprove, onReject }) =>
 
       {/* History Popup */}
       {showHistoryPopup && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-gradient-to-br from-gray-900 to-gray-800 border border-gray-600/50 text-white w-full max-w-7xl max-h-[90vh] rounded-2xl shadow-2xl relative overflow-hidden">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-2 sm:p-4">
+          <div className="bg-gradient-to-br from-gray-900 to-gray-800 border border-gray-600/50 text-white w-full max-w-[95vw] sm:max-w-7xl max-h-[95vh] sm:max-h-[90vh] rounded-lg sm:rounded-2xl shadow-2xl relative overflow-hidden">
             {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-600/50 bg-gradient-to-r from-slate-800 to-slate-700">
-              <div className="flex items-center gap-3">
-                <History className="h-6 w-6 text-blue-400" />
-                <h3 className="text-xl font-bold text-white">All Withdrawal History</h3>
-                <div className="bg-blue-600/20 px-3 py-1 rounded-full">
-                  <span className="text-blue-300 text-sm font-medium">
-                    {withdrawalHistory.length} Total Records
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 sm:p-6 border-b border-gray-600/50 bg-gradient-to-r from-slate-800 to-slate-700 gap-4">
+              <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                <History className="h-5 w-5 sm:h-6 sm:w-6 text-blue-400 flex-shrink-0" />
+                <h3 className="text-lg sm:text-xl font-bold text-white truncate">All Withdrawal History</h3>
+                <div className="bg-blue-600/20 px-2 sm:px-3 py-1 rounded-full flex-shrink-0">
+                  <span className="text-blue-300 text-xs sm:text-sm font-medium">
+                    {withdrawalHistory.length} Records
                   </span>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
                 {/* Filter Buttons */}
                 <div className="flex items-center gap-2 bg-gray-700/50 rounded-lg p-1">
                   <Filter className="h-4 w-4 text-gray-400" />
@@ -591,10 +591,12 @@ const PendingWithdrawTab = ({ pendingWithdrawals = [], onApprove, onReject }) =>
                 <Button
                   onClick={downloadExcel}
                   disabled={getFilteredHistory().length === 0}
-                  className="bg-green-600 hover:bg-green-700 text-white shadow-lg"
+                  className="bg-green-600 hover:bg-green-700 text-white shadow-lg text-sm sm:text-base"
+                  size="sm"
                 >
-                  <Download className="h-4 w-4 mr-2" />
-                  Export Excel
+                  <Download className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Export Excel</span>
+                  <span className="sm:hidden">Export</span>
                 </Button>
                 {/* Close Button */}
                 <Button
@@ -607,7 +609,7 @@ const PendingWithdrawTab = ({ pendingWithdrawals = [], onApprove, onReject }) =>
               </div>
             </div>
             {/* Content */}
-            <div className="p-6 overflow-y-auto max-h-[calc(90vh-180px)]">
+            <div className="p-3 sm:p-6 overflow-y-auto max-h-[calc(95vh-200px)] sm:max-h-[calc(90vh-180px)]">
               {loadingHistory ? (
                 <div className="flex justify-center items-center py-12">
                   <div className="text-center">
@@ -628,11 +630,11 @@ const PendingWithdrawTab = ({ pendingWithdrawals = [], onApprove, onReject }) =>
                   </div>
                 </div>
               ) : (
-                <div className="grid gap-4">
+                <div className="grid gap-3 sm:gap-4">
                   {getFilteredHistory().map((item) => (
                     <Card key={item.id} className="bg-gray-800/30 border-gray-600/30 hover:bg-gray-800/50 transition-all duration-200">
-                      <CardContent className="p-6">
-                        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                      <CardContent className="p-3 sm:p-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
                           {/* User & Status */}
                           <div className="space-y-3">
                             <div className="flex items-center justify-between">
