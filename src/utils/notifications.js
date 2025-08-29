@@ -10,7 +10,7 @@ function getBaseUrl() {
   }
   return process.env.VERCEL_URL 
     ? `https://${process.env.VERCEL_URL}` 
-    : process.env.VITE_WEB_APP_URL || 'https://skyton.vercel.app';
+    : process.env.VITE_WEB_APP_URL || import.meta.env.VITE_WEB_APP_URL || 'https://skyton.vercel.app';
 }
 
 // Get admin API key

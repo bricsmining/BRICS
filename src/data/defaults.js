@@ -10,9 +10,9 @@ export const defaultFirestoreUser = (telegramId, username, firstName, lastName, 
   lastName: lastName || '',
   joinedAt: null, // Will be set to serverTimestamp() by Firestore
   wallet: null,
-  balance: 100, // Legacy balance field (for backward compatibility)
+  balance: 0, // Legacy balance field (for backward compatibility)
   balanceBreakdown: {
-    task: 100,     // From Task completion - Can be used for purchases and withdrawal
+    task: 0,     // From Task completion - Can be used for purchases and withdrawal
     box: 0,       // From Mystery Box opening - Withdrawal only
     referral: 0,  // From Referrals - Withdrawal only  
     mining: 0     // From Mining rewards - Can be used for purchases and withdrawal
@@ -44,12 +44,12 @@ export const defaultFirestoreUser = (telegramId, username, firstName, lastName, 
 
 // Helper function to get default tasks with admin config
 export const getDefaultFirestoreTasks = (adminConfig) => [
-  { id: 'task_join_channel', title: 'Join SkyTON Channel', description: 'Join our main announcement channel.', reward: 500, type: 'telegram_join', target: adminConfig?.telegramChannelLink || '@xSkyTON', active: true, verificationType: 'auto' },
-  { id: 'task_join_group', title: 'Join SkyTON Community Group', description: 'Join our community discussion group.', reward: 500, type: 'telegram_join', target: '@cSkyTON', active: true, verificationType: 'auto' },
+  { id: 'task_join_channel', title: `Join ${adminConfig?.appName || 'SkyTON'} Channel`, description: 'Join our main announcement channel.', reward: 500, type: 'telegram_join', target: adminConfig?.telegramChannelLink || '@xSkyTON', active: true, verificationType: 'auto' },
+  { id: 'task_join_group', title: `Join ${adminConfig?.appName || 'SkyTON'} Community Group`, description: 'Join our community discussion group.', reward: 500, type: 'telegram_join', target: '@cSkyTON', active: true, verificationType: 'auto' },
   { id: 'task_follow_twitter', title: 'Follow on Twitter', description: 'Follow our official Twitter account.', reward: 100, type: 'twitter_follow', target: '@MockSkyTONTwitter', active: true, verificationType: 'manual' },
   { id: 'task_visit_website', title: 'Visit Website', description: 'Visit our landing page.', reward: 50, type: 'visit_site', target: 'https://example-skyton.com', active: true, verificationType: 'auto' },
   { id: 'task_daily_checkin', title: 'Daily Check-in', description: 'Check in daily for a bonus.', reward: 25, type: 'daily_checkin', target: null, active: true, verificationType: 'auto' },
-  { id: 'task_refer_friend', title: 'Refer a Friend', description: 'Invite friends to earn more STON.', reward: 100, type: 'referral', target: null, active: true, verificationType: 'auto' },
+  { id: 'task_refer_friend', title: 'Refer a Friend', description: `Invite friends to earn more ${adminConfig?.tokenName || 'STON'}.`, reward: 100, type: 'referral', target: null, active: true, verificationType: 'auto' },
   { id: 'task_manual_check', title: 'Manual Check Task', description: 'Example task requiring manual check.', reward: 300, type: 'telegram_join', target: '@ManualCheckChannel', active: true, verificationType: 'manual' },
 ];
 

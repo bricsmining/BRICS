@@ -47,6 +47,35 @@ async function getWebAppUrl() {
   }
 }
 
+// Utility function to get app configuration values
+async function getAppConfig() {
+  try {
+    const adminConfigRef = doc(db, 'admin', 'config');
+    const adminConfigSnap = await getDoc(adminConfigRef);
+    
+    if (adminConfigSnap.exists()) {
+      const adminConfig = adminConfigSnap.data();
+      return {
+        appName: adminConfig.appName || 'SkyTON',
+        tokenName: adminConfig.tokenName || 'STON',
+        webAppUrl: adminConfig.telegramWebAppUrl || WEB_APP_URL
+      };
+    }
+    return {
+      appName: 'SkyTON',
+      tokenName: 'STON',
+      webAppUrl: WEB_APP_URL
+    };
+  } catch (error) {
+    console.error('[BOT] Error getting app config:', error);
+    return {
+      appName: 'SkyTON',
+      tokenName: 'STON',
+      webAppUrl: WEB_APP_URL
+    };
+  }
+}
+
 export default async function handler(req, res) {
   console.log(`[WEBHOOK] ${req.method} request received`);
   
@@ -202,12 +231,13 @@ async function handleMessage(message) {
 
   // Default response for unknown messages
   const adminConfig = await getAdminConfig();
+  const appConfig = await getAppConfig();
   const keyboard = await buildInlineKeyboard(adminConfig);
   
   await sendMessage(chatId, `
-Welcome to SkyTON! 🚀
+Welcome to ${appConfig.appName}! 🚀
 
-Tap the button below to start mining STON tokens and earning rewards!
+Tap the button below to start mining ${appConfig.tokenName} tokens and earning rewards!
   `, {
     reply_markup: { inline_keyboard: keyboard }
   });
@@ -286,16 +316,17 @@ async function handleStartWithReferral(chatId, userId, referrerId, userInfo) {
       
       // Get admin configuration for dynamic buttons
       const adminConfig = await getAdminConfig();
+      const appConfig = await getAppConfig();
       const channelLink = adminConfig?.telegramChannelLink || '@xSkyTON';
       const channelUsername = channelLink.replace('@', '');
       
-      await sendMessage(chatId, `🎉 <b>Welcome to SkyTON!</b>
+      await sendMessage(chatId, `🎉 <b>Welcome to ${appConfig.appName}!</b>
 
 You've been invited by a friend! 
 
 🎁 <b>Pending Referral Rewards:</b>
-⏳ ${referralResult.welcomeBonus} STON bonus for you (after completing 3 tasks)
-⏳ ${referralResult.referrerReward} STON reward for your referrer (after you complete 3 tasks)
+⏳ ${referralResult.welcomeBonus} ${appConfig.tokenName} bonus for you (after completing 3 tasks)
+⏳ ${referralResult.referrerReward} ${appConfig.tokenName} reward for your referrer (after you complete 3 tasks)
 ⏳ Free spin reward for referrer (after you complete 3 tasks)
 
 ✅ <b>Complete 3 tasks to unlock all rewards!</b>
@@ -304,7 +335,7 @@ Start mining and completing tasks now! 🚀`, {
         parse_mode: 'HTML',
         reply_markup: {
           inline_keyboard: [
-            [{ text: "🚀 Open SkyTON Mining App", web_app: { url: webAppUrl } }],
+            [{ text: `🚀 Open ${appConfig.appName} Mining App`, web_app: { url: webAppUrl } }],
             [{ text: "📢 Join Channel", url: `https://t.me/${channelUsername}` }],
             [
               { text: "🎯 Invite Friends", callback_data: "get_referral_link" },
@@ -317,15 +348,15 @@ Start mining and completing tasks now! 🚀`, {
       // Notify referrer about PENDING referral (not immediate reward)
       await sendMessage(referrerId, `👥 <b>New Referral Joined!</b>
 
-Someone joined SkyTON through your referral link!
+Someone joined ${appConfig.appName} through your referral link!
 
 👤 <b>New Member:</b> ${userInfo.first_name || 'Friend'}
 ⏳ <b>Status:</b> Pending (needs to complete 3 tasks)
 
 🎁 <b>Rewards when they complete 3 tasks:</b>
-• ${referralResult.referrerReward} STON for you
+• ${referralResult.referrerReward} ${appConfig.tokenName} for you
 • 1 Free Spin for you  
-• ${referralResult.welcomeBonus} STON welcome bonus for them
+• ${referralResult.welcomeBonus} ${appConfig.tokenName} welcome bonus for them
 
 Keep sharing to get more referrals! 🚀
 
@@ -471,13 +502,17 @@ async function handleStart(chatId, userId, userInfo, customMessage = null) {
     }
   }
 
+  // Get admin configuration for dynamic content
+  const adminConfig = await getAdminConfig();
+  const appConfig = await getAppConfig();
+  
   const message = customMessage || `
-🚀 *Welcome to SkyTON!*
+🚀 *Welcome to ${appConfig.appName}!*
 
-Start mining STON tokens, complete tasks, and earn rewards!
+Start mining ${appConfig.tokenName} tokens, complete tasks, and earn rewards!
 
 🎯 *Features:*
-• Mine STON tokens automatically
+• Mine ${appConfig.tokenName} tokens automatically
 • Complete social tasks for bonuses
 • Refer friends and earn free spins
 • Compete on the leaderboard
@@ -486,8 +521,6 @@ Start mining STON tokens, complete tasks, and earn rewards!
 Ready to start your mining journey? 🚀
   `;
 
-  // Get admin configuration for dynamic buttons
-  const adminConfig = await getAdminConfig();
   const keyboard = await buildInlineKeyboard(adminConfig, false, userId); // Don't show welcome URL params
 
   await sendMessage(chatId, message, {
@@ -528,6 +561,7 @@ async function handleCallbackQuery(callbackQuery) {
 // Handle get referral link
 async function handleGetReferralLink(chatId, userId) {
   const referralLink = `https://t.me/${getBotUsername()}?start=refID${userId}`;
+  const appConfig = await getAppConfig();
   
   await sendMessage(chatId, `
 🎯 *Your Referral Link*
@@ -537,7 +571,7 @@ Share this link with friends to earn rewards:
 \`${referralLink}\`
 
 *Rewards for each referral:*
-• 🪙 STON tokens
+• 🪙 ${appConfig.tokenName} tokens
 • 🎰 Free spin on reward wheel
 • 📈 Leaderboard points
 
@@ -546,7 +580,7 @@ The more friends you invite, the more you earn! 🚀
     parse_mode: 'Markdown',
     reply_markup: {
       inline_keyboard: [
-        [{ text: "📱 Share Link", url: `https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${encodeURIComponent('Join me on SkyTON and start mining STON tokens! 🚀')}` }],
+        [{ text: "📱 Share Link", url: `https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${encodeURIComponent(`Join me on ${appConfig.appName} and start mining ${appConfig.tokenName} tokens! 🚀`)}` }],
         [{ text: "🚀 Open App", web_app: { url: await getWebAppUrl() } }]
       ]
     }
@@ -585,12 +619,13 @@ Join now to never miss out! 🚀
 // Handle help with admin username
 async function handleShowHelp(chatId, userId) {
   const adminConfig = await getAdminConfig();
+  const appConfig = await getAppConfig();
   const adminUsername = adminConfig?.adminTgUsername || 'ExecutorHere';
   
   await sendMessage(chatId, `
-🤖 *SkyTON Help*
+🤖 *${appConfig.appName} Help*
 
-*How to earn STON tokens:*
+*How to earn ${appConfig.tokenName} tokens:*
 • ⛏️ Auto-mining (passive income)
 • ✅ Complete social tasks
 • 🎯 Refer friends (earn free spins)
@@ -647,6 +682,7 @@ async function buildInlineKeyboard(adminConfig, isNewUser = false, userId = null
   const channelLink = adminConfig?.telegramChannelLink || '@xSkyTON';
   // Remove @ if present to get clean username
   const channelUsername = channelLink.replace('@', '');
+  const appConfig = await getAppConfig();
   
   // Build webapp URL with welcome parameters for new users
   const baseWebAppUrl = await getWebAppUrl();
@@ -658,7 +694,7 @@ async function buildInlineKeyboard(adminConfig, isNewUser = false, userId = null
   // Build keyboard layout: Open webapp, Join channel, Invite, Help
   const keyboard = [
     // First row: Open webapp
-    [{ text: "🚀 Open SkyTON", web_app: { url: webAppUrl } }],
+    [{ text: `🚀 Open ${appConfig.appName}`, web_app: { url: webAppUrl } }],
     // Second row: Join channel
     [{ text: "📢 Join Channel", url: `https://t.me/${channelUsername}` }],
     // Third row: Invite and Help

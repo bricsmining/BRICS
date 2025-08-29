@@ -132,6 +132,13 @@ function App() {
   const isAdminRoute = location.pathname === "/admin" || location.pathname.startsWith("/admin/");
   const isAdmin = currentUser?.isAdmin === true;
 
+  // Set dynamic document title based on admin config
+  useEffect(() => {
+    if (adminConfig?.appName) {
+      document.title = `${adminConfig.appName} - 🚀 Reach the sky, earn with TON. Don't worry admin will fix this.`;
+    }
+  }, [adminConfig]);
+
   // Check if user is from Telegram and is admin (no additional verification needed)
   const isFromTelegramAndAdmin = currentUser && !currentUser.needsTelegram && isAdmin;
   

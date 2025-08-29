@@ -207,6 +207,19 @@ const AdminSettings = ({ adminData }) => {
               
               <div className="flex items-center justify-between bg-muted/60 border border-border/70 rounded-lg p-3">
                 <div className="flex items-center gap-2">
+                  <Globe className="w-4 h-4 text-gray-400" />
+                  <span className="text-sm font-medium text-gray-300">Web App URL</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className={`w-2 h-2 rounded-full ${envConfig.webAppUrl ? 'bg-green-400' : 'bg-yellow-400'}`} />
+                  <span className="text-xs text-gray-400">
+                    {envConfig.webAppUrl ? envConfig.webAppUrl : 'Using Default'}
+                  </span>
+                </div>
+              </div>
+              
+              <div className="flex items-center justify-between bg-muted/60 border border-border/70 rounded-lg p-3">
+                <div className="flex items-center gap-2">
                   <Hash className="w-4 h-4 text-gray-400" />
                   <span className="text-sm font-medium text-gray-300">Referral API</span>
                 </div>
@@ -697,6 +710,18 @@ const AdminSettings = ({ adminData }) => {
                 onChange={(e) => updateConfigField('appName', e.target.value)}
                 className="bg-input border-border focus:border-blue-500 focus:bg-input/80 text-white"
                 placeholder="SkyTON"
+              />
+            </div>
+            
+            <div>
+              <label className="text-sm font-medium text-gray-300 mb-2 block">
+                Token Name
+              </label>
+              <Input
+                value={config.tokenName || 'STON'}
+                onChange={(e) => updateConfigField('tokenName', e.target.value)}
+                className="bg-input border-border focus:border-blue-500 focus:bg-input/80 text-white"
+                placeholder="STON"
               />
             </div>
             

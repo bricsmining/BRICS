@@ -23,6 +23,7 @@ export const useAdminConfig = () => {
         referralEnabled: true,
         maintenanceMode: false,
         appName: 'SkyTON',
+        tokenName: 'STON',
         appVersion: '1.0.0'
       });
     } finally {

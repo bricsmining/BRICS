@@ -60,6 +60,7 @@ const defaultConfig = {
   
   // App Settings (editable in admin panel)
   appName: 'SkyTON',
+  tokenName: 'STON',
   appVersion: '1.0.0',
   maintenanceMode: false,
   
@@ -113,6 +114,10 @@ export const updateAdminConfig = async (updates, adminEmail = 'system') => {
 export const getEnvConfig = () => ({
   // SECURITY: No sensitive data exposed to client
   // API keys are handled server-side only
+  webAppUrl: import.meta.env.VITE_WEB_APP_URL, // Only check if exists, don't expose
+  telegramBotToken: !!import.meta.env.VITE_TG_BOT_TOKEN, // Only check if exists, don't expose
+  oxapayApiKey: !!import.meta.env.VITE_OXAPAY_API_KEY, // Only check if exists, don't expose
+  adminApiKey: !!import.meta.env.VITE_ADMIN_API_KEY, // Only check if exists, don't expose
 });
 
 // Broadcast message to all users

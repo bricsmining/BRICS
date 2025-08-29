@@ -2,12 +2,12 @@
 
 ## 🎯 Overview
 
-This guide provides step-by-step instructions to set up your Telegram bot webhook for the SkyTON project. After following this guide, your bot will be able to:
+This guide provides step-by-step instructions to set up your Telegram bot webhook for your configurable mini app. After following this guide, your bot will be able to:
 
-- ✅ Respond to user messages and commands
+- ✅ Respond to user messages and commands with your custom branding
 - ✅ Handle referral links and user registration
 - ✅ Process admin notifications
-- ✅ Launch the web app from Telegram
+- ✅ Launch the web app from Telegram with your custom name
 
 ## 📋 Prerequisites
 
@@ -15,16 +15,17 @@ Before starting, make sure you have:
 - A Telegram bot token from @BotFather
 - A deployed Vercel project
 - Access to your Vercel project settings
+- Your custom app name and token name ready
 
-## Step 1: Verify Your Bot Token
+## Step 1: Create Your Custom Bot
 
 ### Get Bot Token from @BotFather:
 1. **Open Telegram** and search for `@BotFather`
 2. **Send `/newbot`** command (or `/mybots` if you already have a bot)
 3. **Follow the prompts**:
-   - Choose a name for your bot (e.g., "SkyTON Mining Bot")
-   - Choose a username (e.g., "xSkyTON_Bot")
-4. **Copy the bot token** (looks like: `7689055729:AAE7bP3Sad7bN26PdOdLzpMNnbr1DaqQenU`)
+   - Choose a name for your bot (e.g., "YourApp Mining Bot")
+   - Choose a username (e.g., "YourApp_Bot")
+4. **Copy the bot token** (looks like: `1234567890:ABCdefGHIjklMNOpqrsTUVwxyz`)
 5. **Save the bot username** for later use
 
 ### Test Your Bot Token:
@@ -38,10 +39,10 @@ Should return bot information like:
 {
   "ok": true,
   "result": {
-    "id": 7689055729,
+    "id": 1234567890,
     "is_bot": true,
-    "first_name": "SkyTON",
-    "username": "xSkyTON_Bot"
+    "first_name": "YourApp",
+    "username": "YourApp_Bot"
   }
 }
 ```
@@ -50,129 +51,79 @@ Should return bot information like:
 
 ### Required Environment Variables:
 ```bash
-TG_BOT_TOKEN=7689055729:AAE7bP3Sad7bN26PdOdLzpMNnbr1DaqQenU
-VITE_WEB_APP_URL=https://skyton.vercel.app
-ADMIN_API_KEY=adminsumon7891
-TELEGRAM_WEBHOOK_SECRET=skyton-webhook-secret
-BOT_USERNAME=xSkyTON_Bot
+# Bot Configuration
+TG_BOT_TOKEN=your_bot_token_here
+BOT_USERNAME=YourApp_Bot
+TELEGRAM_WEBHOOK_SECRET=your-webhook-secret
+
+# App Configuration  
+VITE_WEB_APP_URL=https://yourapp.vercel.app
+ADMIN_API_KEY=your_secure_admin_key
+
+# Firebase Configuration
+VITE_FIREBASE_API_KEY=your_firebase_api_key
+VITE_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=your_project_id
+VITE_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
+VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+VITE_FIREBASE_APP_ID=your_app_id
+
+# Payment Gateway (Optional)
+OXAPAY_API_KEY=your_oxapay_api_key
 ```
 
 ### How to Add Variables in Vercel:
 1. Go to [Vercel Dashboard](https://vercel.com/dashboard)
-2. Select your SkyTON project
+2. Select your project
 3. Navigate to **Settings** → **Environment Variables**
 4. Add each variable:
    - **Name**: Variable name (e.g., `TG_BOT_TOKEN`)
-   - **Value**: Variable value (e.g., your bot token)
-   - **Environment**: Select "Production" (and "Preview" if needed)
-5. Click **Save** for each variable
-6. **Redeploy** your project after adding all variables
+   - **Value**: Your actual value
+   - **Environment**: Select all (Production, Preview, Development)
+5. Click **Save** for each one
+6. **Redeploy** your project (go to Deployments → click "..." → Redeploy)
 
-### Firebase Configuration (Also Required):
-```bash
-VITE_FIREBASE_API_KEY=your-firebase-api-key
-VITE_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
-VITE_FIREBASE_PROJECT_ID=your-project-id
-VITE_FIREBASE_STORAGE_BUCKET=your-project.appspot.com
-VITE_FIREBASE_MESSAGING_SENDER_ID=your-sender-id
-VITE_FIREBASE_APP_ID=your-app-id
+## Step 3: Set Up Webhook
+
+### One-Click Setup (Recommended):
+Use your app's built-in setup API endpoint. Simply open this URL in your browser with your values:
+
+```
+https://yourapp.vercel.app/api/setup-webhook?TG_BOT_TOKEN=your_bot_token&ADMIN_API_KEY=your_admin_key&TELEGRAM_WEBHOOK_SECRET=your_webhook_secret
 ```
 
-## Step 3: Deploy and Verify Your Application
-
-### Redeploy After Environment Variables:
-1. Go to **Deployments** tab in Vercel
-2. Click **"..."** on the latest deployment
-3. Select **"Redeploy"**
-4. Wait for deployment to complete (status should be "Ready")
-
-### Verify API Endpoint:
-Test that your webhook endpoint is accessible:
-```bash
-curl -X POST "https://skyton.vercel.app/api/telegram-bot" \
-  -H "Content-Type: application/json" \
-  -H "X-Telegram-Bot-Api-Secret-Token: skyton-webhook-secret" \
-  -d '{"update_id":999,"message":{"message_id":1,"from":{"id":123},"chat":{"id":123},"text":"/start"}}'
+**Example:**
+```
+https://yourapp.vercel.app/api/setup-webhook?TG_BOT_TOKEN=1234567890:ABCdefGHIjklMNOpqrsTUVwxyz&ADMIN_API_KEY=your_secure_key&TELEGRAM_WEBHOOK_SECRET=your_webhook_secret
 ```
 
-Should return: `{"ok":true}`
+This endpoint will:
+- ✅ Validate your bot token
+- ✅ Set up the webhook automatically
+- ✅ Configure bot commands
+- ✅ Return complete setup status
 
-## Step 4: Set Up the Webhook
-
-### Option A: Using Setup Script (Recommended)
-
-1. **Clone the repository locally** (if not already done)
-2. **Set environment variables** for the script:
-
-**Windows PowerShell:**
-```powershell
-$env:TG_BOT_TOKEN="7689055729:AAE7bP3Sad7bN26PdOdLzpMNnbr1DaqQenU"
-$env:VITE_WEB_APP_URL="https://skyton.vercel.app"
-$env:TELEGRAM_WEBHOOK_SECRET="skyton-webhook-secret"
-$env:ADMIN_API_KEY="adminsumon7891"
+### Alternative Method (Manual):
+If you prefer the direct Telegram API method:
+```
+https://api.telegram.org/bot<YOUR_BOT_TOKEN>/setWebhook?url=https://yourapp.vercel.app/api/telegram-bot&secret_token=your-webhook-secret&drop_pending_updates=true
 ```
 
-**Linux/Mac:**
-```bash
-export TG_BOT_TOKEN="7689055729:AAE7bP3Sad7bN26PdOdLzpMNnbr1DaqQenU"
-export VITE_WEB_APP_URL="https://skyton.vercel.app"
-export TELEGRAM_WEBHOOK_SECRET="skyton-webhook-secret"
-export ADMIN_API_KEY="adminsumon7891"
-```
-
-3. **Run the setup script:**
-```bash
-node webhook-setup.js
-```
-
-### Option B: Using API Endpoint
-
-Visit this URL in your browser (replace with your actual values):
-```
-https://skyton.vercel.app/api/setup-webhook?TG_BOT_TOKEN=7689055729:AAE7bP3Sad7bN26PdOdLzpMNnbr1DaqQenU&ADMIN_API_KEY=adminsumon7891&TELEGRAM_WEBHOOK_SECRET=skyton-webhook-secret
-```
-
-### Option C: Manual Setup with Direct API Call
-
-```bash
-curl -X POST "https://api.telegram.org/bot7689055729:AAE7bP3Sad7bN26PdOdLzpMNnbr1DaqQenU/setWebhook" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "url": "https://skyton.vercel.app/api/telegram-bot",
-    "secret_token": "skyton-webhook-secret",
-    "allowed_updates": ["message", "callback_query"],
-    "drop_pending_updates": true
-  }'
-```
-
-## Step 5: Verify Webhook Setup
-
-### Check Webhook Status:
-```bash
-curl "https://api.telegram.org/bot7689055729:AAE7bP3Sad7bN26PdOdLzpMNnbr1DaqQenU/getWebhookInfo"
-```
-
-**Expected Response:**
+Success response:
 ```json
-{
-  "ok": true,
-  "result": {
-    "url": "https://skyton.vercel.app/api/telegram-bot",
-    "has_custom_certificate": false,
-    "pending_update_count": 0,
-    "last_error_date": null,
-    "last_error_message": null
-  }
-}
+{"ok":true,"result":true,"description":"Webhook was set"}
 ```
 
-### Set Bot Commands:
+## Step 4: Configure Bot Commands
+
+Set up bot commands for better user experience:
+
 ```bash
-curl -X POST "https://api.telegram.org/bot7689055729:AAE7bP3Sad7bN26PdOdLzpMNnbr1DaqQenU/setMyCommands" \
+curl -X POST "https://api.telegram.org/bot<YOUR_BOT_TOKEN>/setMyCommands" \
   -H "Content-Type: application/json" \
   -d '{
     "commands": [
-      {"command": "start", "description": "Start the bot and open SkyTON app"},
+      {"command": "start", "description": "Start the bot and open your app"},
       {"command": "help", "description": "Show help information"},
       {"command": "stats", "description": "View your mining stats"},
       {"command": "invite", "description": "Get your referral link"}
@@ -180,156 +131,104 @@ curl -X POST "https://api.telegram.org/bot7689055729:AAE7bP3Sad7bN26PdOdLzpMNnbr
   }'
 ```
 
-## Step 6: Test Your Bot
+## Step 5: Customize Your App Branding
 
-### Basic Functionality Test:
-1. **Open Telegram** and search for your bot: `@xSkyTON_Bot`
-2. **Send `/start`** command
-3. **Verify you receive** a welcome message with web app button
-4. **Click the web app button** to ensure it opens your application
+1. **Access Admin Panel**: Go to `https://yourapp.vercel.app/admin`
+2. **Navigate to Settings**
+3. **Update Configuration**:
+   - **App Name**: Enter your custom app name (e.g., "CryptoMiner")
+   - **Token Name**: Enter your token symbol (e.g., "MINE")
+   - **Telegram WebApp URL**: Confirm your app URL
+4. **Save Changes**
 
-### Referral System Test:
-1. **Create a referral link**: `https://t.me/xSkyTON_Bot?start=refID123456`
-2. **Open the link** in another Telegram account
-3. **Send `/start`** and verify referral bonus message appears
-4. **Check** that referral is processed correctly in your app
+## Step 6: Verify Setup
 
-### Expected Bot Responses:
+### Test Bot Responses:
+1. **Find your bot**: Search for your bot username in Telegram
+2. **Send `/start`**: Should show welcome message with your custom app name
+3. **Test web app button**: Should open your app with custom branding
+4. **Check referral**: Test with `?start=refID123456`
 
-**For `/start` command:**
-```
-🚀 Welcome to SkyTON!
-
-Start mining STON tokens, complete tasks, and earn rewards!
-
-🎯 Features:
-• Mine STON tokens automatically
-• Complete social tasks for bonuses
-• Refer friends and earn free spins
-• Compete on the leaderboard
-• Purchase mining cards to boost earnings
-
-Ready to start your mining journey? 🚀
-```
-
-**For referral links:**
-```
-🎉 Welcome to SkyTON!
-
-You've been invited by a friend and earned bonus rewards! 
-
-🎁 Referral Bonus Applied:
-• 100 STON tokens added
-• Free spin on the reward wheel  
-• Special welcome bonus
-
-Your SkyTON app is launching automatically... 🚀
-```
-
-## Step 7: Monitor and Debug
-
-### Check Vercel Function Logs:
-1. Go to [Vercel Dashboard](https://vercel.com/dashboard)
-2. Select your project
-3. Navigate to **Functions** tab
-4. Click on `/api/telegram-bot`
-5. Review logs for webhook requests and any errors
-
-### Common Log Messages:
-- `[WEBHOOK] POST request received` - Webhook is receiving requests
-- `[WEBHOOK] Processing message update` - Bot is handling messages
-- `[BOT] Received message from [userId]: [text]` - Message processing
-- `[BOT] Processing referral: [userId] referred by [referrerId]` - Referral handling
-
-### Debug Webhook Issues:
+### Verify Webhook Status:
 ```bash
-# Test webhook endpoint directly
-curl -X POST "https://skyton.vercel.app/api/telegram-bot" \
-  -H "Content-Type: application/json" \
-  -H "X-Telegram-Bot-Api-Secret-Token: skyton-webhook-secret" \
-  -d '{
-    "update_id": 999999,
-    "message": {
-      "message_id": 1,
-      "from": {"id": 123456, "first_name": "Test User", "username": "testuser"},
-      "chat": {"id": 123456, "type": "private"},
-      "date": 1640995200,
-      "text": "/start"
-    }
-  }'
+curl "https://api.telegram.org/bot<YOUR_BOT_TOKEN>/getWebhookInfo"
 ```
+
+Should show:
+```json
+{
+  "ok": true,
+  "result": {
+    "url": "https://yourapp.vercel.app/api/telegram-bot",
+    "has_custom_certificate": false,
+    "pending_update_count": 0,
+    "last_error_date": 0,
+    "max_connections": 40
+  }
+}
+```
+
+## 🎨 Expected Results
+
+After successful setup, your bot will:
+
+✅ **Welcome Message**: "Welcome to [YourApp]! Start mining [YourToken] tokens..."
+✅ **Custom Buttons**: "🚀 Open [YourApp]" 
+✅ **Help Command**: Show help with your app name
+✅ **Referral Messages**: Use your custom token name
+✅ **All Notifications**: Display your branding throughout
 
 ## 🔧 Troubleshooting
 
-### Issue: "Webhook not receiving updates"
-**Solutions:**
-- ✅ Verify Vercel deployment is successful and "Ready"
-- ✅ Check that webhook URL is accessible: `https://skyton.vercel.app/api/telegram-bot`
-- ✅ Ensure environment variables are set in Vercel
-- ✅ Redeploy after adding environment variables
-- ✅ Check Vercel function logs for errors
+### Common Issues:
 
-### Issue: "Invalid bot token"
+#### **Issue**: Bot not responding
 **Solutions:**
-- ✅ Double-check bot token from @BotFather (no extra spaces)
-- ✅ Test token with: `curl "https://api.telegram.org/bot<TOKEN>/getMe"`
-- ✅ Ensure `TG_BOT_TOKEN` is set correctly in Vercel
+- ✅ Verify bot token is correct
+- ✅ Check webhook URL is accessible
+- ✅ Ensure webhook secret matches environment variable
 
-### Issue: "Unauthorized webhook request"
+#### **Issue**: Wrong app name in messages
 **Solutions:**
-- ✅ Verify `TELEGRAM_WEBHOOK_SECRET` matches in both Vercel and webhook setup
-- ✅ Check that secret token is being sent correctly
-- ✅ Temporarily disable secret validation for testing (not recommended for production)
+- ✅ Update app name in Admin Panel → Settings
+- ✅ Verify admin config is saved
+- ✅ Clear cache and test again
 
-### Issue: "Bot not responding to messages"
+#### **Issue**: Web app not opening
 **Solutions:**
-- ✅ Check webhook status with `getWebhookInfo`
-- ✅ Verify `pending_update_count` is 0
-- ✅ Look for error messages in webhook info
-- ✅ Test webhook endpoint manually
+- ✅ Verify `VITE_WEB_APP_URL` environment variable
+- ✅ Check domain is accessible
+- ✅ Ensure bot button URL is correct
+
+#### **Issue**: Webhook errors
+**Solutions:**
 - ✅ Check Vercel function logs
-
-### Issue: "Referrals not working"
-**Solutions:**
-- ✅ Ensure Firebase environment variables are set
-- ✅ Check `ADMIN_API_KEY` is configured correctly
-- ✅ Verify database connection in Vercel logs
-- ✅ Test referral processing in function logs
-
-### Issue: "Web app not opening"
-**Solutions:**
-- ✅ Verify `VITE_WEB_APP_URL` is set to correct domain
-- ✅ Ensure web app is accessible at the configured URL
-- ✅ Check that web app button markup is correct
+- ✅ Verify webhook secret
+- ✅ Ensure environment variables are set
 
 ## ✅ Success Checklist
 
-- [ ] **Bot token verified** with `getMe` API call
-- [ ] **Environment variables set** in Vercel project settings
-- [ ] **Vercel project redeployed** after adding variables
-- [ ] **Webhook URL set** to `https://skyton.vercel.app/api/telegram-bot`
+- [ ] **Bot token configured** and verified with getMe
+- [ ] **Environment variables set** in Vercel
+- [ ] **Project redeployed** after adding variables
+- [ ] **Webhook URL set** to your domain + `/api/telegram-bot`
 - [ ] **Webhook secret configured** and matching
-- [ ] **Bot commands set** (`/start`, `/help`, `/stats`, `/invite`)
-- [ ] **Bot responds to `/start`** with welcome message
-- [ ] **Web app button works** and opens application
-- [ ] **Referral links work** and process bonuses correctly
-- [ ] **Webhook logs show** incoming updates in Vercel
-- [ ] **Firebase connection working** for user data storage
+- [ ] **Bot commands set** for better UX
+- [ ] **App branding customized** in admin panel
+- [ ] **Bot responds** with your custom app name
+- [ ] **Web app button works** and opens your app
+- [ ] **Referral links work** and process correctly
 
-## 🚀 Quick Setup URLs
+## 🚀 Next Steps
 
-### For SkyTON Project:
-- **Setup Webhook**: https://skyton.vercel.app/api/setup-webhook?TG_BOT_TOKEN=7689055729:AAE7bP3Sad7bN26PdOdLzpMNnbr1DaqQenU&ADMIN_API_KEY=adminsumon7891&TELEGRAM_WEBHOOK_SECRET=skyton-webhook-secret
-- **Check Webhook**: https://api.telegram.org/bot7689055729:AAE7bP3Sad7bN26PdOdLzpMNnbr1DaqQenU/getWebhookInfo
-- **Test Bot**: https://t.me/xSkyTON_Bot
-- **Test Referral**: https://t.me/xSkyTON_Bot?start=refID123456
+After successful setup:
 
-## 📚 Additional Resources
-
-- [Telegram Bot API Documentation](https://core.telegram.org/bots/api)
-- [Vercel Functions Documentation](https://vercel.com/docs/functions)
-- [Firebase Firestore Documentation](https://firebase.google.com/docs/firestore)
+1. **Customize Further**: Update colors, features, and functionality
+2. **Add Tasks**: Create custom tasks for your users
+3. **Configure Payments**: Set up OxaPay for withdrawals
+4. **Monitor Analytics**: Track user engagement and growth
+5. **Scale Up**: Add more features and integrations
 
 ---
 
-🎉 **Congratulations!** Once all steps are complete, your SkyTON Telegram bot will be fully functional with webhook integration, referral system, and web app launching capabilities!
+🎉 **Congratulations!** Your custom Telegram mini app is now fully functional with personalized branding!

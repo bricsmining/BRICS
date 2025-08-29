@@ -609,7 +609,7 @@ const SpinModal = ({
 			// Show referral prompt instead of error
 			toast({
 				title: 'No Free Spins Available! 🎯',
-				description: 'Refer friends to earn free spins and win STON rewards!',
+				description: `Refer friends to earn free spins and win ${tokenName} rewards!`,
 				variant: 'default',
 				className: 'bg-gradient-to-r from-orange-600 to-red-600 text-white border-orange-500',
 			});
@@ -677,7 +677,7 @@ const SpinModal = ({
 			// Show correct reward message based on the actual reward
 			const rewardMessage = finalReward.type === 'ton' 
 				? `You won ${finalReward.displayValue}!`
-				: `You won ${finalReward.actualReward.toLocaleString()} STON!`;
+				: `You won ${finalReward.actualReward.toLocaleString()} ${tokenName}!`;
 
 			toast({
 				title: 'Congratulations! 🎉',
@@ -800,7 +800,7 @@ const SpinModal = ({
 										</p>
 									) : (
 										<p className='text-2xl font-bold text-yellow-400 mb-1'>
-											{spinResult.actualReward.toLocaleString()} STON
+											{spinResult.actualReward.toLocaleString()} {tokenName}
 										</p>
 									)}
 									<p className='text-xs text-gray-300'>
@@ -884,7 +884,7 @@ const SpinModal = ({
 						<div className='space-y-0.5 text-xs text-gray-300'>
 							<p>• Get 1 free spin for each successful referral</p>
 							<p>• Invite friends to join and earn more spins</p>
-							<p>• Win STON rewards with every spin</p>
+							<p>• Win {tokenName} rewards with every spin</p>
 						</div>
 					</div>
 				)}
@@ -898,6 +898,17 @@ const ReferralSection = ({ user, refreshUserData }) => {
 	const { toast } = useToast();
 	const { adminConfig } = useContext(UserContext);
 	const { pauseAdTimer, resumeAdTimer } = useAdTimer();
+	
+	// Get dynamic token name
+	const tokenName = adminConfig?.tokenName || 'STON';
+	
+	// Helper function to get dynamic reward label
+	const getDynamicRewardLabel = (reward) => {
+		if (reward.type === 'ston') {
+			return `${reward.displayValue} ${tokenName}`;
+		}
+		return reward.label; // Keep TON rewards as is
+	};
 	const [referredUsers, setReferredUsers] = useState([]);
 	const [referrerInfo, setReferrerInfo] = useState(null);
 	const [loadingReferrals, setLoadingReferrals] = useState(true);
@@ -1108,7 +1119,7 @@ const ReferralSection = ({ user, refreshUserData }) => {
 							Invite & Earn
 						</h2>
 						<p className='text-xs text-gray-400 mt-1'>
-							Share your link with friends and earn STON
+							Share your link with friends and earn {tokenName}
 						</p>
 					</motion.div>
 
@@ -1338,7 +1349,7 @@ const ReferralSection = ({ user, refreshUserData }) => {
 								<p>• Share your link on social media platforms</p>
 								<p>• Invite friends and family members</p>
 								<p>• Help your referrals complete their first tasks</p>
-								<p>• Earn STON for every successful referral</p>
+								<p>• Earn {tokenName} for every successful referral</p>
 								<p>• Get 1 free spin for each successful refer</p>
 							</div>
 						</div>

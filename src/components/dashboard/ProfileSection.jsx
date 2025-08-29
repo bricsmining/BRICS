@@ -406,7 +406,7 @@ const MysteryBoxSection = ({ user, refreshUserData, navigate }) => {
             
             toast({
               title: "🎉 Mystery Box Opened!",
-              description: `You received ${reward} STON!`,
+              description: `You received ${reward} ${tokenName}!`,
               variant: "success",
               className: "bg-[#1a1a1a] text-white"
             });
@@ -775,7 +775,7 @@ const MysteryBoxSection = ({ user, refreshUserData, navigate }) => {
                           ease: "easeInOut"
                         }}
                       >
-                        +{rewardAmount} STON
+                        +{rewardAmount} {tokenName}
                       </motion.span>
                       
                       {/* Animated star icon */}
@@ -860,7 +860,7 @@ const MysteryBoxSection = ({ user, refreshUserData, navigate }) => {
           <div className="mt-4 text-center">
             <div className="bg-gradient-to-r from-yellow-600/20 to-orange-600/20 border border-yellow-500/30 rounded-xl p-2">
               <p className="text-xs text-yellow-300 font-medium">
-                🎁 Each box contains 500-1000 STON randomly
+                🎁 Each box contains 500-1000 {tokenName} randomly
               </p>
             </div>
           </div>
@@ -1081,7 +1081,7 @@ const WithdrawDialog = ({ isOpen, onClose, user, onWithdraw, stonToTon, adminCon
           <X className="w-6 h-6" />
         </button>
         <h2 className="text-lg font-bold mb-4 text-center">
-          Withdraw STON
+          Withdraw {tokenName}
         </h2>
 
         <div className="bg-gradient-to-r from-yellow-600/20 to-orange-600/20 border border-yellow-500/50 rounded-xl p-2 mb-4">
@@ -1113,7 +1113,7 @@ const WithdrawDialog = ({ isOpen, onClose, user, onWithdraw, stonToTon, adminCon
                   type="number"
                   value={withdrawAmount}
                   onChange={(e) => setWithdrawAmount(e.target.value)}
-                  placeholder="Enter STON amount"
+                  placeholder={`Enter ${tokenName} amount`}
                   className="h-10 text-white placeholder:text-gray-400 bg-gray-800/50 border border-gray-600/50 rounded-xl pr-20 focus:border-blue-500"
                   aria-label="Withdrawal amount"
                 />
@@ -1134,7 +1134,7 @@ const WithdrawDialog = ({ isOpen, onClose, user, onWithdraw, stonToTon, adminCon
                   Available Balance
                 </p>
                 <p className="text-lg font-bold text-white text-center">
-                  {user.balance?.toLocaleString() || "0"} STON
+                  {user.balance?.toLocaleString() || "0"} {tokenName}
                 </p>
               </div>
             </div>
@@ -1147,8 +1147,8 @@ const WithdrawDialog = ({ isOpen, onClose, user, onWithdraw, stonToTon, adminCon
                 
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-gray-300">STON Amount:</span>
-                    <span className="text-white font-medium">{withdrawAmount || "0"} STON</span>
+                    <span className="text-gray-300">{tokenName} Amount:</span>
+                    <span className="text-white font-medium">{withdrawAmount || "0"} {tokenName}</span>
                   </div>
                   
                   <div className="flex justify-between">
@@ -1170,10 +1170,10 @@ const WithdrawDialog = ({ isOpen, onClose, user, onWithdraw, stonToTon, adminCon
                 </div>
                 
                 <p className="text-xs text-gray-400 mt-2 text-center">
-                  Rate: {Math.round(1 / stonToTonRate).toLocaleString()} STON = 1 TON
+                  Rate: {Math.round(1 / stonToTonRate).toLocaleString()} {tokenName} = 1 TON
                 </p>
                 <p className="text-xs text-yellow-400 mt-1 text-center">
-                  Minimum: {minWithdrawal.toLocaleString()} STON ({(minWithdrawal * stonToTonRate).toFixed(6)} TON)
+                  Minimum: {minWithdrawal.toLocaleString()} {tokenName} ({(minWithdrawal * stonToTonRate).toFixed(6)} TON)
                 </p>
                 {tonAmount <= withdrawalFee && amount > 0 && (
                   <p className="text-xs text-red-400 mt-1 text-center font-medium">
@@ -1225,6 +1225,9 @@ const WithdrawDialog = ({ isOpen, onClose, user, onWithdraw, stonToTon, adminCon
 
 const ProfileSection = ({ user, refreshUserData }) => {
   const { adminConfig: globalAdminConfig } = useContext(UserContext);
+  
+  // Get dynamic token name
+  const tokenName = globalAdminConfig?.tokenName || 'STON';
   const [showWalletDialog, setShowWalletDialog] = useState(false);
   const [showWithdrawDialog, setShowWithdrawDialog] = useState(false);
   const [showHistoryDialog, setShowHistoryDialog] = useState(false);
@@ -3149,7 +3152,7 @@ const MysteryBoxModal = ({ isOpen, onClose, user, refreshUserData, navigate }) =
                         animate={{ scale: [1, 1.1, 1] }}
                         transition={{ duration: 0.8, repeat: Infinity }}
                       >
-                        +{rewardAmount} STON
+                        +{rewardAmount} {tokenName}
                       </motion.span>
                     </div>
                     
