@@ -1613,7 +1613,7 @@ const ProfileSection = ({ user, refreshUserData }) => {
       const tonEquivalent = ((minWithdrawal * (globalAdminConfig?.stonToTonRate || 0.0000001)) || 0).toFixed(6);
       toast({
         title: "Invalid Amount",
-        description: `Minimum withdrawal is ${minWithdrawal.toLocaleString()} STON (${tonEquivalent} TON) and must be within your balance.`,
+        description: `Minimum withdrawal is ${minWithdrawal.toLocaleString()} ${tokenName} (${tonEquivalent} TON) and must be within your balance.`,
         variant: "destructive",
         className: "bg-[#1a1a1a] text-white",
       });
@@ -1693,7 +1693,7 @@ const ProfileSection = ({ user, refreshUserData }) => {
 
       toast({
         title: "Withdrawal Requested",
-        description: `You have requested to withdraw ${amount.toLocaleString()} STON. Admin will review your request.`,
+        description: `You have requested to withdraw ${amount.toLocaleString()} ${tokenName}. Admin will review your request.`,
         variant: "success",
         className: "bg-[#1a1a1a] text-white",
       });
@@ -2258,7 +2258,7 @@ const ProfileSection = ({ user, refreshUserData }) => {
                   </motion.p>
                   <p className="text-sm text-blue-300 flex items-center justify-center gap-1">
                     <Coins className="h-4 w-4" />
-                    Total STON
+                    Total {tokenName}
                   </p>
                   <p className="text-xs text-gray-400 mt-1">
                     ≈ {stonToTon(user.balance || 0)} TON
@@ -2773,7 +2773,7 @@ const ProfileSection = ({ user, refreshUserData }) => {
                             <div className="flex items-center gap-2">
                               <Wallet className="h-4 w-4 text-sky-400" />
                               <span className="font-semibold text-white">
-                                {withdrawal.amount?.toLocaleString()} STON
+                                {withdrawal.amount?.toLocaleString()} {tokenName}
                               </span>
                             </div>
                             {getStatusBadge(withdrawal.status)}
@@ -2918,7 +2918,7 @@ const MysteryBoxModal = ({ isOpen, onClose, user, refreshUserData, navigate }) =
             
             toast({
               title: "🎉 Mystery Box Opened!",
-              description: `You received ${reward} STON (Box balance - withdrawal only)!`,
+              description: `You received ${reward} ${tokenName} (Box balance - withdrawal only)!`,
               variant: "success",
               className: "bg-[#1a1a1a] text-white"
             });

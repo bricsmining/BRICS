@@ -1,13 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { UserContext } from '@/App';
 import { Loader2, Zap, Star, Rocket } from 'lucide-react';
 
 const DynamicLoader = ({ message = "Loading your dashboard" }) => {
+  const { adminConfig } = useContext(UserContext);
   const [currentStep, setCurrentStep] = useState(0);
   const [dots, setDots] = useState('');
 
+  // Get dynamic app name
+  const appName = adminConfig?.appName || 'SkyTON';
+
   const loadingSteps = [
-    { text: "Initializing SkyTON", icon: Rocket, color: "text-blue-400" },
+    { text: `Initializing ${appName}`, icon: Rocket, color: "text-blue-400" },
     { text: "Loading your data", icon: Zap, color: "text-yellow-400" },
     { text: "Connecting to TON", icon: Star, color: "text-purple-400" },
     { text: "Preparing dashboard", icon: Loader2, color: "text-sky-400" },

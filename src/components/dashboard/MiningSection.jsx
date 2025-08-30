@@ -112,6 +112,9 @@ const cardVariants = {
 const MiningSection = ({ user, refreshUserData }) => {
   const { toast } = useToast();
   const { adminConfig: globalAdminConfig } = useContext(UserContext);
+  
+  // Get dynamic token name
+  const tokenName = globalAdminConfig?.tokenName || 'STON';
   const [searchParams, setSearchParams] = useSearchParams();
   const [currentUser, setCurrentUser] = useState(user);
   const [miningProgress, setMiningProgress] = useState(0);
@@ -394,7 +397,7 @@ const MiningSection = ({ user, refreshUserData }) => {
 
       toast({
         title: 'Rewards Claimed! 🎉',
-        description: `You earned ${pendingRewards.toLocaleString()} STON`,
+        description: `You earned ${pendingRewards.toLocaleString()} ${tokenName}`,
         variant: 'success',
         className: 'bg-[#1a1a1a] text-white',
       });
@@ -498,7 +501,7 @@ const MiningSection = ({ user, refreshUserData }) => {
               animate={{ scale: [1, 1.05, 1] }}
               transition={{ duration: 2, repeat: Infinity }}
             >
-              {pendingRewards.toLocaleString()} STON
+              {pendingRewards.toLocaleString()} {tokenName}
             </motion.div>
             <div className="text-sm text-gray-300/90 font-medium">Available to Claim</div>
           </motion.div>
@@ -607,7 +610,7 @@ const MiningSection = ({ user, refreshUserData }) => {
             <CardContent className="p-8 text-center">
               <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <h4 className="text-base font-semibold text-white mb-2">No Mining Cards</h4>
-              <p className="text-gray-400 mb-4">Purchase your first mining card to start earning STON!</p>
+              <p className="text-gray-400 mb-4">Purchase your first mining card to start earning {tokenName}!</p>
               <Button
                 onClick={() => setShowCardSelection(true)}
                 className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
@@ -642,7 +645,7 @@ const MiningSection = ({ user, refreshUserData }) => {
                   <p className="text-sm text-gray-400 mb-3">{card.description}</p>
                   <div className="space-y-2">
                     <div className="text-lg font-bold text-white">{card.ratePerHour}/hr</div>
-                    <div className="text-base text-yellow-400">{card.price.toLocaleString()} STON</div>
+                    <div className="text-base text-yellow-400">{card.price.toLocaleString()} {tokenName}</div>
                     <div className="text-xs text-gray-500">{card.cryptoPrice} TON</div>
                   </div>
                 </div>
@@ -753,7 +756,7 @@ const MiningSection = ({ user, refreshUserData }) => {
                       </div>
                       <div className="space-y-1 text-center">
                         <div className="text-base font-bold text-white">{card.ratePerHour}/hr</div>
-                        <div className="text-sm text-yellow-400">{card.price.toLocaleString()} STON</div>
+                        <div className="text-sm text-yellow-400">{card.price.toLocaleString()} {tokenName}</div>
                         <div className="text-xs text-gray-500">{card.cryptoPrice} TON</div>
                       </div>
                     </CardContent>

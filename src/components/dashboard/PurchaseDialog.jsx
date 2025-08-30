@@ -71,6 +71,9 @@ const PurchaseDialog = ({ isOpen, onClose, cardPrice, cardNumber, currentBalance
   const [paymentData, setPaymentData] = useState(null);
   const { toast } = useToast();
 
+  // Get dynamic token name
+  const tokenName = adminConfig?.tokenName || 'STON';
+
   // Load admin config on mount
   useEffect(() => {
     const loadAdminConfig = async () => {
@@ -366,7 +369,7 @@ const PurchaseDialog = ({ isOpen, onClose, cardPrice, cardNumber, currentBalance
                       {cardConfigs[cardNumber].name} - {cardConfigs[cardNumber].description}
                     </p>
                     <p className="text-xs text-gray-400">
-                      {cardConfigs[cardNumber].ratePerHour.toLocaleString()} STON/hour mining rate
+                      {cardConfigs[cardNumber].ratePerHour.toLocaleString()} {tokenName}/hour mining rate
                     </p>
                   </div>
                 )}
@@ -383,9 +386,9 @@ const PurchaseDialog = ({ isOpen, onClose, cardPrice, cardNumber, currentBalance
                     }`}
                   >
                     <Wallet className="h-5 w-5 mb-2 mx-auto" />
-                    <p className="text-xs font-medium">STON Balance</p>
+                    <p className="text-xs font-medium">{tokenName} Balance</p>
                     <p className="text-sm font-bold mt-1">
-                      {cardPrice?.toLocaleString()} STON
+                      {cardPrice?.toLocaleString()} {tokenName}
                     </p>
                     {cardNumber && cardConfigs[cardNumber] && (
                       <p className="text-xs text-gray-400 mt-1">
@@ -432,7 +435,7 @@ const PurchaseDialog = ({ isOpen, onClose, cardPrice, cardNumber, currentBalance
                         )}
                       </p>
                       <div className="text-xs text-gray-300 text-center">
-                        <p>Available for purchases: {purchasableBalance?.toLocaleString()} STON</p>
+                        <p>Available for purchases: {purchasableBalance?.toLocaleString()} {tokenName}</p>
                         <p className="text-gray-400 mt-1">
                           ✓ Tasks + Mining • ⚠ Boxes + Referrals (withdrawal only)
                         </p>
@@ -466,10 +469,10 @@ const PurchaseDialog = ({ isOpen, onClose, cardPrice, cardNumber, currentBalance
                       </p>
                       <div className="text-center">
                         <p className="text-xs text-gray-300">
-                          Equivalent: {cardPrice?.toLocaleString()} STON = {cryptoAmount} TON
+                          Equivalent: {cardPrice?.toLocaleString()} {tokenName} = {cryptoAmount} TON
                         </p>
                         <p className="text-xs text-gray-400 mt-1">
-                          Rate: {adminConfig?.stonToTonRate ? (1 / adminConfig.stonToTonRate).toLocaleString() : '10,000,000'} STON = 1 TON
+                          Rate: {adminConfig?.stonToTonRate ? (1 / adminConfig.stonToTonRate).toLocaleString() : '10,000,000'} {tokenName} = 1 TON
                         </p>
                       </div>
                     </div>

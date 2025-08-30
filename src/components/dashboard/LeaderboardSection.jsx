@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { motion } from 'framer-motion';
+import { UserContext } from '@/App';
 import { getLeaderboardData } from '@/data';
 import { Loader2, Trophy, Crown, Medal, Award, Users, Calendar, Clock } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -32,6 +33,10 @@ const formatLeaderboardNumber = (num) => {
 };
 
 const LeaderboardSection = ({ currentUserTelegramId }) => {
+  const { adminConfig } = useContext(UserContext);
+  
+  // Get dynamic token name
+  const tokenName = adminConfig?.tokenName || 'STON';
   const [leaderboard, setLeaderboard] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState('all');
@@ -310,7 +315,7 @@ const LeaderboardSection = ({ currentUserTelegramId }) => {
                             <p className="text-sm font-semibold text-yellow-400">
                               {formatLeaderboardNumber(user.balance || 0)}
                             </p>
-                            <p className="text-xs text-gray-400">STON</p>
+                            <p className="text-xs text-gray-400">{tokenName}</p>
                           </div>
                         </div>
                         {filter === 'weekly' && user.totalReferrals && user.totalReferrals > user.referrals && (
@@ -374,9 +379,9 @@ const LeaderboardSection = ({ currentUserTelegramId }) => {
                 ) : (
                   <>
                     <p>• Share your referral link with friends and family</p>
-                    <p>• Complete tasks and mine STON to boost your balance</p>
+                    <p>• Complete tasks and mine {tokenName} to boost your balance</p>
                     <p>• Help your referrals complete tasks for better retention</p>
-                    <p>• Rankings consider referrals first, then STON balance</p>
+                    <p>• Rankings consider referrals first, then {tokenName} balance</p>
                   </>
                 )}
               </div>
