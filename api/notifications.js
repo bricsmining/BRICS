@@ -149,7 +149,7 @@ async function handleAdminNotification(req, res) {
     console.log(`[NOTIFICATIONS] Routing for type '${type}':`, routing);
     
     // Generate notification message based on type
-    const messageData = generateNotificationMessage(type, data);
+    const messageData = await generateNotificationMessage(type, data, adminConfig);
     
     if (!messageData) {
       console.error('[NOTIFICATIONS] Invalid notification type:', type);
@@ -288,8 +288,13 @@ async function handleUserNotification(req, res) {
   }
 
   try {
+    // Get admin config for dynamic token/app names
+    const adminConfigRef = doc(db, 'admin', 'config');
+    const adminConfigSnap = await getDoc(adminConfigRef);
+    const adminConfig = adminConfigSnap.exists() ? adminConfigSnap.data() : {};
+    
     // Generate notification message based on type
-    const message = generateUserMessage(type, data);
+    const message = await generateUserMessage(type, data, adminConfig);
     
     if (!message) {
       return res.status(400).json({ success: false, message: 'Invalid notification type.' });
@@ -367,8 +372,10 @@ function getNotificationTarget(type, adminConfig) {
 }
 
 // Generate notification messages (using HTML parse mode consistently)
-function generateNotificationMessage(type, data) {
+async function generateNotificationMessage(type, data, adminConfig = {}) {
   const timestamp = new Date().toLocaleString();
+  const appName = adminConfig?.appName || 'SkyTON';
+  const tokenName = adminConfig?.tokenName || '${tokenName}';
   
   switch (type) {
     case 'new_user':
@@ -386,7 +393,7 @@ ${data.totalUsers ? `• Total Users: <b>${data.totalUsers.toLocaleString()}</b>
 👥 <b>Referral Info:</b>
 • Referrer: <code>${data.referrerId}</code> (${data.referrerName || 'Unknown'})
 • New User: ${formatUserDisplay({userId: data.newUserId, userName: data.newUserName, userTelegramUsername: data.newUserTelegramUsername})}
-• Reward: ${data.reward || 0} STON + 1 Free Spin
+• Reward: ${data.reward || 0} ${tokenName} + 1 Free Spin
 
 🕐 <b>Time:</b> ${timestamp}`;
 
@@ -397,7 +404,7 @@ ${data.totalUsers ? `• Total Users: <b>${data.totalUsers.toLocaleString()}</b>
 • Referrer: <code>${data.referrerId}</code> (${data.referrerName || 'Unknown'})
 • New User: ${formatUserDisplay({userId: data.newUserId, userName: data.newUserName, userTelegramUsername: data.newUserTelegramUsername})}
 • Status: <b>Pending</b> (${data.tasksCompleted || 0}/${data.tasksRequired || 3} tasks completed)
-• Potential Reward: ${data.userReward || 0} + ${data.referrerReward || 0} STON
+• Potential Reward: ${data.userReward || 0} + ${data.referrerReward || 0} ${tokenName}
 
 🕐 <b>Time:</b> ${timestamp}`;
 
@@ -408,7 +415,7 @@ ${data.totalUsers ? `• Total Users: <b>${data.totalUsers.toLocaleString()}</b>
 • Referrer: <code>${data.referrerId}</code> (${data.referrerName || 'Unknown'})
 • User: ${formatUserDisplay(data)}
 • Tasks Completed: <b>${data.tasksCompleted}/${data.tasksRequired}</b>
-• Rewards Distributed: ${data.userReward || 0} + ${data.referrerReward || 0} STON
+• Rewards Distributed: ${data.userReward || 0} + ${data.referrerReward || 0} ${tokenName}
 
 🕐 <b>Time:</b> ${timestamp}`;
 
@@ -454,7 +461,7 @@ ${data.totalUsers ? `• Total Users: <b>${data.totalUsers.toLocaleString()}</b>
       return `🎉 <b>Mystery Box Opened!</b>
 
 👤 <b>User:</b> ${formatUserDisplay(data)}
-• Reward: <b>+${data.reward || 0} STON</b>
+• Reward: <b>+${data.reward || 0} ${tokenName}</b>
 • Balance Type: ${data.balanceType || 'Box (Withdrawal Only)'}
 • Boxes Remaining: <b>${data.boxesRemaining || 0}</b>
 
@@ -472,7 +479,7 @@ ${data.totalUsers ? `• Total Users: <b>${data.totalUsers.toLocaleString()}</b>
 📝 <b>Task Details:</b>
 • Title: ${data.taskTitle || 'Unknown Task'}
 • Type: ${data.taskType || 'Manual Task'}
-• Reward: ${data.reward || 0} STON
+• Reward: ${data.reward || 0} ${tokenName}
 • Target: ${data.target || 'N/A'}
 • Submission: ${data.submission || 'No submission provided'}
 
@@ -500,16 +507,16 @@ ${data.totalUsers ? `• Total Users: <b>${data.totalUsers.toLocaleString()}</b>
 • Joined: ${stats.joinedAt || 'Unknown'}
 
 💰 <b>Withdrawal Details:</b>
-• Amount: ${data.amount || 0} STON
+• Amount: ${data.amount || 0} ${tokenName}
 • Method: ${data.method || 'Unknown'}
 • Address: <code>${data.address || 'Not provided'}</code>
-• Current Balance: ${data.currentBalance || 0} STON
+• Current Balance: ${data.currentBalance || 0} ${tokenName}
 
 📊 <b>Balance Breakdown:</b>
-• Task Rewards: ${breakdown.task || 0} STON
-• Box Rewards: ${breakdown.box || 0} STON  
-• Referral Rewards: ${breakdown.referral || 0} STON
-• Mining Rewards: ${breakdown.mining || 0} STON
+• Task Rewards: ${breakdown.task || 0} ${tokenName}
+• Box Rewards: ${breakdown.box || 0} ${tokenName}  
+• Referral Rewards: ${breakdown.referral || 0} ${tokenName}
+• Mining Rewards: ${breakdown.mining || 0} ${tokenName}
 
 📈 <b>User Statistics:</b>
 • Total Referrals: ${stats.totalReferrals || 0}
@@ -536,7 +543,7 @@ ${data.totalUsers ? `• Total Users: <b>${data.totalUsers.toLocaleString()}</b>
 👤 <b>User:</b> ${formatUserDisplay(data)}
 
 💰 <b>Payout Details:</b>
-• Amount: ${data.amount} STON (${data.tonAmount} TON)
+• Amount: ${data.amount} ${tokenName} (${data.tonAmount} TON)
 • Address: <code>${data.address}</code>
 ${data.memo ? `• Memo: <code>${data.memo}</code>` : ''}
 • Withdrawal ID: <code>${data.withdrawalId}</code>
@@ -595,7 +602,7 @@ ${data.memo ? `• Memo: <code>${data.memo}</code>` : ''}
 👤 <b>User:</b> ${formatUserDisplay(data)}
 
 💰 <b>Withdrawal Details:</b>
-• Amount: ${data.amount || 0} STON
+• Amount: ${data.amount || 0} ${tokenName}
 📝 <b>Reason:</b> ${data.reason || 'Administrative decision'}
 
 ✅ <b>Balance Restored:</b> User's balance has been refunded
@@ -617,7 +624,7 @@ ${data.memo ? `• Memo: <code>${data.memo}</code>` : ''}
 
 👤 <b>User:</b> ${formatUserDisplay(data)}
 📝 <b>Task:</b> ${data.taskTitle || 'Unknown Task'}
-💰 <b>Reward:</b> ${data.reward || 0} STON
+💰 <b>Reward:</b> ${data.reward || 0} ${tokenName}
 📊 <b>Type:</b> ${data.taskType || 'Manual'}
 
 🕐 <b>Time:</b> ${timestamp}`;
@@ -627,7 +634,7 @@ ${data.memo ? `• Memo: <code>${data.memo}</code>` : ''}
 
 👤 <b>User:</b> ${formatUserDisplay(data)}
 📝 <b>Task:</b> ${data.taskTitle || 'Unknown Task'}
-💰 <b>Reward:</b> ${data.reward || 0} STON
+💰 <b>Reward:</b> ${data.reward || 0} ${tokenName}
 🎉 <b>Status:</b> Approved by Admin
 
 🕐 <b>Time:</b> ${timestamp}`;
@@ -644,8 +651,8 @@ ${data.memo ? `• Memo: <code>${data.memo}</code>` : ''}
 🎉 <b>Achievement Details:</b>
 • New Level: ${data.newLevel || 1}
 • Previous Level: ${data.previousLevel || 0}
-• Total STON Earned: ${data.totalEarned || 0}
-• Level Bonus: ${data.levelBonus || 0} STON
+• Total ${tokenName} Earned: ${data.totalEarned || 0}
+• Level Bonus: ${data.levelBonus || 0} ${tokenName}
 
 🎊 User has leveled up and earned bonus rewards!
 
@@ -661,15 +668,15 @@ ${data.memo ? `• Memo: <code>${data.memo}</code>` : ''}
       if (data.rewardType === '2x_ad_bonus') {
         gameMessage += `
 🎁 <b>Reward Breakdown:</b>
-• Original Reward: ${data.originalReward || 0} STON
-• Ad Bonus: +${data.adBonus || 0} STON
-• <b>Total Earned: ${data.totalReward || 0} STON (2x)</b>
+• Original Reward: ${data.originalReward || 0} ${tokenName}
+• Ad Bonus: +${data.adBonus || 0} ${tokenName}
+• <b>Total Earned: ${data.totalReward || 0} ${tokenName} (2x)</b>
 
 📱 <b>Method:</b> User watched ad to double rewards!
 ✨ <b>Multiplier:</b> ${data.multiplier || '2x'}`;
       } else {
         gameMessage += `
-🎁 <b>Reward:</b> ${data.reward || 0} STON`;
+🎁 <b>Reward:</b> ${data.reward || 0} ${tokenName}`;
         
         if (data.rewardType === 'early_quit') {
           gameMessage += `
@@ -810,7 +817,7 @@ ${data.paymentUrl ? `🔗 <b>Payment URL:</b> ${data.paymentUrl}` : ''}
       return `✅ <b>Payout Completed!</b>
 
 👤 <b>User:</b> ${formatUserDisplay(data)}
-💰 <b>STON Amount:</b> ${data.amount || 0} STON
+💰 <b>${tokenName} Amount:</b> ${data.amount || 0} ${tokenName}
 💰 <b>Gross TON:</b> ${data.grossTonAmount || data.tonAmount || 0} TON
 💳 <b>Withdrawal Fee:</b> ${data.withdrawalFee || 0} TON
 💵 <b>Net Sent:</b> ${data.tonAmount || 0} TON
@@ -832,7 +839,7 @@ ${data.memo ? `📝 <b>Memo:</b> ${data.memo}` : ''}
 • Name: ${data.userName || 'Unknown'}
 
 💰 <b>Payout Details:</b>
-• Amount: ${data.amount ? `${data.amount.toLocaleString()} STON` : 'Unknown'} ${data.tonAmount ? `(${data.tonAmount} TON)` : ''}
+• Amount: ${data.amount ? `${data.amount.toLocaleString()} ${tokenName}` : 'Unknown'} ${data.tonAmount ? `(${data.tonAmount} TON)` : ''}
 • Address: <code>${data.address || 'Not provided'}</code>
 ${data.memo ? `• Memo: ${data.memo}` : ''}
 • Withdrawal ID: <code>${data.withdrawalId || 'Unknown'}</code>
@@ -854,7 +861,10 @@ ${data.oxapayDetails?.error?.message ? `• Specific Issue: ${data.oxapayDetails
 
 
 // Generate user notification messages
-function generateUserMessage(type, data) {
+async function generateUserMessage(type, data, adminConfig = {}) {
+  const appName = adminConfig?.appName || 'SkyTON';
+  const tokenName = adminConfig?.tokenName || 'STON';
+  
   switch (type) {
     case 'payment_invoice_created':
       return `💳 <b>Payment Invoice Created!</b>
@@ -877,10 +887,10 @@ Complete your payment to activate your mining card! ⛏️`;
 Your task submission has been approved!
 
 📝 <b>Task:</b> ${data.taskTitle || 'Unknown Task'}
-💰 <b>Reward:</b> ${data.reward || 0} STON added to your balance
+💰 <b>Reward:</b> ${data.reward || 0} ${tokenName} added to your balance
 🎉 <b>Status:</b> Completed
 
-Keep completing tasks to earn more STON! 🚀`;
+Keep completing tasks to earn more ${tokenName}! 🚀`;
 
     case 'task_rejected':
       return `❌ <b>Task Rejected</b>
@@ -901,7 +911,7 @@ Please try again following the task requirements. 🔄`;
 
 Your withdrawal request has been approved and is being processed!
 
-💰 <b>STON Amount:</b> ${data.amount || 0} STON
+💰 <b>${tokenName} Amount:</b> ${data.amount || 0} ${tokenName}
 💰 <b>Gross TON:</b> ${data.grossTonAmount || data.tonAmount || 0} TON
 💳 <b>Withdrawal Fee:</b> ${data.withdrawalFee || 0} TON
 💵 <b>You'll Receive:</b> ${data.tonAmount || 0} TON
@@ -916,18 +926,18 @@ Your tokens are being transferred to your wallet! 🚀`;
 
 Your withdrawal request has been rejected.
 
-💰 <b>Amount:</b> ${data.amount || 0} STON
+💰 <b>Amount:</b> ${data.amount || 0} ${tokenName}
 📝 <b>Reason:</b> ${data.reason || 'Invalid request'}
 
-Your STON balance has been restored. Please try again. 🔄`;
+Your ${tokenName} balance has been restored. Please try again. 🔄`;
 
     case 'successful_referral':
       return `🎉 <b>Successful Referral!</b>
 
-Your friend joined SkyTON through your referral link!
+Your friend joined ${appName} through your referral link!
 
 👥 <b>New Member:</b> ${data.newUserName || 'Friend'}
-💰 <b>Your Reward:</b> ${data.reward || 0} STON
+💰 <b>Your Reward:</b> ${data.reward || 0} ${tokenName}
 🎰 <b>Bonus:</b> 1 Free Spin added
 
 Keep sharing to earn more rewards! 🚀
@@ -939,7 +949,7 @@ Keep sharing to earn more rewards! 🚀
 
 Your withdrawal has been successfully processed and sent to your wallet!
 
-💰 <b>STON Amount:</b> ${data.amount || 0} STON
+💰 <b>${tokenName} Amount:</b> ${data.amount || 0} ${tokenName}
 💰 <b>Gross TON:</b> ${data.grossTonAmount || data.tonAmount || 0} TON
 💳 <b>Withdrawal Fee:</b> ${data.withdrawalFee || 0} TON
 💵 <b>Received:</b> ${data.tonAmount || 0} TON
