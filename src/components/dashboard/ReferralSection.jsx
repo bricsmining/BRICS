@@ -438,6 +438,7 @@ const SpinModal = ({
 	user,
 	refreshUserData,
 	onSpinComplete,
+	tokenName = 'STON', // fallback default
 }) => {
 	const { toast } = useToast();
 	const [isSpinning, setIsSpinning] = useState(false);
@@ -1439,6 +1440,7 @@ const ReferralSection = ({ user, refreshUserData }) => {
 							user={currentUser}
 							refreshUserData={refreshUserData}
 							onSpinComplete={handleSpinComplete}
+							tokenName={tokenName}
 						/>
 					)}
 				</AnimatePresence>

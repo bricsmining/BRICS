@@ -297,6 +297,9 @@ const FlyingReward = ({ type, amount, onComplete }) => {
 const TasksSection = ({ tasks = [], user = {}, refreshUserData, isLoading }) => {
   const { toast } = useToast();
   const { adminConfig } = useContext(UserContext);
+  
+  // Get dynamic token name
+  const tokenName = adminConfig?.tokenName || 'STON';
   const navigate = useNavigate();
   const location = useLocation();
   const [clickedTasks, setClickedTasks] = useState({});
@@ -921,7 +924,7 @@ const TasksSection = ({ tasks = [], user = {}, refreshUserData, isLoading }) => 
             <h2 className="text-xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
               Available Tasks
             </h2>
-            <p className="text-xs text-gray-400 mt-1">Complete tasks to earn STON rewards</p>
+            <p className="text-xs text-gray-400 mt-1">Complete tasks to earn {tokenName} rewards</p>
           </motion.div>
 
           {/* Ad Rewards Section */}
@@ -1094,7 +1097,7 @@ const TasksSection = ({ tasks = [], user = {}, refreshUserData, isLoading }) => 
                 </motion.div>
                 <div className="flex-1">
                   <p className="text-sm font-semibold text-white">Play Game</p>
-                  <p className="text-xs text-gray-300">Catch STON gems and earn rewards!</p>
+                  <p className="text-xs text-gray-300">Catch {tokenName} gems and earn rewards!</p>
                 </div>
               </div>
               <Button 
@@ -1311,7 +1314,7 @@ const TasksSection = ({ tasks = [], user = {}, refreshUserData, isLoading }) => 
                 <p>• Complete daily check-ins to build your streak</p>
                 <p>• Join Telegram channels for instant verification</p>
                 <p>• Manual tasks are reviewed by admins within 24 hours</p>
-                <p>• Play the game daily for extra STON rewards</p>
+                <p>• Play the game daily for extra {tokenName} rewards</p>
                 <p>• Watch ads to earn energy and mystery boxes</p>
               </div>
             </div>
