@@ -4,7 +4,8 @@ import { UserContext } from '@/App';
 import { Loader2, Zap, Star, Rocket } from 'lucide-react';
 
 const DynamicLoader = ({ message = "Loading your dashboard" }) => {
-  const { adminConfig } = useContext(UserContext);
+  const context = useContext(UserContext);
+  const { adminConfig } = context || {};
   const [currentStep, setCurrentStep] = useState(0);
   const [dots, setDots] = useState('');
 

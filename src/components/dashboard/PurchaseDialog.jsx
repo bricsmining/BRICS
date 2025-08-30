@@ -71,7 +71,7 @@ const PurchaseDialog = ({ isOpen, onClose, cardPrice, cardNumber, currentBalance
   const [paymentData, setPaymentData] = useState(null);
   const { toast } = useToast();
 
-  // Get dynamic token name
+  // Get dynamic token name (safe access)
   const tokenName = adminConfig?.tokenName || 'STON';
 
   // Load admin config on mount

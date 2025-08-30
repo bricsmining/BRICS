@@ -1224,7 +1224,8 @@ const WithdrawDialog = ({ isOpen, onClose, user, onWithdraw, stonToTon, adminCon
 };
 
 const ProfileSection = ({ user, refreshUserData }) => {
-  const { adminConfig: globalAdminConfig } = useContext(UserContext);
+  const context = useContext(UserContext);
+  const { adminConfig: globalAdminConfig } = context || {};
   
   // Get dynamic token name
   const tokenName = globalAdminConfig?.tokenName || 'STON';

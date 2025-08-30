@@ -111,7 +111,8 @@ const cardVariants = {
 
 const MiningSection = ({ user, refreshUserData }) => {
   const { toast } = useToast();
-  const { adminConfig: globalAdminConfig } = useContext(UserContext);
+  const context = useContext(UserContext);
+  const { adminConfig: globalAdminConfig } = context || {};
   
   // Get dynamic token name
   const tokenName = globalAdminConfig?.tokenName || 'STON';

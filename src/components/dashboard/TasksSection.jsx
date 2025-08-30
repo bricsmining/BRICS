@@ -296,7 +296,8 @@ const FlyingReward = ({ type, amount, onComplete }) => {
 
 const TasksSection = ({ tasks = [], user = {}, refreshUserData, isLoading }) => {
   const { toast } = useToast();
-  const { adminConfig } = useContext(UserContext);
+  const context = useContext(UserContext);
+  const { adminConfig } = context || {};
   
   // Get dynamic token name
   const tokenName = adminConfig?.tokenName || 'STON';

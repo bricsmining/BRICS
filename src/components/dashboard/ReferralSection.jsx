@@ -897,7 +897,8 @@ const SpinModal = ({
 // Main ReferralSection Component - UPDATED
 const ReferralSection = ({ user, refreshUserData }) => {
 	const { toast } = useToast();
-	const { adminConfig } = useContext(UserContext);
+	const context = useContext(UserContext);
+	const { adminConfig } = context || {};
 	const { pauseAdTimer, resumeAdTimer } = useAdTimer();
 	
 	// Get dynamic token name

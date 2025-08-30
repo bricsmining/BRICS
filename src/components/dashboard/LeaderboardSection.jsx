@@ -33,7 +33,8 @@ const formatLeaderboardNumber = (num) => {
 };
 
 const LeaderboardSection = ({ currentUserTelegramId }) => {
-  const { adminConfig } = useContext(UserContext);
+  const context = useContext(UserContext);
+  const { adminConfig } = context || {};
   
   // Get dynamic token name
   const tokenName = adminConfig?.tokenName || 'STON';
