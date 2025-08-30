@@ -41,6 +41,9 @@ const AdminSettings = ({ adminData }) => {
   const [envConfig, setEnvConfig] = useState({});
   const { toast } = useToast();
 
+  // Get dynamic token name
+  const tokenName = config?.tokenName || 'STON';
+
   useEffect(() => {
     loadConfig();
   }, []);
@@ -474,7 +477,7 @@ const AdminSettings = ({ adminData }) => {
             
             <div>
               <label className="text-sm font-medium text-gray-300 mb-2 block">
-                Min Withdrawal (STON)
+                Min Withdrawal ({tokenName})
               </label>
               <Input
                 type="number"
@@ -503,7 +506,7 @@ const AdminSettings = ({ adminData }) => {
             
             <div>
               <label className="text-sm font-medium text-gray-300 mb-2 block">
-                STON to TON Exchange Rate
+                {tokenName} to TON Exchange Rate
               </label>
               <Input
                 type="number"
@@ -514,7 +517,7 @@ const AdminSettings = ({ adminData }) => {
                 placeholder="0.0000001"
               />
               <p className="text-xs text-gray-400 mt-1">
-                1 STON = {config.stonToTonRate || 0.0000001} TON (Currently: {Math.round(1 / (config.stonToTonRate || 0.0000001)).toLocaleString()} STON = 1 TON)
+                1 {tokenName} = {config.stonToTonRate || 0.0000001} TON (Currently: {Math.round(1 / (config.stonToTonRate || 0.0000001)).toLocaleString()} {tokenName} = 1 TON)
               </p>
             </div>
             
@@ -560,7 +563,7 @@ const AdminSettings = ({ adminData }) => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium text-gray-300 mb-2 block">
-                    Referrer Reward (STON)
+                    Referrer Reward ({tokenName})
                   </label>
                   <Input
                     type="number"
@@ -570,13 +573,13 @@ const AdminSettings = ({ adminData }) => {
                     placeholder="100"
                   />
                   <p className="text-xs text-gray-400 mt-1">
-                    STON tokens awarded to the person who shared the referral link
+                    {tokenName} tokens awarded to the person who shared the referral link
                   </p>
                 </div>
                 
                 <div>
                   <label className="text-sm font-medium text-gray-300 mb-2 block">
-                    Welcome Bonus (STON)
+                    Welcome Bonus ({tokenName})
                   </label>
                   <Input
                     type="number"
@@ -586,7 +589,7 @@ const AdminSettings = ({ adminData }) => {
                     placeholder="50"
                   />
                   <p className="text-xs text-gray-400 mt-1">
-                    STON tokens awarded to the new user who joined via referral link
+                    {tokenName} tokens awarded to the new user who joined via referral link
                   </p>
                 </div>
               </div>
@@ -761,7 +764,7 @@ const AdminSettings = ({ adminData }) => {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium text-gray-300 mb-2 block">
-                  Level 2 (STON)
+                  Level 2 ({tokenName})
                 </label>
                 <Input
                   type="number"
@@ -774,7 +777,7 @@ const AdminSettings = ({ adminData }) => {
               
               <div>
                 <label className="text-sm font-medium text-gray-300 mb-2 block">
-                  Level 3 (STON)
+                  Level 3 ({tokenName})
                 </label>
                 <Input
                   type="number"
@@ -787,7 +790,7 @@ const AdminSettings = ({ adminData }) => {
               
               <div>
                 <label className="text-sm font-medium text-gray-300 mb-2 block">
-                  Level 4 (STON)
+                  Level 4 ({tokenName})
                 </label>
                 <Input
                   type="number"
@@ -800,7 +803,7 @@ const AdminSettings = ({ adminData }) => {
               
               <div>
                 <label className="text-sm font-medium text-gray-300 mb-2 block">
-                  Level 5 (STON)
+                  Level 5 ({tokenName})
                 </label>
                 <Input
                   type="number"
@@ -828,7 +831,7 @@ const AdminSettings = ({ adminData }) => {
           <CardContent className="space-y-4">
             <div>
               <label className="text-sm font-medium text-gray-300 mb-2 block">
-                Rate per Hour (STON)
+                Rate per Hour ({tokenName})
               </label>
               <Input
                 type="number"
@@ -879,7 +882,7 @@ const AdminSettings = ({ adminData }) => {
           <CardContent className="space-y-4">
             <div>
               <label className="text-sm font-medium text-gray-300 mb-2 block">
-                Rate per Hour (STON)
+                Rate per Hour ({tokenName})
               </label>
               <Input
                 type="number"
@@ -930,7 +933,7 @@ const AdminSettings = ({ adminData }) => {
         <CardContent className="space-y-4">
           <div>
             <label className="text-sm font-medium text-gray-300 mb-2 block">
-                Rate per Hour (STON)
+                Rate per Hour ({tokenName})
               </label>
               <Input
                 type="number"

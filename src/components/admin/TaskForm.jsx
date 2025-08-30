@@ -13,7 +13,8 @@ const TaskForm = ({
   onVerificationTypeChange,
   onSubmit,
   onCancel,
-  isEditing
+  isEditing,
+  tokenName = 'STON'
 }) => {
   const idPrefix = isEditing ? 'edit' : 'new';
   const showVerificationOptions = taskData?.type === 'telegram_join';
@@ -42,7 +43,7 @@ const TaskForm = ({
           />
         </div>
         <div>
-          <Label htmlFor={`${idPrefix}-reward`} className="text-white">Reward (STON)</Label>
+          <Label htmlFor={`${idPrefix}-reward`} className="text-white">Reward ({tokenName})</Label>
           <Input
             id={`${idPrefix}-reward`}
             name="reward"

@@ -40,11 +40,11 @@ import { useAdTimer } from '@/contexts/AdTimerContext';
 const defaultAvatar =
 	'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQB_4gKwn8q2WBPTwnV14Jmh3B5g56SCiGEBA&usqp=CAU';
 
-// Spin rewards configuration with weighted probabilities - FIXED ORDER AND PRIORITIES
-const SPIN_REWARDS = [
+// Function to generate dynamic spin rewards with current token name
+const getSpinRewards = (tokenName = 'STON') => [
 	{
 		id: 1,
-		label: '100 STON',
+		label: `100 ${tokenName}`,
 		value: 100,
 		type: 'ston',
 		color: '#607D8B',
@@ -64,7 +64,7 @@ const SPIN_REWARDS = [
 	},
 	{
 		id: 3,
-		label: '500 STON',
+		label: `500 ${tokenName}`,
 		value: 500,
 		type: 'ston',
 		color: '#4CAF50',
@@ -84,7 +84,7 @@ const SPIN_REWARDS = [
 	},
 	{
 		id: 5,
-		label: '1000 STON',
+		label: `1000 ${tokenName}`,
 		value: 1000,
 		type: 'ston',
 		color: '#2196F3',
@@ -94,7 +94,7 @@ const SPIN_REWARDS = [
 	},
 	{
 		id: 6,
-		label: '5000 STON',
+		label: `5000 ${tokenName}`,
 		value: 5000,
 		type: 'ston',
 		color: '#9C27B0',
@@ -104,7 +104,7 @@ const SPIN_REWARDS = [
 	},
 	{
 		id: 7,
-		label: '10000 STON',
+		label: `10000 ${tokenName}`,
 		value: 10000,
 		type: 'ston',
 		color: '#FF9800',
@@ -114,7 +114,7 @@ const SPIN_REWARDS = [
 	},
 	{
 		id: 8,
-		label: '50000 STON',
+		label: `50000 ${tokenName}`,
 		value: 50000,
 		type: 'ston',
 		color: '#E91E63',
@@ -125,7 +125,8 @@ const SPIN_REWARDS = [
 ];
 
 // Function to select reward based on weighted probability with strict priority
-const selectWeightedReward = () => {
+const selectWeightedReward = (tokenName = 'STON') => {
+    const SPIN_REWARDS = getSpinRewards(tokenName);
     const availableRewards = SPIN_REWARDS.filter((r) => r.weight > 0)
         .sort((a, b) => b.weight - a.weight); // Sort by weight in descending order
     
@@ -262,9 +263,12 @@ const FloatingSpinButton = ({ spinsAvailable, onClick, hasSpins }) => {
 };
 
 // Professional Spin Wheel Component - FIXED ROTATION ISSUES
-const SpinWheel = ({ isSpinning, selectedReward, onSpinStart, onSpinComplete }) => {
+const SpinWheel = ({ isSpinning, selectedReward, onSpinStart, onSpinComplete, tokenName = 'STON' }) => {
 	const [rotation, setRotation] = useState(0);
 	const [isAnimating, setIsAnimating] = useState(false);
+
+	// Get dynamic rewards for this token
+	const SPIN_REWARDS = getSpinRewards(tokenName);
 
 	useEffect(() => {
 		if (isSpinning && selectedReward && !isAnimating) {
@@ -412,7 +416,7 @@ const SpinWheel = ({ isSpinning, selectedReward, onSpinStart, onSpinComplete }) 
 												{reward.displayValue}
 											</span>
 											<span className='text-xs font-bold opacity-90 leading-none'>
-												STON
+												{tokenName}
 											</span>
 										</div>
 									)}
@@ -626,7 +630,7 @@ const SpinModal = ({
 		setSpinResult(null);
 
 		// Pre-select the reward based on weighted probability
-		const preSelectedReward = selectWeightedReward();
+		const preSelectedReward = selectWeightedReward(tokenName);
 		setSelectedReward(preSelectedReward);
 		setIsSpinning(true);
 	};
@@ -766,6 +770,7 @@ const SpinModal = ({
 						selectedReward={selectedReward}
 						onSpinStart={() => {}}
 						onSpinComplete={handleSpinComplete}
+						tokenName={tokenName}
 					/>
 				</div>
 
