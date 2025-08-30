@@ -158,7 +158,7 @@ export default function StonDropGame() {
           speed: 3 - (difficultyFactor * 0.5), // Slightly faster as game progresses
         };
 
-        console.log('🎯 Creating drop:', isBomb ? '💣 Bomb' : `💎 Gem (${reward} STON)`);
+        console.log('🎯 Creating drop:', isBomb ? '💣 Bomb' : `💎 Gem (${reward} ${tokenName})`);
         
         setDroppables(prev => [...prev, newDrop]);
       } catch (error) {
@@ -230,7 +230,7 @@ export default function StonDropGame() {
                 userId: userId,
                 userName: userData?.firstName || userData?.username || `User ${userId}`,
                 userTelegramUsername: userData?.username,
-                gameType: 'STON Drop',
+                gameType: `${tokenName} Drop`,
                 reward: score,
                 rewardType: 'early_quit'
               }
@@ -245,12 +245,12 @@ export default function StonDropGame() {
         if (gameTime < 5) {
           await updateDoc(docRef, { energy: increment(ENERGY_COST) });
           toast({ 
-            title: `Game ended early! Energy refunded and you earned ${score} STON`,
+            title: `Game ended early! Energy refunded and you earned ${score} ${tokenName}`,
             className: "bg-[#1a1a1a] text-white"
           });
         } else {
           toast({ 
-            title: `Game ended! You earned ${score} STON`,
+            title: `Game ended! You earned ${score} ${tokenName}`,
             className: "bg-[#1a1a1a] text-white"
           });
         }
@@ -305,7 +305,7 @@ export default function StonDropGame() {
                     userId: userId,
                     userName: userData?.firstName || userData?.username || `User ${userId}`,
                     userTelegramUsername: userData?.username,
-                    gameType: 'STON Drop',
+                    gameType: `${tokenName} Drop`,
                     reward: doubledScore,
                     multiplier: '2x',
                     originalReward: score,
@@ -321,7 +321,7 @@ export default function StonDropGame() {
             
             toast({ 
               title: `Rewards Doubled!`,
-              description: `You earned extra ${doubledScore} STON`,
+              description: `You earned extra ${doubledScore} ${tokenName}`,
               variant: 'success',
               className: "bg-[#1a1a1a] text-white"
             });
@@ -547,7 +547,7 @@ export default function StonDropGame() {
                 userId: userId,
                 userName: userData?.firstName || userData?.username || `User ${userId}`,
                 userTelegramUsername: userData?.username,
-                gameType: 'STON Drop',
+                gameType: `${tokenName} Drop`,
                 reward: score,
                 rewardType: 'normal_completion'
               }
@@ -558,7 +558,7 @@ export default function StonDropGame() {
         }
         
         toast({ 
-          title: `Game Over! You earned ${score} STON`,
+          title: `Game Over! You earned ${score} ${tokenName}`,
           variant: 'success',
           className: "bg-[#1a1a1a] text-white"
         });
