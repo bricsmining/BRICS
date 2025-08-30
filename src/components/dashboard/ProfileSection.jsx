@@ -60,7 +60,7 @@ import {
   getUserWithdrawalHistory,
 } from "@/data/firestore/adminActions";
 import { getAdminConfig } from "@/data/firestore/adminConfig";
-import { notifyAdmin } from "@/utils/notifications";
+import { notifyAdmin, notifyBoxOpening } from "@/utils/notifications";
 
 // Animation variants
 const boxVariants = {
@@ -375,12 +375,11 @@ const MysteryBoxSection = ({ user, refreshUserData, navigate }) => {
 
         // Send admin notification for box opening
         try {
-          await notifyAdmin('box_opening', {
+          await notifyAdmin('mystery_box_opened', {
             userId: user.id,
             userName: user.first_name || user.last_name || user.username || 'Unknown',
             userTelegramUsername: user.username,
-            username: user.username || 'None',
-            boxType: 'Mystery Box',
+
             reward: reward,
             balanceType: 'Box (Withdrawal Only)',
             boxesRemaining: mysteryBoxCount - 1
@@ -2896,12 +2895,11 @@ const MysteryBoxModal = ({ isOpen, onClose, user, refreshUserData, navigate }) =
 
         // Send admin notification for box opening
         try {
-          await notifyAdmin('box_opening', {
+          await notifyAdmin('mystery_box_opened', {
             userId: user.id,
             userName: user.first_name || user.last_name || user.username || 'Unknown',
             userTelegramUsername: user.username,
-            username: user.username || 'None',
-            boxType: 'Mystery Box',
+
             reward: reward,
             balanceType: 'Box (Withdrawal Only)',
             boxesRemaining: mysteryBoxCount - 1

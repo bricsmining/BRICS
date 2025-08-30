@@ -135,7 +135,7 @@ export async function notifyEnergyEarning(userId, userName, energy, stonEquivale
 }
 
 export async function notifyBoxOpening(userId, userName, boxType, reward, source = 'Ad Reward') {
-  return await notifyAdmin('box_opening', {
+  return await notifyAdmin('mystery_box_opened', {
     userId,
     userName,
     boxType,
