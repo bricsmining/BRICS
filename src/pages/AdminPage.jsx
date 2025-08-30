@@ -40,6 +40,10 @@ const AdminPage = () => {
   const context = useContext(UserContext);
   const sessionUser = JSON.parse(sessionStorage.getItem('tgUserData') || '{}');
   const user = context?.user || sessionUser;
+  const { adminConfig } = context || {};
+  
+  // Get dynamic token name
+  const tokenName = adminConfig?.tokenName || 'STON';
 
   // Authentication state
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -386,7 +390,7 @@ const AdminPage = () => {
           </TabsContent>
 
           <TabsContent value="broadcast" className="pt-4">
-            <BroadcastTab />
+            <BroadcastTab tokenName={tokenName} adminConfig={adminConfig} />
           </TabsContent>
 
           <TabsContent value="users" className="pt-4">
@@ -400,6 +404,7 @@ const AdminPage = () => {
                 searchTerm={searchTerm}
                 setSearchTerm={setSearchTerm}
                 handleBanToggle={handleBanToggle}
+                tokenName={tokenName}
               />
             )}
           </TabsContent>
@@ -419,6 +424,7 @@ const AdminPage = () => {
               setEditingTask={setEditingTask}
               handleEditClick={handleEditClick}
               handleDeleteTask={handleDeleteTask}
+              tokenName={tokenName}
             />
           </TabsContent>
 
@@ -432,6 +438,7 @@ const AdminPage = () => {
                 pendingItems={pendingItems}
                 onApprove={handleApprove}
                 onReject={handleReject}
+                tokenName={tokenName}
               />
             )}
           </TabsContent>
@@ -446,6 +453,7 @@ const AdminPage = () => {
                 pendingWithdrawals={pendingWithdrawals}
                 onApprove={handleApproveWithdrawal}
                 onReject={handleRejectWithdrawal}
+                tokenName={tokenName}
               />
             )}
           </TabsContent>

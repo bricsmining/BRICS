@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
 import { Trash2, Plus, Send, Image, Video, FileAudio, FileText, ExternalLink, Smartphone } from 'lucide-react';
 
-const BroadcastTab = () => {
+const BroadcastTab = ({ tokenName = 'STON', adminConfig = {} }) => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [broadcastData, setBroadcastData] = useState({

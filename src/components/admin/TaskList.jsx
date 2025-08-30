@@ -15,7 +15,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
-const TaskList = ({ tasks, onEditClick, onDeleteTask, isEditing }) => {
+const TaskList = ({ tasks, onEditClick, onDeleteTask, isEditing, tokenName = 'STON' }) => {
   return (
     <div className="w-full">
       {tasks.length > 0 ? (
@@ -48,7 +48,7 @@ const TaskList = ({ tasks, onEditClick, onDeleteTask, isEditing }) => {
                       <Award className="h-3.5 w-3.5 text-amber-400 flex-shrink-0" />
                       <div>
                         <span className="text-[#BCCCDC]">Reward: </span>
-                        <span className="text-green-400 font-semibold">{task.reward} STON</span>
+                        <span className="text-green-400 font-semibold">{task.reward} {tokenName}</span>
                       </div>
                     </div>
                     

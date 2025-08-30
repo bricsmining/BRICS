@@ -11,7 +11,7 @@ import * as XLSX from 'xlsx';
 import { getAllWithdrawalHistory } from '@/data/firestore/adminActions';
 import { getAdminConfig } from '@/data/firestore/adminConfig';
 
-const PendingWithdrawTab = ({ pendingWithdrawals = [], onApprove, onReject }) => {
+const PendingWithdrawTab = ({ pendingWithdrawals = [], onApprove, onReject, tokenName = 'STON' }) => {
   const [processing, setProcessing] = useState({});
   const [showHistoryPopup, setShowHistoryPopup] = useState(false);
   const [withdrawalHistory, setWithdrawalHistory] = useState([]);
@@ -53,7 +53,7 @@ const PendingWithdrawTab = ({ pendingWithdrawals = [], onApprove, onReject }) =>
 
   const stonToTon = (ston) => {
     const amount = parseFloat(ston) || 0;
-    const stonToTonRate = adminConfig?.stonToTonRate || 0.0000001; // Default: 10M STON = 1 TON
+    const stonToTonRate = adminConfig?.stonToTonRate || 0.0000001; // Default: 10M {tokenName} = 1 TON
     return (amount * stonToTonRate).toFixed(6);
   };
 
@@ -122,8 +122,8 @@ const PendingWithdrawTab = ({ pendingWithdrawals = [], onApprove, onReject }) =>
     const rejectedCount = data.filter(item => item.status === 'rejected').length;
     const pendingCount = data.filter(item => item.status === 'pending').length;
     
-    const totalSTON = data.reduce((sum, item) => sum + (item.amount || 0), 0);
-    const approvedSTON = data.filter(item => item.status === 'approved')
+    const totalTokens = data.reduce((sum, item) => sum + (item.amount || 0), 0);
+    const approvedTokens = data.filter(item => item.status === 'approved')
                            .reduce((sum, item) => sum + (item.amount || 0), 0);
     
     return [
@@ -131,10 +131,10 @@ const PendingWithdrawTab = ({ pendingWithdrawals = [], onApprove, onReject }) =>
       { 'Metric': 'Approved Withdrawals', 'Value': approvedCount },
       { 'Metric': 'Rejected Withdrawals', 'Value': rejectedCount },
       { 'Metric': 'Pending Withdrawals', 'Value': pendingCount },
-      { 'Metric': 'Total STON Requested', 'Value': totalSTON.toLocaleString() },
-      { 'Metric': 'Total TON Requested', 'Value': stonToTon(totalSTON) },
-      { 'Metric': 'Approved STON', 'Value': approvedSTON.toLocaleString() },
-      { 'Metric': 'Approved TON', 'Value': stonToTon(approvedSTON) },
+      { 'Metric': `Total ${tokenName} Requested`, 'Value': totalTokens.toLocaleString() },
+      { 'Metric': 'Total TON Requested', 'Value': stonToTon(totalTokens) },
+      { 'Metric': `Approved ${tokenName}`, 'Value': approvedTokens.toLocaleString() },
+      { 'Metric': 'Approved TON', 'Value': stonToTon(approvedTokens) },
       { 'Metric': 'Approval Rate', 'Value': totalWithdrawals > 0 ? `${((approvedCount / totalWithdrawals) * 100).toFixed(2)}%` : '0%' },
       { 'Metric': 'Report Generated', 'Value': new Date().toLocaleString() }
     ];
@@ -160,7 +160,7 @@ const PendingWithdrawTab = ({ pendingWithdrawals = [], onApprove, onReject }) =>
       'Withdrawal ID': item.id,
       'User ID': item.userId,
       'Username': item.username || 'N/A',
-      'Amount (STON)': item.amount,
+      [`Amount (${tokenName})`]: item.amount,
       'Amount (TON)': stonToTon(item.amount),
       'Wallet Address': item.walletAddress,
       'Status': item.status.charAt(0).toUpperCase() + item.status.slice(1),
@@ -182,7 +182,7 @@ const PendingWithdrawTab = ({ pendingWithdrawals = [], onApprove, onReject }) =>
       { wch: 20 }, // Withdrawal ID
       { wch: 15 }, // User ID
       { wch: 20 }, // Username
-      { wch: 15 }, // Amount STON
+      { wch: 15 }, // Amount ${tokenName}
       { wch: 15 }, // Amount TON
       { wch: 50 }, // Wallet Address
       { wch: 12 }, // Status
@@ -258,7 +258,7 @@ const PendingWithdrawTab = ({ pendingWithdrawals = [], onApprove, onReject }) =>
   };
 
   const handleApprove = async (withdrawal) => {
-    if (!window.confirm(`Approve withdrawal of ${withdrawal.amount} STON (${stonToTon(withdrawal.amount)} TON) for ${withdrawal.username || withdrawal.userId}?`)) {
+    if (!window.confirm(`Approve withdrawal of ${withdrawal.amount} ${tokenName} (${stonToTon(withdrawal.amount)} TON) for ${withdrawal.username || withdrawal.userId}?`)) {
       return;
     }
     
@@ -270,7 +270,7 @@ const PendingWithdrawTab = ({ pendingWithdrawals = [], onApprove, onReject }) =>
       if (result.success) {
         toast({
           title: 'Withdrawal Approved ✅',
-          description: `${withdrawal.amount} STON (${stonToTon(withdrawal.amount)} TON) withdrawal approved and payout initiated for ${withdrawal.username || withdrawal.userId}`,
+          description: `${withdrawal.amount} ${tokenName} (${stonToTon(withdrawal.amount)} TON) withdrawal approved and payout initiated for ${withdrawal.username || withdrawal.userId}`,
           variant: 'success',
           className: 'bg-[#1a1a1a] text-white',
         });
@@ -398,7 +398,7 @@ const PendingWithdrawTab = ({ pendingWithdrawals = [], onApprove, onReject }) =>
                       
                       <div className="flex items-center gap-1.5">
                         <span className="text-[#BCCCDC]">Amount: </span>
-                        <span className="text-green-400 font-semibold">{withdrawal.amount?.toLocaleString()} STON</span>
+                        <span className="text-green-400 font-semibold">{withdrawal.amount?.toLocaleString()} {tokenName}</span>
                       </div>
                       
                       <div className="flex items-center gap-1.5">
@@ -415,7 +415,7 @@ const PendingWithdrawTab = ({ pendingWithdrawals = [], onApprove, onReject }) =>
                       {withdrawal.userBalance !== undefined && (
                         <div className="flex items-center gap-1.5">
                           <span className="text-[#BCCCDC]">Balance: </span>
-                          <span className="text-yellow-400">{withdrawal.userBalance?.toLocaleString()} STON</span>
+                          <span className="text-yellow-400">{withdrawal.userBalance?.toLocaleString()} {tokenName}</span>
                           {withdrawal.amount > (withdrawal.userBalance || 0) && (
                             <span className="text-red-400 text-xs">⚠️ Exceeds balance!</span>
                           )}
@@ -672,7 +672,7 @@ const PendingWithdrawTab = ({ pendingWithdrawals = [], onApprove, onReject }) =>
                             </h4>
                             <div className="space-y-2 text-sm">
                               <div className="flex justify-between items-center">
-                                <span className="text-gray-400">STON:</span>
+                                <span className="text-gray-400">{tokenName}:</span>
                                 <span className="text-green-400 font-bold">
                                   {item.amount?.toLocaleString()}
                                 </span>
@@ -780,7 +780,7 @@ const PendingWithdrawTab = ({ pendingWithdrawals = [], onApprove, onReject }) =>
                   </div>
                 </div>
                 <div>
-                  <div className="text-gray-400">Total STON</div>
+                  <div className="text-gray-400">Total {tokenName}</div>
                   <div className="text-green-400 font-bold">
                     {getFilteredHistory().reduce((sum, w) => sum + (w.amount || 0), 0).toLocaleString()}
                   </div>

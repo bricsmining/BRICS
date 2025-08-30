@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Check, X, Loader2 } from 'lucide-react';
 import { getAdminConfig } from '@/data/firestore/adminConfig';
 
-const PendingVerificationTab = ({ pendingItems = [], tasks = [], onApprove, onReject }) => {
+const PendingVerificationTab = ({ pendingItems = [], tasks = [], onApprove, onReject, tokenName = 'STON' }) => {
   const [processing, setProcessing] = useState({});
   const [adminChatId, setAdminChatId] = useState('');
 
@@ -196,7 +196,7 @@ const PendingVerificationTab = ({ pendingItems = [], tasks = [], onApprove, onRe
                       <div className="flex items-center gap-1.5">
                         <div>
                           <span className="text-[#BCCCDC]">Reward: </span>
-                          <span className="text-green-400 font-semibold">{reward} STON</span>
+                          <span className="text-green-400 font-semibold">{reward} {tokenName}</span>
                         </div>
                       </div>
                       

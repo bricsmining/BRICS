@@ -10,7 +10,7 @@ import { Ban, CheckCircle, User, Wallet, Calendar, Copy, SortAsc, SortDesc, User
 import { Timestamp } from 'firebase/firestore';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-const UserManagementTab = ({ users = [], searchTerm, setSearchTerm, handleBanToggle }) => {
+const UserManagementTab = ({ users = [], searchTerm, setSearchTerm, handleBanToggle, tokenName = 'STON' }) => {
   const [copying, setCopying] = useState(false);
   const [sortOption, setSortOption] = useState("newest");
   const { toast } = useToast();
@@ -220,7 +220,7 @@ const UserManagementTab = ({ users = [], searchTerm, setSearchTerm, handleBanTog
 
                     <div className="flex items-center justify-between pt-2">
                       <p className="text-sm font-bold text-green-400">
-                        {user.balance?.toLocaleString()} STON
+                        {user.balance?.toLocaleString()} {tokenName}
                       </p>
                       <p className="text-sm">Refs: <span className="font-semibold text-sky-400">{user.referrals || 0}</span></p>
                     </div>

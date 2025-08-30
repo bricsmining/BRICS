@@ -26,7 +26,8 @@ const TaskManagementTab = ({
   handleUpdateTask,
   setEditingTask,
   handleEditClick,
-  handleDeleteTask
+  handleDeleteTask,
+  tokenName = 'STON'
 }) => {
   const [isFormOpen, setIsFormOpen] = useState(false);
 
@@ -80,6 +81,7 @@ const TaskManagementTab = ({
           onEditClick={handleTaskEdit}
           onDeleteTask={handleDeleteTask}
           isEditing={!!editingTask}
+          tokenName={tokenName}
         />
 
         <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
@@ -105,6 +107,7 @@ const TaskManagementTab = ({
               }
               onSubmit={handleFormSubmit}
               onCancel={closeForm}
+              tokenName={tokenName}
             />
           </DialogContent>
         </Dialog>
