@@ -1041,6 +1041,9 @@ const WithdrawDialog = ({ isOpen, onClose, user, onWithdraw, stonToTon, adminCon
   const [verifying, setVerifying] = useState(false);
   const navigate = useNavigate();
 
+  // Get dynamic token name from adminConfig prop
+  const tokenName = adminConfig?.tokenName || 'STON';
+
   const handleMaxClick = () => {
     setWithdrawAmount(user.balance?.toString() || "0");
   };
@@ -2721,7 +2724,7 @@ const ProfileSection = ({ user, refreshUserData }) => {
           user={user}
           onWithdraw={handleWithdraw}
           stonToTon={stonToTon}
-          adminConfig={adminConfig}
+          adminConfig={globalAdminConfig}
         />
 
         {/* Withdrawal History Dialog */}
