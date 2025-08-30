@@ -9,8 +9,8 @@ const DynamicLoader = ({ message = "Loading your dashboard" }) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [dots, setDots] = useState('');
 
-  // Get dynamic app name
-  const appName = adminConfig?.appName || 'SkyTON';
+  // Get dynamic app name - wait for adminConfig or use generic fallback
+  const appName = adminConfig?.appName || 'your app';
 
   const loadingSteps = [
     { text: `Initializing ${appName}`, icon: Rocket, color: "text-blue-400" },

@@ -251,9 +251,9 @@ function App() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#0f0f0f] text-white flex-col">
         <div className="bg-[#181818] px-8 py-10 rounded-lg shadow-lg text-center">
-          <h1 className="text-2xl font-bold mb-4">SkyTON</h1>
+          <h1 className="text-2xl font-bold mb-4">{adminConfig?.appName || 'SkyTON'}</h1>
           <p className="mb-6 text-lg">
-            Please open this app through the <span className="text-sky-400 font-semibold">SkyTON Telegram Bot</span> to continue.
+            Please open this app through the <span className="text-sky-400 font-semibold">{adminConfig?.appName || 'SkyTON'} Telegram Bot</span> to continue.
           </p>
           <a
             href={`https://t.me/${import.meta.env.VITE_BOT_USERNAME || 'xSkyTON_Bot'}`}
