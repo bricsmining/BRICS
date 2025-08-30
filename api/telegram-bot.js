@@ -633,25 +633,23 @@ async function handleShowHelp(chatId, userId) {
   const appConfig = await getAppConfig();
   const adminUsername = adminConfig?.adminTgUsername || 'ExecutorHere';
   
-  await sendMessage(chatId, `
-🤖 *${appConfig.appName} Help*
+  await sendMessage(chatId, `🤖 <b>${appConfig.appName} Help</b>
 
-*How to earn ${appConfig.tokenName} tokens:*
+<b>How to earn ${appConfig.tokenName} tokens:</b>
 • ⛏️ Auto-mining (passive income)
 • ✅ Complete social tasks
 • 🎯 Refer friends (earn free spins)
 • 🎰 Spin the reward wheel
 • 💎 Purchase mining cards
 
-*Commands:*
+<b>Commands:</b>
 /start - Start the bot
 /help - Show this help
 
-*Need support?* Contact @${adminUsername}
+<b>Need support?</b> Contact @${adminUsername}
 
-Ready to start mining? Use the button below! 🚀
-  `, {
-    parse_mode: 'Markdown',
+Ready to start mining? Use the button below! 🚀`, {
+    parse_mode: 'HTML',
     reply_markup: {
       inline_keyboard: [[
         { text: "🚀 Open App", web_app: { url: await getWebAppUrl() } }
