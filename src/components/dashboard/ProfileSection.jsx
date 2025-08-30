@@ -60,6 +60,7 @@ import {
   getUserWithdrawalHistory,
 } from "@/data/firestore/adminActions";
 import { getAdminConfig } from "@/data/firestore/adminConfig";
+import { notifyAdmin } from "@/utils/notifications";
 
 // Animation variants
 const boxVariants = {
@@ -374,7 +375,7 @@ const MysteryBoxSection = ({ user, refreshUserData, navigate }) => {
 
         // Send admin notification for box opening
         try {
-          await sendAdminNotification('mystery_box_opened', {
+          await notifyAdmin('box_opening', {
             userId: user.id,
             userName: user.first_name || user.last_name || user.username || 'Unknown',
             userTelegramUsername: user.username,
@@ -1458,7 +1459,7 @@ const ProfileSection = ({ user, refreshUserData }) => {
   }, []);
 
   // API call to backend for admin notification with enhanced system
-  const sendAdminNotification = useCallback(async (type, data) => {
+  const notifyAdmin = useCallback(async (type, data) => {
     try {
       const response = await fetch("/api/notifications?action=admin", {
         method: "POST",
@@ -1669,7 +1670,7 @@ const ProfileSection = ({ user, refreshUserData }) => {
       const miningBalance = balanceBreakdown.mining || 0;
       
       // Send notification with enhanced details using UPDATED balance
-      await sendAdminNotification('withdrawal_request', {
+      await notifyAdmin('withdrawal_request', {
         userId: user.id,
         userName: user.first_name || user.last_name || user.username || 'Unknown',
         userTelegramUsername: user.username,
@@ -1710,7 +1711,7 @@ const ProfileSection = ({ user, refreshUserData }) => {
         className: "bg-[#1a1a1a] text-white",
       });
     }
-  }, [user, stonToTon, sendAdminNotification, toast]);
+  }, [user, stonToTon, notifyAdmin, toast]);
 
   const handleShowHistory = useCallback(async () => {
     if (!user?.id) {
@@ -2864,6 +2865,11 @@ const MysteryBoxModal = ({ isOpen, onClose, user, refreshUserData, navigate }) =
   const [rewardAmount, setRewardAmount] = useState(0);
   const [showConfetti, setShowConfetti] = useState(false);
   const { toast } = useToast();
+  
+  // Get adminConfig for dynamic token name
+  const context = useContext(UserContext);
+  const { adminConfig } = context || {};
+  const tokenName = adminConfig?.tokenName || 'STON';
 
   const mysteryBoxCount = user?.mysteryBoxes || 0;
 
@@ -2890,7 +2896,7 @@ const MysteryBoxModal = ({ isOpen, onClose, user, refreshUserData, navigate }) =
 
         // Send admin notification for box opening
         try {
-          await sendAdminNotification('mystery_box_opened', {
+          await notifyAdmin('box_opening', {
             userId: user.id,
             userName: user.first_name || user.last_name || user.username || 'Unknown',
             userTelegramUsername: user.username,
