@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -7,6 +7,7 @@ import { Zap, DollarSign, ArrowLeft, Play, X, Loader2, Gift, Star, Sparkles } fr
 import { db } from '@/lib/firebase';
 import { doc, getDoc, updateDoc, increment } from 'firebase/firestore';
 import { showRewardedAd } from '@/ads/adsController';
+import { UserContext } from '@/App';
 
 import backgroundImg from '../assets/background.jpg';
 import stonImg from '../assets/ston.png';
@@ -43,6 +44,12 @@ const formatNumber = (num) => {
 };
 
 export default function StonDropGame() {
+  // Get adminConfig for dynamic app/token names
+  const context = useContext(UserContext);
+  const { adminConfig } = context || {};
+  const appName = adminConfig?.appName || 'SkyTON';
+  const tokenName = adminConfig?.tokenName || 'STON';
+
   const [userData, setUserData] = useState(null);
   const [droppables, setDroppables] = useState([]);
   const [score, setScore] = useState(0);
@@ -711,7 +718,7 @@ export default function StonDropGame() {
               </span>
               <span className="flex items-center gap-1 bg-green-500/20 px-1.5 py-0.5 rounded-lg min-w-0 max-w-20">
                 <DollarSign className="w-3 h-3 text-green-400 flex-shrink-0" />
-                <span className="font-semibold text-xs truncate" title={`${(userData?.balance ?? 0).toLocaleString()} STON`}>
+                <span className="font-semibold text-xs truncate" title={`${(userData?.balance ?? 0).toLocaleString()} ${tokenName}`}>
                   {formatNumber(userData?.balance ?? 0)}
                 </span>
               </span>
@@ -761,7 +768,7 @@ export default function StonDropGame() {
               </span>
               <span className="flex items-center gap-1 bg-green-500/20 px-2 py-1 rounded-lg min-w-0 max-w-32">
                 <DollarSign className="w-4 h-4 text-green-400 flex-shrink-0" />
-                <span className="font-semibold text-sm truncate" title={`${(userData?.balance ?? 0).toLocaleString()} STON`}>
+                <span className="font-semibold text-sm truncate" title={`${(userData?.balance ?? 0).toLocaleString()} ${tokenName}`}>
                   {formatNumber(userData?.balance ?? 0)}
                 </span>
               </span>
@@ -791,8 +798,8 @@ export default function StonDropGame() {
             animate={{ scale: 1, opacity: 1 }}
             className="text-center bg-gradient-to-br from-gray-900/90 to-gray-800/90 backdrop-blur-sm rounded-2xl p-8 border border-white/10 shadow-2xl max-w-sm mx-4"
           >
-            <h1 className="text-5xl font-bold text-white mb-2 drop-shadow-lg">STON DROP</h1>
-            <p className="text-gray-300 mb-6 text-lg">Catch STON gems, avoid bombs!</p>
+            <h1 className="text-5xl font-bold text-white mb-2 drop-shadow-lg">{tokenName} DROP</h1>
+            <p className="text-gray-300 mb-6 text-lg">Catch {tokenName} gems, avoid bombs!</p>
             <div className="flex flex-col gap-3 mb-6">
               <div className="flex items-center gap-2 text-sm text-gray-300 justify-center">
                 <Zap className="w-4 h-4 text-yellow-400" />
@@ -800,7 +807,7 @@ export default function StonDropGame() {
               </div>
               <div className="flex items-center gap-2 text-sm text-gray-300 justify-center">
                 <DollarSign className="w-4 h-4 text-green-400" />
-                <span>Earn 15-30 STON per gem</span>
+                <span>Earn 15-30 {tokenName} per gem</span>
               </div>
               <div className="flex items-center gap-2 text-sm text-yellow-300 justify-center">
                 <Star className="w-4 h-4 text-yellow-400" />
@@ -914,7 +921,7 @@ export default function StonDropGame() {
             exit={{ opacity: 0, scale: 0 }}
             whileHover={{ scale: 1.1, filter: drop.isBomb ? 'drop-shadow(0 0 12px rgba(255, 0, 0, 0.8))' : 'drop-shadow(0 0 10px rgba(0, 255, 100, 0.6))' }}
             whileTap={{ scale: 0.9 }}
-            alt={drop.isBomb ? "Bomb" : "STON"}
+            alt={drop.isBomb ? "Bomb" : tokenName}
             draggable={false}
           />
         ))}
@@ -1010,7 +1017,7 @@ export default function StonDropGame() {
               transition={{ delay: 1, duration: 0.5 }}
               className="text-2xl md:text-3xl text-white font-bold"
             >
-              🎯 Final Score: {formatNumber(score)} STON
+              🎯 Final Score: {formatNumber(score)} {tokenName}
             </motion.div>
             
             {/* Animated particles */}
@@ -1076,10 +1083,10 @@ export default function StonDropGame() {
               className="mb-6"
             >
               <p className="text-2xl mb-2 font-bold">
-                You earned <span className="text-yellow-400">{score} STON</span>
+                You earned <span className="text-yellow-400">{score} {tokenName}</span>
               </p>
               <div className="text-sm text-gray-300 space-y-1">
-                <p>New Balance: <span className="text-green-400 font-semibold">{finalBalance} STON</span></p>
+                <p>New Balance: <span className="text-green-400 font-semibold">{finalBalance} {tokenName}</span></p>
                 <p>Energy Left: <span className="text-yellow-400 font-semibold">{finalEnergy}</span></p>
               </div>
             </motion.div>
@@ -1115,7 +1122,7 @@ export default function StonDropGame() {
               {hasDoubled && (
                 <div className="bg-green-600/20 border border-green-500/50 rounded-xl p-3 mb-2">
                   <p className="text-green-400 text-sm font-semibold">
-                    ✅ Rewards Doubled! You earned an extra {doubledAmount} STON
+                    ✅ Rewards Doubled! You earned an extra {doubledAmount} {tokenName}
                   </p>
                 </div>
               )}
