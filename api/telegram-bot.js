@@ -38,8 +38,19 @@ async function getWebAppUrl() {
     
     if (adminConfigSnap.exists()) {
       const adminConfig = adminConfigSnap.data();
-      return adminConfig.telegramWebAppUrl || WEB_APP_URL;
+      const webAppUrl = adminConfig.telegramWebAppUrl || WEB_APP_URL;
+      console.log('[BOT] Using web app URL:', webAppUrl);
+      
+      // Validate URL format
+      if (!webAppUrl || !webAppUrl.startsWith('https://')) {
+        console.error('[BOT] Invalid web app URL format, using fallback:', WEB_APP_URL);
+        return WEB_APP_URL;
+      }
+      
+      return webAppUrl;
     }
+    
+    console.log('[BOT] No admin config found, using fallback URL:', WEB_APP_URL);
     return WEB_APP_URL;
   } catch (error) {
     console.error('[BOT] Error getting webapp URL from admin config:', error);
