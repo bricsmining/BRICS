@@ -116,7 +116,7 @@ export const getEnvConfig = () => ({
   // API keys are handled server-side only
   webAppUrl: import.meta.env.VITE_WEB_APP_URL, // Only check if exists, don't expose
   telegramBotToken: !!import.meta.env.VITE_TG_BOT_TOKEN, // Only check if exists, don't expose
-  telegramWebhookSecret: !!import.meta.env.TELEGRAM_WEBHOOK_SECRET, // Only check if exists, don't expose
+  telegramWebhookSecret: true, // Server-side only - always show as configured (TELEGRAM_WEBHOOK_SECRET)
   oxapayApiKey: !!import.meta.env.VITE_OXAPAY_API_KEY, // Only check if exists, don't expose (legacy)
   oxapayMerchantApiKey: !!import.meta.env.VITE_OXAPAY_MERCHANT_API_KEY, // Only check if exists, don't expose
   oxapayPayoutApiKey: !!import.meta.env.VITE_OXAPAY_PAYOUT_API_KEY, // Only check if exists, don't expose

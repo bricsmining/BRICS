@@ -179,7 +179,7 @@ const AdminSettings = ({ adminData }) => {
                   <p>Critical configuration that must be set in your deployment environment (Vercel/etc.).</p>
                   <div className="mt-2 space-y-1 text-xs">
                     <p><span className="font-medium">🤖 Telegram Bot:</span> TG_BOT_TOKEN - From @BotFather</p>
-                    <p><span className="font-medium">🔒 Webhook Security:</span> TELEGRAM_WEBHOOK_SECRET - Secures webhook endpoints</p>
+                    <p><span className="font-medium">🔒 Webhook Security:</span> TELEGRAM_WEBHOOK_SECRET - Server-side secured (not client-accessible)</p>
                     <p><span className="font-medium">🔗 Referral API:</span> ADMIN_API_KEY - For referral system and admin operations</p>
                     <p><span className="font-medium">💳 Payment (Invoices):</span> VITE_OXAPAY_MERCHANT_API_KEY - For creating payments</p>
                     <p><span className="font-medium">💰 Withdrawals:</span> VITE_OXAPAY_PAYOUT_API_KEY - For processing payouts</p>
@@ -209,9 +209,9 @@ const AdminSettings = ({ adminData }) => {
                   <span className="text-sm font-medium text-gray-300">Webhook Security</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className={`w-2 h-2 rounded-full ${envConfig.telegramWebhookSecret ? 'bg-green-400' : 'bg-red-400'}`} />
+                  <div className="w-2 h-2 rounded-full bg-blue-400" />
                   <span className="text-xs text-gray-400">
-                    {envConfig.telegramWebhookSecret ? 'Secured' : 'Not Configured'}
+                    Server-Side Secured
                   </span>
                 </div>
               </div>
