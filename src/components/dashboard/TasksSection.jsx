@@ -414,7 +414,7 @@ const TasksSection = ({ tasks = [], user = {}, refreshUserData, isLoading }) => 
         if (updatedUser) refreshUserData(updatedUser);
         toast({ 
           title: 'Daily Check-in Successful!', 
-          description: `+${result.reward} STON`, 
+          description: `+${result.reward} ${tokenName}`, 
           variant: 'success', 
           className: "bg-[#1a1a1a] text-white" 
         });
