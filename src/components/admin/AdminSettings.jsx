@@ -180,6 +180,7 @@ const AdminSettings = ({ adminData }) => {
                   <div className="mt-2 space-y-1 text-xs">
                     <p><span className="font-medium">🤖 Telegram Bot:</span> TG_BOT_TOKEN - From @BotFather</p>
                     <p><span className="font-medium">🔒 Webhook Security:</span> TELEGRAM_WEBHOOK_SECRET - Secures webhook endpoints</p>
+                    <p><span className="font-medium">🔗 Referral API:</span> ADMIN_API_KEY - For referral system and admin operations</p>
                     <p><span className="font-medium">💳 Payment (Invoices):</span> VITE_OXAPAY_MERCHANT_API_KEY - For creating payments</p>
                     <p><span className="font-medium">💰 Withdrawals:</span> VITE_OXAPAY_PAYOUT_API_KEY - For processing payouts</p>
                     <p><span className="font-medium">🌐 Web App URL:</span> VITE_WEB_APP_URL - Your deployment URL</p>

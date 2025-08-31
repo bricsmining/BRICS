@@ -121,6 +121,7 @@ export const getEnvConfig = () => ({
   oxapayMerchantApiKey: !!import.meta.env.VITE_OXAPAY_MERCHANT_API_KEY, // Only check if exists, don't expose
   oxapayPayoutApiKey: !!import.meta.env.VITE_OXAPAY_PAYOUT_API_KEY, // Only check if exists, don't expose
   adminApiKey: !!import.meta.env.VITE_ADMIN_API_KEY, // Only check if exists, don't expose
+  referralApiKey: !!(import.meta.env.ADMIN_API_KEY || import.meta.env.VITE_ADMIN_API_KEY), // Referral API key (primary or fallback)
 });
 
 // Broadcast message to all users
