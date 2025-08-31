@@ -110,3 +110,120 @@ firebase-debug.log
 # Local development files
 test-admin-notify.js
 ADMIN_NOTIFICATION_SETUP.md
+
+# Security & sensitive files
+*.key
+*.pem
+*.p12
+*.pfx
+secrets/
+config/secrets/
+
+# API Keys and credentials (additional protection)
+.env.sample
+.env.template
+.env.backup
+.env.*.backup
+api-keys.txt
+credentials.json
+service-account*.json
+
+# Keep example.env but exclude other env examples
+.env.example
+
+# Telegram bot specific
+bot-token.txt
+webhook-url.txt
+*.bot
+
+# Firebase specific
+firebase-adminsdk-*.json
+firebaseServiceAccountKey.json
+firebase-service-account*.json
+
+# Payment provider keys
+oxapay-*.key
+payment-*.key
+
+# Backup and archive files
+*.backup
+*.bak
+*.old
+*.orig
+*.tmp
+backups/
+archives/
+
+# Editor and IDE specific
+.vscode/settings.json
+.vscode/launch.json
+.vscode/extensions.json
+*.sublime-project
+*.sublime-workspace
+.idea/workspace.xml
+.idea/tasks.xml
+.idea/dictionaries/
+.idea/shelf/
+
+# Documentation that might contain sensitive info
+DEPLOYMENT_NOTES.md
+PRIVATE_*.md
+SECRET_*.md
+KEYS_*.md
+PASSWORDS_*.md
+
+# Local scripts and helpers
+setup-local.sh
+deploy-local.sh
+test-*.js
+debug-*.js
+local-*.js
+
+# Build artifacts and temporary files
+*.map.backup
+*.css.map.backup
+*.js.map.backup
+.vite/
+.turbo/
+
+# Package manager specific
+pnpm-lock.yaml
+.pnpm-debug.log*
+yarn.lock.backup
+package-lock.json.backup
+
+# Mobile app builds (if applicable)
+*.apk
+*.ipa
+*.app
+android/
+ios/build/
+
+# Database dumps and exports
+*.sql
+*.db
+*.sqlite
+*.sqlite3
+database-dump/
+db-backup/
+
+# Generated documentation
+docs/generated/
+api-docs/generated/
+
+# Performance and profiling
+*.cpuprofile
+*.heapprofile
+.clinic/
+
+# Testing artifacts
+test-results/
+coverage-reports/
+.nyc_output/
+.coverage/
+
+# Local environment overrides
+.env.override
+.env.*.override
+local.env
+dev.env
