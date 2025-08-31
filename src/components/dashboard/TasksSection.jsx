@@ -774,7 +774,7 @@ const TasksSection = ({ tasks = [], user = {}, refreshUserData, isLoading }) => 
               if (updatedUser) refreshUserData(updatedUser);
               toast({ 
                 title: 'Joined Verified', 
-                description: `+${task.reward} STON`, 
+                description: `+${task.reward} ${tokenName}`, 
                 variant: 'success', 
                 className: "bg-[#1a1a1a] text-white" 
               });
@@ -827,7 +827,7 @@ const TasksSection = ({ tasks = [], user = {}, refreshUserData, isLoading }) => 
         }
         toast({
           title: success ? 'Task Verified!' : 'Verification Failed',
-          description: success ? `+${task.reward} STON` : 'Could not verify task completion.',
+          description: success ? `+${task.reward} ${tokenName}` : 'Could not verify task completion.',
           variant: success ? 'success' : 'destructive',
           className: "bg-[#1a1a1a] text-white"
         });
@@ -1148,7 +1148,7 @@ const TasksSection = ({ tasks = [], user = {}, refreshUserData, isLoading }) => 
                             {task.title || 'Untitled Task'}
                           </p>
                           <Badge className="bg-green-600/20 text-green-300 border-green-600 text-xs px-2 py-0.5">
-                            +{task.reward || 0} STON
+                            +{task.reward || 0} {tokenName}
                           </Badge>
                         </div>
                         <a
