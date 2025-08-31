@@ -31,16 +31,20 @@ export default async function handler(req, res) {
       });
     }
 
-    if (!ADMIN_API_KEY) {
+    // Use ADMIN_API_KEY from query or environment variable
+    const adminApiKey = ADMIN_API_KEY || process.env.ADMIN_API_KEY || process.env.VITE_ADMIN_API_KEY;
+    
+    if (!adminApiKey) {
       return res.status(400).json({
         error: 'Missing ADMIN_API_KEY parameter',
-        usage: 'GET /api/setup-webhook?TG_BOT_TOKEN=your_token&ADMIN_API_KEY=your_key&TELEGRAM_WEBHOOK_SECRET=your_secret'
+        usage: 'GET /api/setup-webhook?TG_BOT_TOKEN=your_token&ADMIN_API_KEY=your_key&TELEGRAM_WEBHOOK_SECRET=your_secret',
+        note: 'You can also set ADMIN_API_KEY as an environment variable'
       });
     }
 
-    // Set defaults for optional parameters
-    const webhookSecret = TELEGRAM_WEBHOOK_SECRET || 'skyton-webhook-secret';
-    const webAppUrl = VITE_WEB_APP_URL || 'https://skyton.vercel.app';
+    // Set defaults for optional parameters using environment variables as fallbacks
+    const webhookSecret = TELEGRAM_WEBHOOK_SECRET || process.env.TELEGRAM_WEBHOOK_SECRET || 'default-webhook-secret';
+    const webAppUrl = VITE_WEB_APP_URL || process.env.VITE_WEB_APP_URL || getBaseUrl(req);
     const webhookUrl = `${webAppUrl}/api/telegram-bot`;
 
     console.log(`🤖 Setting up webhook via API for bot token: ${TG_BOT_TOKEN.substring(0, 10)}...`);
@@ -86,9 +90,9 @@ export default async function handler(req, res) {
       });
     }
 
-    // Step 4: Set bot commands
+    // Step 4: Set bot commands (dynamic)
     const commands = [
-      { command: "start", description: "Start the bot and open SkyTON app" },
+      { command: "start", description: "Start the bot and open the app" },
       { command: "help", description: "Show help information" },
       { command: "stats", description: "View your mining stats" },
       { command: "invite", description: "Get your referral link" }
@@ -153,8 +157,8 @@ export default async function handler(req, res) {
       commands_status: commandsResult.ok ? 'set' : 'failed',
       configuration: {
         TG_BOT_TOKEN: TG_BOT_TOKEN.substring(0, 10) + '...',
-        ADMIN_API_KEY: ADMIN_API_KEY.substring(0, 5) + '...',
-        TELEGRAM_WEBHOOK_SECRET: webhookSecret,
+        ADMIN_API_KEY: adminApiKey.substring(0, 5) + '...',
+        TELEGRAM_WEBHOOK_SECRET: webhookSecret.substring(0, 8) + '...',
         VITE_WEB_APP_URL: webAppUrl
       },
       links: {
@@ -163,10 +167,11 @@ export default async function handler(req, res) {
         referral_example: `https://t.me/${botInfo.username}?start=refID123456`
       },
       next_steps: [
-        "Add the same environment variables to your Vercel project",
-        "Redeploy your Vercel project if needed",
+        "Add the same environment variables to your deployment platform (Vercel/etc.)",
+        "Redeploy your project if environment variables were changed",
         `Test your bot: https://t.me/${botInfo.username}`,
-        `Test referral: https://t.me/${botInfo.username}?start=refID123456`
+        `Test referral: https://t.me/${botInfo.username}?start=refID123456`,
+        "Configure your app name and token name in the admin panel"
       ]
     };
 
@@ -185,8 +190,22 @@ export default async function handler(req, res) {
   }
 }
 
-// Helper function to get base URL
+// Helper function to get base URL dynamically
 function getBaseUrl(req) {
+  // Check for various deployment environment URLs
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`;
+  }
+  
+  if (process.env.RAILWAY_STATIC_URL) {
+    return process.env.RAILWAY_STATIC_URL;
+  }
+  
+  if (process.env.RENDER_EXTERNAL_URL) {
+    return process.env.RENDER_EXTERNAL_URL;
+  }
+  
+  // Fallback to request headers
   const protocol = req.headers['x-forwarded-proto'] || 'https';
   const host = req.headers['x-forwarded-host'] || req.headers.host;
   return `${protocol}://${host}`;
