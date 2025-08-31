@@ -175,8 +175,15 @@ const AdminSettings = ({ adminData }) => {
               <div className="flex items-start gap-2">
                 <AlertCircle className="w-4 h-4 text-blue-400 mt-0.5 flex-shrink-0" />
                 <div className="text-xs text-blue-300">
-                  <p className="font-medium mb-1">Secure Configuration</p>
-                  <p>Sensitive credentials are stored in environment variables for security.</p>
+                  <p className="font-medium mb-1">Environment Variables Status</p>
+                  <p>Critical configuration that must be set in your deployment environment (Vercel/etc.).</p>
+                  <div className="mt-2 space-y-1 text-xs">
+                    <p><span className="font-medium">🤖 Telegram Bot:</span> TG_BOT_TOKEN - From @BotFather</p>
+                    <p><span className="font-medium">🔒 Webhook Security:</span> TELEGRAM_WEBHOOK_SECRET - Secures webhook endpoints</p>
+                    <p><span className="font-medium">💳 Payment (Invoices):</span> VITE_OXAPAY_MERCHANT_API_KEY - For creating payments</p>
+                    <p><span className="font-medium">💰 Withdrawals:</span> VITE_OXAPAY_PAYOUT_API_KEY - For processing payouts</p>
+                    <p><span className="font-medium">🌐 Web App URL:</span> VITE_WEB_APP_URL - Your deployment URL</p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -197,8 +204,47 @@ const AdminSettings = ({ adminData }) => {
               
               <div className="flex items-center justify-between bg-muted/60 border border-border/70 rounded-lg p-3">
                 <div className="flex items-center gap-2">
+                  <Shield className="w-4 h-4 text-gray-400" />
+                  <span className="text-sm font-medium text-gray-300">Webhook Security</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className={`w-2 h-2 rounded-full ${envConfig.telegramWebhookSecret ? 'bg-green-400' : 'bg-red-400'}`} />
+                  <span className="text-xs text-gray-400">
+                    {envConfig.telegramWebhookSecret ? 'Secured' : 'Not Configured'}
+                  </span>
+                </div>
+              </div>
+              
+              <div className="flex items-center justify-between bg-muted/60 border border-border/70 rounded-lg p-3">
+                <div className="flex items-center gap-2">
                   <Wallet className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm font-medium text-gray-300">OxaPay API</span>
+                  <span className="text-sm font-medium text-gray-300">OxaPay Merchant</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className={`w-2 h-2 rounded-full ${envConfig.oxapayMerchantApiKey ? 'bg-green-400' : 'bg-red-400'}`} />
+                  <span className="text-xs text-gray-400">
+                    {envConfig.oxapayMerchantApiKey ? 'Connected' : 'Not Configured'}
+                  </span>
+                </div>
+              </div>
+              
+              <div className="flex items-center justify-between bg-muted/60 border border-border/70 rounded-lg p-3">
+                <div className="flex items-center gap-2">
+                  <DollarSign className="w-4 h-4 text-gray-400" />
+                  <span className="text-sm font-medium text-gray-300">OxaPay Payout</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className={`w-2 h-2 rounded-full ${envConfig.oxapayPayoutApiKey ? 'bg-green-400' : 'bg-red-400'}`} />
+                  <span className="text-xs text-gray-400">
+                    {envConfig.oxapayPayoutApiKey ? 'Connected' : 'Not Configured'}
+                  </span>
+                </div>
+              </div>
+              
+              <div className="flex items-center justify-between bg-muted/60 border border-border/70 rounded-lg p-3">
+                <div className="flex items-center gap-2">
+                  <Wallet className="w-4 h-4 text-gray-400" />
+                  <span className="text-sm font-medium text-gray-300">OxaPay API (Legacy)</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className={`w-2 h-2 rounded-full ${envConfig.oxapayApiKey ? 'bg-green-400' : 'bg-red-400'}`} />
