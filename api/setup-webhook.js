@@ -44,10 +44,17 @@ export default async function handler(req, res) {
 
     // Set defaults for optional parameters using environment variables as fallbacks
     const webhookSecret = TELEGRAM_WEBHOOK_SECRET || process.env.TELEGRAM_WEBHOOK_SECRET || 'default-webhook-secret';
-    const webAppUrl = VITE_WEB_APP_URL || process.env.VITE_WEB_APP_URL || getBaseUrl(req);
+    let webAppUrl = VITE_WEB_APP_URL || process.env.VITE_WEB_APP_URL || getBaseUrl(req);
+    
+    // Ensure URL has proper protocol
+    if (webAppUrl && !webAppUrl.startsWith('http://') && !webAppUrl.startsWith('https://')) {
+      webAppUrl = `https://${webAppUrl}`;
+    }
+    
     const webhookUrl = `${webAppUrl}/api/telegram-bot`;
 
     console.log(`🤖 Setting up webhook via API for bot token: ${TG_BOT_TOKEN.substring(0, 10)}...`);
+    console.log(`🌐 Webhook URL will be: ${webhookUrl}`);
 
     // Step 1: Validate bot token by getting bot info
     const botInfoResponse = await fetch(`https://api.telegram.org/bot${TG_BOT_TOKEN}/getMe`);
@@ -112,6 +119,7 @@ export default async function handler(req, res) {
 
     // Step 6: Test webhook endpoint
     let endpointStatus = 'unknown';
+    let endpointError = null;
     try {
       const testResponse = await fetch(webhookUrl, {
         method: 'POST',
@@ -132,8 +140,13 @@ export default async function handler(req, res) {
       });
       
       endpointStatus = testResponse.status === 200 ? 'working' : `error_${testResponse.status}`;
+      if (testResponse.status !== 200) {
+        const errorText = await testResponse.text().catch(() => 'Unknown error');
+        endpointError = `HTTP ${testResponse.status}: ${errorText}`;
+      }
     } catch (error) {
       endpointStatus = 'unreachable';
+      endpointError = error.message;
     }
 
     // Success response
@@ -149,9 +162,10 @@ export default async function handler(req, res) {
       },
       webhook_info: {
         url: webhookUrl,
-        secret_token: webhookSecret,
+        secret_token: webhookSecret.substring(0, 8) + '...',
         webhook_status: webhookResult.description,
         endpoint_status: endpointStatus,
+        endpoint_error: endpointError,
         pending_updates: verifyResult.ok ? verifyResult.result.pending_update_count : 'unknown'
       },
       commands_status: commandsResult.ok ? 'set' : 'failed',
