@@ -16,6 +16,7 @@ import {
 import { defaultFirestoreUser } from '@/data/defaults';
 import { generateReferralLink, processReferralInfo } from '@/data/telegramUtils';
 import { getTask } from '@/data/firestore/taskActions';
+import { getAdminConfig } from '@/data/firestore/adminConfig';
 // Removed botNotifications import - using backend API endpoints instead
 
 // Create or return existing user
@@ -35,6 +36,10 @@ export const getOrCreateUser = async (telegramUserData, referrerId = null) => {
   const userRef = doc(db, "users", userId);
 
   try {
+    // Get admin config for bot username
+    const adminConfig = await getAdminConfig();
+    const botUsername = adminConfig?.botUsername;
+    
     const userSnap = await getDoc(userRef);
 
     if (userSnap.exists()) {
@@ -44,7 +49,7 @@ export const getOrCreateUser = async (telegramUserData, referrerId = null) => {
       if (!existingData.referralLink || 
           !existingData.referralLink.includes('?start=refID') ||
           existingData.referralLink.includes('?start=User_')) { 
-        updates.referralLink = generateReferralLink(userId);
+        updates.referralLink = generateReferralLink(userId, botUsername);
       }
 
       // Handle referral for existing users who don't have a referrer yet
@@ -87,7 +92,7 @@ export const getOrCreateUser = async (telegramUserData, referrerId = null) => {
       );
       console.log('[WEBAPP] New user invitedBy field:', newUser.invitedBy);
       newUser.profilePicUrl = telegramUserData.profilePicUrl;
-      newUser.referralLink = generateReferralLink(userId);
+      newUser.referralLink = generateReferralLink(userId, botUsername);
 
       await setDoc(userRef, { ...newUser, joinedAt: serverTimestamp() });
       

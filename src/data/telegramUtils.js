@@ -356,9 +356,13 @@ export const clearWelcomeInfo = (userId = null) => {
   }
 };
 
-export const generateReferralLink = (userId) => {
+export const generateReferralLink = (userId, botUsername = null) => {
   if (!userId) return '';
-  const botUsername = import.meta.env.VITE_BOT_USERNAME || 'xSkyTON_Bot';
+  // Priority: parameter > env variables > fallback
+  const finalBotUsername = botUsername || 
+    import.meta.env.VITE_BOT_USERNAME || 
+    import.meta.env.BOT_USERNAME || 
+    'xSkyTON_Bot';
   // Bot-first approach: User goes to bot chat first, then bot launches Web App
-  return `https://t.me/${botUsername}?start=refID${userId}`;
+  return `https://t.me/${finalBotUsername}?start=refID${userId}`;
 };

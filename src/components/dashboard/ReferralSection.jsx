@@ -906,8 +906,9 @@ const ReferralSection = ({ user, refreshUserData }) => {
 	const { adminConfig } = context || {};
 	const { pauseAdTimer, resumeAdTimer } = useAdTimer();
 	
-	// Get dynamic token name
+	// Get dynamic token name and bot username
 	const tokenName = adminConfig?.tokenName || 'STON';
+	const botUsername = adminConfig?.botUsername;
 	
 	// Helper function to get dynamic reward label
 	const getDynamicRewardLabel = (reward) => {
@@ -951,7 +952,7 @@ const ReferralSection = ({ user, refreshUserData }) => {
 	}, [showSpinModal, pauseAdTimer, resumeAdTimer]);
 
 	const referralLink =
-		currentUser.referralLink || generateReferralLink(currentUser.id);
+		currentUser.referralLink || generateReferralLink(currentUser.id, botUsername);
 
 	const copyReferralLink = () => {
 		if (!referralLink) {
