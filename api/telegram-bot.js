@@ -504,6 +504,7 @@ async function handleStart(chatId, userId, userInfo, customMessage = null) {
         referrals: 0,
         referralHistory: [],
         referralCode: userId.toString(),
+        referralLink: `https://t.me/${await getBotUsername()}?start=refID${userId}`,
         invitedBy: null,
         completedTasks: [],
         referredUsers: [],
@@ -520,6 +521,23 @@ async function handleStart(chatId, userId, userInfo, customMessage = null) {
         },
         joinedAt: serverTimestamp()
       });
+    } else {
+      // Update existing user's referral link if it's outdated (contains hardcoded bot username)
+      const existingData = userDoc.data();
+      const currentBotUsername = await getBotUsername();
+      const expectedReferralLink = `https://t.me/${currentBotUsername}?start=refID${userId}`;
+      
+      // Check if referral link needs updating (is missing, outdated, or contains old hardcoded username)
+      if (!existingData.referralLink || 
+          existingData.referralLink !== expectedReferralLink ||
+          existingData.referralLink.includes('xSkyTON_Bot')) {
+        
+        await updateDoc(userRef, {
+          referralLink: expectedReferralLink
+        });
+        
+        console.log(`[BOT] Updated referral link for existing user ${userId}: ${expectedReferralLink}`);
+      }
     }
   }
 
@@ -855,8 +873,13 @@ async function processReferralDirect(newUserId, referrerId, userInfo) {
           mining: 0
         };
 
+        // Update referral link if needed
+        const currentBotUsername = await getBotUsername();
+        const expectedReferralLink = `https://t.me/${currentBotUsername}?start=refID${newUserId}`;
+        
         await updateDoc(newUserRef, {
           invitedBy: referrerId,
+          referralLink: expectedReferralLink, // Always update to current bot username
           pendingReferralReward: {
             referrerId: referrerId,
             userReward: welcomeBonus,
@@ -902,7 +925,7 @@ async function processReferralDirect(newUserId, referrerId, userInfo) {
         referralHistory: [],
         referralCode: newUserId.toString(),
         invitedBy: referrerId,
-        referralLink: `https://t.me/${getBotUsername()}?start=refID${newUserId}`,
+        referralLink: `https://t.me/${await getBotUsername()}?start=refID${newUserId}`,
         completedTasks: [],
         referredUsers: [],
         isBanned: false,
