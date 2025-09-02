@@ -381,7 +381,7 @@ Someone joined ${appConfig.appName} through your referral link!
 
 Keep sharing to get more referrals! 🚀
 
-<b>Share your link:</b> https://t.me/${getBotUsername()}?start=refID${referrerId}`, {
+<b>Share your link:</b> https://t.me/${await getBotUsername()}?start=refID${referrerId}`, {
         parse_mode: 'HTML'
       });
       

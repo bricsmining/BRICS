@@ -942,7 +942,7 @@ Your friend joined ${appName} through your referral link!
 
 Keep sharing to earn more rewards! 🚀
 
-<b>Share your link:</b> https://t.me/${process.env.BOT_USERNAME || 'xSkyTON_Bot'}?start=refID${data.referrerId}`;
+<b>Share your link:</b> https://t.me/${adminConfig?.botUsername || process.env.BOT_USERNAME || 'xSkyTON_Bot'}?start=refID${data.referrerId}`;
 
     case 'withdrawal_success':
       return `🎉 <b>Withdrawal Completed!</b>
