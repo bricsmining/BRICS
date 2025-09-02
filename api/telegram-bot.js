@@ -381,7 +381,7 @@ Someone joined ${appConfig.appName} through your referral link!
 
 Keep sharing to get more referrals! 🚀
 
-<b>Share your link:</b> https://t.me/${await getBotUsername()}?start=refID${referrerId}`, {
+<b>Share your link:</b> https://t.me/${getBotUsername()}?start=refID${referrerId}`, {
         parse_mode: 'HTML'
       });
       
@@ -504,7 +504,7 @@ async function handleStart(chatId, userId, userInfo, customMessage = null) {
         referrals: 0,
         referralHistory: [],
         referralCode: userId.toString(),
-        referralLink: `https://t.me/${await getBotUsername()}?start=refID${userId}`,
+        referralLink: `https://t.me/${getBotUsername()}?start=refID${userId}`,
         invitedBy: null,
         completedTasks: [],
         referredUsers: [],
@@ -524,7 +524,7 @@ async function handleStart(chatId, userId, userInfo, customMessage = null) {
     } else {
       // Update existing user's referral link if it's outdated (contains hardcoded bot username)
       const existingData = userDoc.data();
-      const currentBotUsername = await getBotUsername();
+      const currentBotUsername = getBotUsername();
       const expectedReferralLink = `https://t.me/${currentBotUsername}?start=refID${userId}`;
       
       // Check if referral link needs updating (is missing, outdated, or contains old hardcoded username)
@@ -599,7 +599,7 @@ async function handleCallbackQuery(callbackQuery) {
 
 // Handle get referral link
 async function handleGetReferralLink(chatId, userId) {
-  const botUsername = await getBotUsername();
+  const botUsername = getBotUsername();
   const referralLink = `https://t.me/${botUsername}?start=refID${userId}`;
   const appConfig = await getAppConfig();
   
@@ -874,7 +874,7 @@ async function processReferralDirect(newUserId, referrerId, userInfo) {
         };
 
         // Update referral link if needed
-        const currentBotUsername = await getBotUsername();
+        const currentBotUsername = getBotUsername();
         const expectedReferralLink = `https://t.me/${currentBotUsername}?start=refID${newUserId}`;
         
         await updateDoc(newUserRef, {
@@ -925,7 +925,7 @@ async function processReferralDirect(newUserId, referrerId, userInfo) {
         referralHistory: [],
         referralCode: newUserId.toString(),
         invitedBy: referrerId,
-        referralLink: `https://t.me/${await getBotUsername()}?start=refID${newUserId}`,
+        referralLink: `https://t.me/${getBotUsername()}?start=refID${newUserId}`,
         completedTasks: [],
         referredUsers: [],
         isBanned: false,

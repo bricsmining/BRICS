@@ -777,21 +777,6 @@ const AdminSettings = ({ adminData }) => {
             
             <div>
               <label className="text-sm font-medium text-gray-300 mb-2 block">
-                Bot Username
-              </label>
-              <Input
-                value={config.botUsername || 'xSkyTON_Bot'}
-                onChange={(e) => updateConfigField('botUsername', e.target.value)}
-                className="bg-input border-border focus:border-blue-500 focus:bg-input/80 text-white"
-                placeholder="YourApp_Bot"
-              />
-              <p className="text-xs text-gray-400 mt-1">
-                Bot username for referral links (without @)
-              </p>
-            </div>
-            
-            <div>
-              <label className="text-sm font-medium text-gray-300 mb-2 block">
                 App Version
               </label>
               <Input

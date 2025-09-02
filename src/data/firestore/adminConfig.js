@@ -61,7 +61,6 @@ const defaultConfig = {
   // App Settings (editable in admin panel)
   appName: 'SkyTON',
   tokenName: 'STON',
-  botUsername: 'xSkyTON_Bot', // Bot username for referral links
   appVersion: '1.0.0',
   maintenanceMode: false,
   
@@ -118,7 +117,7 @@ export const getEnvConfig = () => ({
   webAppUrl: import.meta.env.VITE_WEB_APP_URL, // Only check if exists, don't expose
   telegramBotToken: !!import.meta.env.VITE_TG_BOT_TOKEN, // Only check if exists, don't expose
   telegramWebhookSecret: true, // Server-side only - always show as configured (TELEGRAM_WEBHOOK_SECRET)
-  botUsername: import.meta.env.VITE_BOT_USERNAME || import.meta.env.BOT_USERNAME, // Bot username for referral links
+
   oxapayApiKey: !!import.meta.env.VITE_OXAPAY_API_KEY, // Only check if exists, don't expose (legacy)
   oxapayMerchantApiKey: !!import.meta.env.VITE_OXAPAY_MERCHANT_API_KEY, // Only check if exists, don't expose
   oxapayPayoutApiKey: !!import.meta.env.VITE_OXAPAY_PAYOUT_API_KEY, // Only check if exists, don't expose
