@@ -375,7 +375,7 @@ function getNotificationTarget(type, adminConfig) {
 async function generateNotificationMessage(type, data, adminConfig = {}) {
   const timestamp = new Date().toLocaleString();
   const appName = adminConfig?.appName || 'SkyTON';
-  const tokenName = adminConfig?.tokenName || '${tokenName}';
+  const tokenName = adminConfig?.tokenName || 'STON';
   
   switch (type) {
     case 'new_user':
