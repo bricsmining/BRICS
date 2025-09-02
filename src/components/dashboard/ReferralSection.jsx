@@ -950,9 +950,9 @@ const ReferralSection = ({ user, refreshUserData }) => {
 		};
 	}, [showSpinModal, pauseAdTimer, resumeAdTimer]);
 
-	// Always generate dynamic referral link with current bot username from env variable
-	// This ensures users get the correct bot username even if their stored link is outdated
-	const referralLink = generateReferralLink(currentUser.id);
+	// Use stored referral link from database (which has correct bot username)
+	// Only generate if missing from database
+	const referralLink = currentUser.referralLink || generateReferralLink(currentUser.id);
 
 	const copyReferralLink = () => {
 		if (!referralLink) {
