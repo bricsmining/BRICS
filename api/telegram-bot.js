@@ -240,6 +240,16 @@ async function handleMessage(message) {
     return;
   }
 
+  if (text === '/invite') {
+    await handleGetReferralLink(chatId, userId);
+    return;
+  }
+
+  if (text === '/stats') {
+    await handleShowStats(chatId, userId);
+    return;
+  }
+
   // Default response for unknown messages
   const adminConfig = await getAdminConfig();
   const appConfig = await getAppConfig();
@@ -571,7 +581,8 @@ async function handleCallbackQuery(callbackQuery) {
 
 // Handle get referral link
 async function handleGetReferralLink(chatId, userId) {
-  const referralLink = `https://t.me/${getBotUsername()}?start=refID${userId}`;
+  const botUsername = await getBotUsername();
+  const referralLink = `https://t.me/${botUsername}?start=refID${userId}`;
   const appConfig = await getAppConfig();
   
   await sendMessage(chatId, `
@@ -596,6 +607,64 @@ The more friends you invite, the more you earn! 🚀
       ]
     }
   });
+}
+
+// Handle show stats command
+async function handleShowStats(chatId, userId) {
+  try {
+    // Get user data from database
+    const userRef = doc(db, 'users', userId.toString());
+    const userSnap = await getDoc(userRef);
+    
+    if (!userSnap.exists()) {
+      await sendMessage(chatId, `
+❌ *User not found*
+
+Please start the bot first with /start to create your account.
+      `, { parse_mode: 'Markdown' });
+      return;
+    }
+    
+    const userData = userSnap.data();
+    const appConfig = await getAppConfig();
+    
+    // Format numbers with commas
+    const formatNumber = (num) => num?.toLocaleString() || '0';
+    
+    await sendMessage(chatId, `
+📊 *Your ${appConfig.appName} Stats*
+
+💰 *Balance:* ${formatNumber(userData.balance)} ${appConfig.tokenName}
+⚡ *Energy:* ${userData.energy || 0}/500
+🎁 *Mystery Boxes:* ${userData.mysteryBoxes || 0}
+🃏 *Mining Cards:* ${userData.cards || 0}
+
+👥 *Referrals:* ${userData.referrals || 0}
+📈 *Total Mined:* ${formatNumber(userData.miningData?.totalMined)} ${appConfig.tokenName}
+✅ *Tasks Completed:* ${userData.completedTasks?.length || 0}
+
+🏆 *Account Status:* ${userData.isBanned ? '🚫 Banned' : '✅ Active'}
+📅 *Joined:* ${userData.joinedAt?.toDate?.()?.toLocaleDateString() || 'Unknown'}
+
+Keep mining and inviting friends! 🚀
+    `, {
+      parse_mode: 'Markdown',
+      reply_markup: {
+        inline_keyboard: [
+          [{ text: "🚀 Open App", web_app: { url: await getWebAppUrl() } }],
+          [{ text: "🎯 Get Referral Link", callback_data: "get_referral_link" }]
+        ]
+      }
+    });
+    
+  } catch (error) {
+    console.error('[BOT] Error in handleShowStats:', error);
+    await sendMessage(chatId, `
+❌ *Error retrieving stats*
+
+Something went wrong. Please try again later.
+    `, { parse_mode: 'Markdown' });
+  }
 }
 
 // Handle join channel

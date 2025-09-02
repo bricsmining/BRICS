@@ -951,8 +951,9 @@ const ReferralSection = ({ user, refreshUserData }) => {
 		};
 	}, [showSpinModal, pauseAdTimer, resumeAdTimer]);
 
-	const referralLink =
-		currentUser.referralLink || generateReferralLink(currentUser.id, botUsername);
+	// Always generate dynamic referral link with current bot username
+	// This ensures users get the correct bot username even if their stored link is outdated
+	const referralLink = generateReferralLink(currentUser.id, botUsername);
 
 	const copyReferralLink = () => {
 		if (!referralLink) {
