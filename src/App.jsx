@@ -20,6 +20,7 @@ import DynamicLoader from '@/components/ui/DynamicLoader';
 import { initializeAdNetworks, showRewardedAd } from '@/ads/adsController';
 import { useAdminConfig } from '@/hooks/useAdminConfig';
 import MaintenanceMode from '@/components/MaintenanceMode';
+import { getBotUsernameFromContext } from '@/data/telegramUtils';
 
 export const UserContext = React.createContext(null);
 
@@ -256,7 +257,7 @@ function App() {
             Please open this app through the <span className="text-sky-400 font-semibold">{adminConfig?.appName || 'SkyTON'} Telegram Bot</span> to continue.
           </p>
           <a
-            href={`https://t.me/${import.meta.env.VITE_BOT_USERNAME || import.meta.env.BOT_USERNAME || 'xSkyTON_Bot'}`}
+            href={`https://t.me/${getBotUsernameFromContext()}`}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-block bg-sky-500 hover:bg-sky-400 text-white px-6 py-2 rounded transition"

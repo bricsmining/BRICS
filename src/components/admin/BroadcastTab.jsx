@@ -10,10 +10,18 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
 import { Trash2, Plus, Send, Image, Video, FileAudio, FileText, ExternalLink, Smartphone } from 'lucide-react';
+import { getBotUsernameFromContext } from '@/data/telegramUtils';
 
 const BroadcastTab = ({ tokenName = 'STON', adminConfig = {} }) => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Debug environment variables
+  console.log('🔍 [BroadcastTab] Environment variables:', {
+    VITE_BOT_USERNAME: import.meta.env.VITE_BOT_USERNAME,
+    BOT_USERNAME: import.meta.env.BOT_USERNAME,
+    final_bot_username: import.meta.env.VITE_BOT_USERNAME || import.meta.env.BOT_USERNAME || 'xSkyTON_Bot'
+  });
   const [broadcastData, setBroadcastData] = useState({
     message: '',
     mediaType: null,
@@ -468,7 +476,7 @@ Ready to boost your earnings?`,
                 buttons: [
                   [{ text: `🚀 Open ${adminConfig?.appName || 'SkyTON'}`, type: 'webapp', value: import.meta.env.VITE_WEB_APP_URL || 'https://your-app.com' }],
                   [
-                    { text: '📱 Share', type: 'url', value: `https://t.me/share/url?url=https://t.me/${import.meta.env.VITE_BOT_USERNAME || import.meta.env.BOT_USERNAME || 'xSkyTON_Bot'}&text=Join%20me%20on%20${adminConfig?.appName || 'SkyTON'}!` },
+                    { text: '📱 Share', type: 'url', value: `https://t.me/share/url?url=https://t.me/${getBotUsernameFromContext()}&text=Join%20me%20on%20${adminConfig?.appName || 'SkyTON'}!` },
                     { text: '💬 Support', type: 'url', value: 'https://t.me/SkyTONSupport' }
                   ]
                 ]

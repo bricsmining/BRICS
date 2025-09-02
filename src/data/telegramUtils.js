@@ -424,13 +424,41 @@ export const clearWelcomeInfo = (userId = null) => {
   }
 };
 
+// Utility function to determine the correct bot username based on context
+export const getBotUsernameFromContext = () => {
+  // First priority: Environment variables
+  if (import.meta.env.VITE_BOT_USERNAME) return import.meta.env.VITE_BOT_USERNAME;
+  if (import.meta.env.BOT_USERNAME) return import.meta.env.BOT_USERNAME;
+  
+  // Second priority: Try to detect from app context
+  // Check if we can access adminConfig from localStorage/sessionStorage
+  try {
+    const cachedUser = sessionStorage.getItem("cachedUser");
+    if (cachedUser) {
+      const userData = JSON.parse(cachedUser);
+      // For BRICS deployment, use BricsMiningBot
+      if (userData.appName === 'BricsMining' || userData.tokenName === 'BRICS') {
+        return 'BricsMiningBot';
+      }
+    }
+  } catch (error) {
+    console.warn('Could not determine bot username from cached user data');
+  }
+  
+  // Third priority: Check URL or other indicators
+  const currentHost = window.location.hostname;
+  if (currentHost.includes('brics') || document.title.includes('BricsMining')) {
+    return 'BricsMiningBot';
+  }
+  
+  // Final fallback
+  return 'xSkyTON_Bot';
+};
+
 export const generateReferralLink = (userId, botUsername = null) => {
   if (!userId) return '';
-  // Priority: parameter > env variables > fallback
-  const finalBotUsername = botUsername || 
-    import.meta.env.VITE_BOT_USERNAME || 
-    import.meta.env.BOT_USERNAME || 
-    'xSkyTON_Bot';
+  // Priority: parameter > context-based detection > fallback
+  const finalBotUsername = botUsername || getBotUsernameFromContext();
   // Bot-first approach: User goes to bot chat first, then bot launches Web App
   return `https://t.me/${finalBotUsername}?start=refID${userId}`;
 };
