@@ -17,9 +17,76 @@ export function restoreTelegramSession() {
 // Call this IMMEDIATELY at the top of your app, before using any Telegram params!
 restoreTelegramSession();
 
+// Enhanced Telegram context detection
+const detectTelegramContext = () => {
+  console.log('[WEBAPP] Running enhanced Telegram detection...');
+  
+  // Method 1: Check Telegram WebApp API availability
+  if (window.Telegram && window.Telegram.WebApp) {
+    console.log('[WEBAPP] ✅ Telegram WebApp API detected');
+    
+    // Check if WebApp is initialized
+    if (window.Telegram.WebApp.initData || window.Telegram.WebApp.initDataUnsafe) {
+      console.log('[WEBAPP] ✅ Telegram WebApp initData available');
+      return true;
+    }
+    
+    // Check if we're in Telegram environment (even without initData)
+    if (window.Telegram.WebApp.platform || window.Telegram.WebApp.version) {
+      console.log('[WEBAPP] ✅ Telegram WebApp platform/version detected');
+      return true;
+    }
+  }
+  
+  // Method 2: Check User Agent for Telegram
+  const userAgent = navigator.userAgent || '';
+  if (userAgent.includes('TelegramBot') || userAgent.includes('Telegram')) {
+    console.log('[WEBAPP] ✅ Telegram detected in User Agent:', userAgent);
+    return true;
+  }
+  
+  // Method 3: Check for stored Telegram session data
+  const hasStoredTgData = sessionStorage.getItem('tgWebAppDataRaw') || 
+                          localStorage.getItem('tgWebAppDataRaw') ||
+                          sessionStorage.getItem('tgWebAppHash') ||
+                          localStorage.getItem('tgWebAppHash');
+  
+  if (hasStoredTgData) {
+    console.log('[WEBAPP] ✅ Stored Telegram session data found');
+    return true;
+  }
+  
+  // Method 4: Check URL hash for Telegram data
+  const hash = window.location.hash;
+  if (hash && (hash.includes('tgWebAppData') || hash.includes('user=') || hash.includes('auth_date='))) {
+    console.log('[WEBAPP] ✅ Telegram data detected in URL hash');
+    return true;
+  }
+  
+  // Method 5: Check for Telegram-specific URL parameters
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get('tgWebAppStartParam') || urlParams.get('tgWebAppData')) {
+    console.log('[WEBAPP] ✅ Telegram parameters detected in URL');
+    return true;
+  }
+  
+  // Method 6: Check referrer for Telegram
+  if (document.referrer && document.referrer.includes('t.me')) {
+    console.log('[WEBAPP] ✅ Telegram referrer detected:', document.referrer);
+    return true;
+  }
+  
+  console.log('[WEBAPP] ❌ No Telegram context detected');
+  return false;
+};
+
 export const parseLaunchParams = () => {
   console.log('[WEBAPP] parseLaunchParams called');
   console.log('[WEBAPP] URL:', window.location.href);
+  
+  // Enhanced Telegram detection
+  const isTelegramContext = detectTelegramContext();
+  console.log('[WEBAPP] Telegram context detected:', isTelegramContext);
   
   let hash = window.location.hash ? window.location.hash.slice(1) : '';
 
@@ -183,10 +250,11 @@ export const parseLaunchParams = () => {
   console.log('[WEBAPP] Final result:', {
     telegramUserId: telegramUser?.id,
     referrerId: referrerId,
-    source: startParam ? 'telegram_start_param' : 'none'
+    source: startParam ? 'telegram_start_param' : 'none',
+    isTelegramContext: isTelegramContext
   });
 
-  return { telegramUser, referrerId };
+  return { telegramUser, referrerId, isTelegramContext };
 };
 
 // Process temporary referral and welcome info once we have the actual user ID

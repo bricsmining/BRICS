@@ -9,7 +9,7 @@ import { defaultFirestoreTasks } from '@/data/defaults';
  * If user is not in Telegram context, signals the UI to show a warning.
  */
 export const initializeAppData = async () => {
-  const { telegramUser, referrerId } = parseLaunchParams();
+  const { telegramUser, referrerId, isTelegramContext } = parseLaunchParams();
 
   // Seed tasks if they don’t already exist
   await seedInitialTasks(defaultFirestoreTasks);
@@ -61,7 +61,30 @@ export const initializeAppData = async () => {
     }
   }
 
-  // 3. If any are missing, force warning
-  console.warn("No Telegram user or stored session. User must use Telegram WebApp.");
+  // 3. Enhanced decision making based on Telegram context detection
+  if (!isTelegramContext) {
+    console.warn("No Telegram context detected. User should use Telegram WebApp.");
+    return { needsTelegram: true };
+  }
+  
+  // If we detect Telegram context but no user data, there might be a temporary issue
+  // Try to be more lenient and allow the user to continue with limited functionality
+  console.warn("Telegram context detected but no user data available. Attempting graceful fallback.");
+  
+  // Check if there's any partial user data we can work with
+  const partialUserId = sessionStorage.getItem('userId') || localStorage.getItem('userId');
+  if (partialUserId) {
+    try {
+      const existingUser = await getUserById(partialUserId);
+      if (existingUser) {
+        console.log("Recovered user from partial session data:", partialUserId);
+        return existingUser;
+      }
+    } catch (error) {
+      console.error("Failed to recover user from partial data:", error);
+    }
+  }
+  
+  // Final fallback - show Telegram warning
   return { needsTelegram: true };
 };

@@ -466,9 +466,9 @@ Ready to boost your earnings?`,
                 mediaUrl: '',
                 parseMode: 'Markdown',
                 buttons: [
-                  [{ text: '🚀 Open SkyTON', type: 'webapp', value: import.meta.env.VITE_WEB_APP_URL || 'https://your-app.com' }],
+                  [{ text: `🚀 Open ${adminConfig?.appName || 'SkyTON'}`, type: 'webapp', value: import.meta.env.VITE_WEB_APP_URL || 'https://your-app.com' }],
                   [
-                    { text: '📱 Share', type: 'url', value: 'https://t.me/share/url?url=https://t.me/xSkyTON_Bot&text=Join%20me%20on%20SkyTON!' },
+                    { text: '📱 Share', type: 'url', value: `https://t.me/share/url?url=https://t.me/${import.meta.env.VITE_BOT_USERNAME || import.meta.env.BOT_USERNAME || 'xSkyTON_Bot'}&text=Join%20me%20on%20${adminConfig?.appName || 'SkyTON'}!` },
                     { text: '💬 Support', type: 'url', value: 'https://t.me/SkyTONSupport' }
                   ]
                 ]
